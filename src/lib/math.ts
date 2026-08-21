@@ -26,7 +26,7 @@ export const OP_NAME: Record<Op, string> = {
 const rnd = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
 export function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+  return arr[Math.floor(Math.random() * arr.length)] as T;
 }
 
 /** level 1-10 */
