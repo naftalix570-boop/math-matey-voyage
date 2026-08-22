@@ -28,7 +28,7 @@ export function TopicHelpSheet({
   open,
   onClose,
 }: {
-  topicId?: string;
+  topicId?: string | undefined;
   open: boolean;
   onClose: () => void;
 }) {
