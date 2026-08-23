@@ -32,6 +32,9 @@ export type Profile = {
   weeklyDone: string;
   subscribed: boolean;
   boosts: Boosts;
+  chests: number;
+  lastChestDay: string;
+  chestsOpened: number;
 };
 
 const KEY = "math-journey-v1";
@@ -60,6 +63,9 @@ const defaultProfile: Profile = {
   weeklyDone: "",
   subscribed: false,
   boosts: { doubleUntil: 0, premiumUntil: 0 },
+  chests: 1,
+  lastChestDay: "",
+  chestsOpened: 0,
 };
 
 export type Achievement = { id: string; title: string; emoji: string };
@@ -73,7 +79,24 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "divmaster", title: "מומחה לחילוק", emoji: "➗" },
   { id: "st10", title: "10 מדבקות", emoji: "🏅" },
   { id: "flash", title: "סיים אתגר בזק", emoji: "⚡" },
+  { id: "chest5", title: "פתחת 5 תיבות", emoji: "🎁" },
 ];
+
+export type ChestKind = "wood" | "silver" | "gold";
+
+export const CHESTS: Record<ChestKind, { title: string; emoji: string; price: number; desc: string }> = {
+  wood: { title: "תיבת עץ", emoji: "📦", price: 50, desc: "מטבעות ורמזים" },
+  silver: { title: "תיבת כסף", emoji: "🎁", price: 120, desc: "פרס גדול יותר + סיכוי למדבקה" },
+  gold: { title: "תיבת זהב", emoji: "🏆", price: 250, desc: "מדבקה מובטחת + בוסט" },
+};
+
+export type ChestReward = {
+  coins: number;
+  hints: number;
+  sticker: number | null;
+  boost: "double" | "premium" | null;
+  kind: ChestKind;
+};
 
 type Ctx = {
   profile: Profile;
@@ -84,6 +107,7 @@ type Ctx = {
   spendCoins: (n: number) => boolean;
   useHint: () => boolean;
   grantSticker: () => number | null;
+  openChest: (kind: ChestKind, free?: boolean) => ChestReward | null;
   unlockAchievement: (id: string) => void;
   sound: (kind: Parameters<typeof playSound>[0]) => void;
   reset: () => void;
@@ -108,6 +132,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
           const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
           parsed.streakDays = parsed.lastDay === yesterday ? parsed.streakDays + 1 : 1;
           parsed.lastDay = today;
+        }
+        if (parsed.lastChestDay !== today) {
+          parsed.lastChestDay = today;
+          parsed.chests = parsed.chests + 1;
         }
         setProfile(parsed);
       }
@@ -147,6 +175,49 @@ export function GameProvider({ children }: { children: ReactNode }) {
       return { ...p, stickers: [...p.stickers, slot] };
     });
     return granted;
+  }, []);
+
+  const openChest = useCallback<Ctx["openChest"]>((kind, free = false) => {
+    const cfg = CHESTS[kind];
+    let reward: ChestReward | null = null;
+    setProfile((p) => {
+      if (free ? p.chests <= 0 : p.coins < cfg.price) return p;
+      const rnd = (a: number, b: number) => a + Math.floor(Math.random() * (b - a + 1));
+      const coins = kind === "wood" ? rnd(20, 70) : kind === "silver" ? rnd(60, 170) : rnd(150, 400);
+      const hints = kind === "wood" ? rnd(0, 2) : kind === "silver" ? rnd(1, 4) : rnd(3, 6);
+      const wantsSticker = kind === "gold" || (kind === "silver" && Math.random() < 0.5) || Math.random() < 0.2;
+      const free_slots = Array.from({ length: ALBUM_SIZE }, (_, i) => i).filter(
+        (i) => !p.stickers.includes(i),
+      );
+      const slot =
+        wantsSticker && free_slots.length
+          ? (free_slots[Math.floor(Math.random() * free_slots.length)] as number)
+          : null;
+      const boost: ChestReward["boost"] =
+        kind === "gold" ? (Math.random() < 0.5 ? "premium" : "double") : kind === "silver" && Math.random() < 0.4 ? "double" : null;
+
+      reward = { coins, hints, sticker: slot, boost, kind };
+
+      const achievements = [...p.achievements];
+      if (p.chestsOpened + 1 >= 5 && !achievements.includes("chest5")) achievements.push("chest5");
+
+      return {
+        ...p,
+        coins: p.coins - (free ? 0 : cfg.price) + coins,
+        hints: p.hints + hints,
+        chests: free ? p.chests - 1 : p.chests,
+        chestsOpened: p.chestsOpened + 1,
+        stickers: slot == null ? p.stickers : [...p.stickers, slot],
+        achievements,
+        boosts: {
+          doubleUntil:
+            boost === "double" ? Math.max(Date.now(), p.boosts.doubleUntil) + 3600000 : p.boosts.doubleUntil,
+          premiumUntil:
+            boost === "premium" ? Math.max(Date.now(), p.boosts.premiumUntil) + 86400000 : p.boosts.premiumUntil,
+        },
+      };
+    });
+    return reward;
   }, []);
 
   const unlockAchievement = useCallback((id: string) => {
@@ -257,6 +328,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       spendCoins,
       useHint,
       grantSticker,
+      openChest,
       unlockAchievement,
       sound,
       reset,
@@ -272,6 +344,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       spendCoins,
       useHint,
       grantSticker,
+      openChest,
       unlockAchievement,
       sound,
       reset,
