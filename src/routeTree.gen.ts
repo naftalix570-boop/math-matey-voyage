@@ -10,14 +10,21 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AlbumRouteImport } from './routes/album'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ShopRouteImport } from './routes/shop'
+import { Route as PlayGameIdRouteImport } from './routes/play.$gameId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlbumRoute = AlbumRouteImport.update({
+  id: '/album',
+  path: '/album',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GamesRoute = GamesRouteImport.update({
@@ -40,43 +47,78 @@ const ShopRoute = ShopRouteImport.update({
   path: '/shop',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlayGameIdRoute = PlayGameIdRouteImport.update({
+  id: '/play/$gameId',
+  path: '/play/$gameId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/album': typeof AlbumRoute
   '/games': typeof GamesRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
+  '/play/$gameId': typeof PlayGameIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/album': typeof AlbumRoute
   '/games': typeof GamesRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
+  '/play/$gameId': typeof PlayGameIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/album': typeof AlbumRoute
   '/games': typeof GamesRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
+  '/play/$gameId': typeof PlayGameIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/games' | '/progress' | '/settings' | '/shop'
+  fullPaths:
+    | '/'
+    | '/album'
+    | '/games'
+    | '/progress'
+    | '/settings'
+    | '/shop'
+    | '/play/$gameId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/games' | '/progress' | '/settings' | '/shop'
-  id: '__root__' | '/' | '/games' | '/progress' | '/settings' | '/shop'
+  to:
+    | '/'
+    | '/album'
+    | '/games'
+    | '/progress'
+    | '/settings'
+    | '/shop'
+    | '/play/$gameId'
+  id:
+    | '__root__'
+    | '/'
+    | '/album'
+    | '/games'
+    | '/progress'
+    | '/settings'
+    | '/shop'
+    | '/play/$gameId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AlbumRoute: typeof AlbumRoute
   GamesRoute: typeof GamesRoute
   ProgressRoute: typeof ProgressRoute
   SettingsRoute: typeof SettingsRoute
   ShopRoute: typeof ShopRoute
+  PlayGameIdRoute: typeof PlayGameIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -86,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/album': {
+      id: '/album'
+      path: '/album'
+      fullPath: '/album'
+      preLoaderRoute: typeof AlbumRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/games': {
@@ -116,15 +165,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/play/$gameId': {
+      id: '/play/$gameId'
+      path: '/play/$gameId'
+      fullPath: '/play/$gameId'
+      preLoaderRoute: typeof PlayGameIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AlbumRoute: AlbumRoute,
   GamesRoute: GamesRoute,
   ProgressRoute: ProgressRoute,
   SettingsRoute: SettingsRoute,
   ShopRoute: ShopRoute,
+  PlayGameIdRoute: PlayGameIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
