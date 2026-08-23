@@ -99,7 +99,7 @@ function SettingsPage() {
                   reset();
                   setConfirming(false);
                 }}
-                className="flex-1 rounded-xl bg-destructive px-4 py-3 font-bold text-white active:scale-95"
+                className="flex-1 rounded-xl bg-destructive px-4 py-3 font-bold text-destructive-foreground active:scale-95"
               >
                 כן, למחוק הכול
               </button>
