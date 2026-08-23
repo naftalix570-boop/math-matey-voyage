@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AlbumRouteImport } from './routes/album'
+import { Route as ChestsRouteImport } from './routes/chests'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -25,6 +26,11 @@ const IndexRoute = IndexRouteImport.update({
 const AlbumRoute = AlbumRouteImport.update({
   id: '/album',
   path: '/album',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChestsRoute = ChestsRouteImport.update({
+  id: '/chests',
+  path: '/chests',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GamesRoute = GamesRouteImport.update({
@@ -56,6 +62,7 @@ const PlayGameIdRoute = PlayGameIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/album': typeof AlbumRoute
+  '/chests': typeof ChestsRoute
   '/games': typeof GamesRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/album': typeof AlbumRoute
+  '/chests': typeof ChestsRoute
   '/games': typeof GamesRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/album': typeof AlbumRoute
+  '/chests': typeof ChestsRoute
   '/games': typeof GamesRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/album'
+    | '/chests'
     | '/games'
     | '/progress'
     | '/settings'
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/album'
+    | '/chests'
     | '/games'
     | '/progress'
     | '/settings'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/album'
+    | '/chests'
     | '/games'
     | '/progress'
     | '/settings'
@@ -114,6 +126,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlbumRoute: typeof AlbumRoute
+  ChestsRoute: typeof ChestsRoute
   GamesRoute: typeof GamesRoute
   ProgressRoute: typeof ProgressRoute
   SettingsRoute: typeof SettingsRoute
@@ -135,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/album'
       fullPath: '/album'
       preLoaderRoute: typeof AlbumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chests': {
+      id: '/chests'
+      path: '/chests'
+      fullPath: '/chests'
+      preLoaderRoute: typeof ChestsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/games': {
@@ -178,6 +198,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlbumRoute: AlbumRoute,
+  ChestsRoute: ChestsRoute,
   GamesRoute: GamesRoute,
   ProgressRoute: ProgressRoute,
   SettingsRoute: SettingsRoute,
