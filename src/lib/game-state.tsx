@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { ALBUM_SIZE } from "./stickers";
+import { MAX_LEVEL } from "./math";
 import { playSound } from "./sfx";
 
 export type Boosts = {
