@@ -106,7 +106,7 @@ function Home() {
 
       <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
         <div className="flex justify-between font-bold text-ink">
-          <span>רמה {profile.level} מתוך 10</span>
+          <span>רמה {profile.level} מתוך 30</span>
           <span>{pct}%</span>
         </div>
         <div className="mt-2 h-3 overflow-hidden rounded-full bg-muted">
