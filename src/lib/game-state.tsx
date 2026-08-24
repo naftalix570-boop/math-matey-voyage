@@ -240,7 +240,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         let level = p.level;
         const last40 = history.slice(-40);
         const last20 = history.slice(-20);
-        if (last40.length === 40 && last40.filter(Boolean).length >= 30 && level < 10) {
+        if (last40.length === 40 && last40.filter(Boolean).length >= 30 && level < MAX_LEVEL) {
           level += 1;
           levelUp = true;
         } else if (last20.length === 20 && last20.filter((x) => !x).length >= 15 && level > 1) {
