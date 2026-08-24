@@ -1,16 +1,17 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { ArrowLeft, Home, Gamepad2, ShoppingCart, BarChart3, Settings } from "lucide-react";
+import { ArrowLeft, Home, Gamepad2, Gift, ShoppingCart, BarChart3 } from "lucide-react";
 import { useGame } from "@/lib/game-state";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { to: "/", label: "בית", icon: Home },
   { to: "/games", label: "משחקים", icon: Gamepad2 },
+  { to: "/chests", label: "תיבות", icon: Gift },
   { to: "/shop", label: "חנות", icon: ShoppingCart },
   { to: "/progress", label: "התקדמות", icon: BarChart3 },
-  { to: "/settings", label: "הגדרות", icon: Settings },
 ] as const;
+
 
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
