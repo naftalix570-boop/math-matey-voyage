@@ -29,7 +29,14 @@ const ITEMS: Item[] = [
   { id: "hint5", title: "חבילת 5 רמזים", desc: "משתלם יותר!", emoji: "🎁", price: 40 },
   { id: "sticker", title: "מדבקת הפתעה", desc: "מדבקה אקראית לאלבום", emoji: "🎟️", price: 60 },
   { id: "double", title: "כפל מטבעות שעה", desc: "פי 2 מטבעות למשך שעה", emoji: "⏩", price: 80 },
-  { id: "premium", title: "פרימיום ליום", desc: "רמזים ללא הגבלה 24 שעות", emoji: "👑", price: 150 },
+  {
+    id: "premium",
+    title: "פרימיום ל-24 שעות",
+    desc: "רמזים ללא הגבלה + פי 2 מטבעות ל-24 שעות מלאות",
+    emoji: "👑",
+    price: 150,
+  },
+
 ];
 
 function ShopPage() {
