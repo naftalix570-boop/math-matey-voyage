@@ -56,6 +56,16 @@ function PlayPage() {
   const { profile, update } = useGame();
   const level = profile.level;
   const [op, setOp] = useState<Op | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted)
+    return (
+      <Screen title={game.title}>
+        <div className="mt-10 text-center text-4xl">{game.emoji}</div>
+      </Screen>
+    );
+
 
   if (game.id === "memory") return <Screen title={game.title}><MemoryGame /></Screen>;
   if (game.id === "line-match") return <Screen title={game.title}><LineMatchGame /></Screen>;
