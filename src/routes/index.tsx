@@ -126,12 +126,15 @@ function Home() {
         ▶️ שחק עכשיו
       </Link>
 
-      <div className="mt-3 grid grid-cols-4 gap-2">
+      <div className="mt-3 grid grid-cols-3 gap-2">
         <Tile to="/games" emoji="🎮" label="משחקים" />
         <Tile to="/chests" emoji="🎁" label="תיבות" />
         <Tile to="/album" emoji="📗" label="אלבום" />
         <Tile to="/shop" emoji="🛒" label="חנות" />
+        <Tile to="/progress" emoji="📊" label="התקדמות" />
+        <Tile to="/settings" emoji="⚙️" label="הגדרות" />
       </div>
+
 
 
       <div className="mt-4 rounded-2xl bg-sky p-4 shadow-card">
