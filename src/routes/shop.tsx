@@ -39,6 +39,13 @@ const ITEMS: Item[] = [
 
 ];
 
+function remaining(until: number) {
+  const ms = Math.max(0, until - Date.now());
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  return h > 0 ? `${h} שע' ו-${m} דק'` : `${m} דק'`;
+}
+
 function ShopPage() {
   const { profile, spendCoins, update, grantSticker, sound, premium, doubling } = useGame();
   const [msg, setMsg] = useState<string | null>(null);
