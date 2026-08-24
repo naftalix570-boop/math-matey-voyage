@@ -1,5 +1,5 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { QuizGame, type QuizItem, type QuizVariant } from "@/components/quiz";
 import { BuilderGame, FlashGame, LineMatchGame, MemoryGame } from "@/components/mini-games";
