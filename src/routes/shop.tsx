@@ -82,13 +82,21 @@ function ShopPage() {
       {(premium || doubling) && (
         <div className="mt-3 flex flex-wrap justify-center gap-2 text-sm font-bold">
           {premium && (
-            <span className="rounded-full bg-warning px-3 py-1 text-white">👑 פרימיום פעיל</span>
+            <span className="rounded-full bg-warning px-3 py-1 text-white">
+              👑 פרימיום פעיל — נשאר {remaining(profile.boosts.premiumUntil)}
+            </span>
           )}
           {doubling && (
-            <span className="rounded-full bg-success px-3 py-1 text-white">⏩ כפל מטבעות פעיל</span>
+            <span className="rounded-full bg-success px-3 py-1 text-white">
+              ⏩ כפל מטבעות פעיל
+              {profile.boosts.doubleUntil > Date.now()
+                ? ` — נשאר ${remaining(profile.boosts.doubleUntil)}`
+                : ""}
+            </span>
           )}
         </div>
       )}
+
 
       {msg && (
         <p className="mt-3 rounded-2xl bg-card p-3 text-center font-bold text-ink shadow-card">
