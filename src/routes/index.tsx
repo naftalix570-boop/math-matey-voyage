@@ -170,7 +170,15 @@ function Stat({ emoji, label, value }: { emoji: string; label: string; value: nu
   );
 }
 
-function Tile({ to, emoji, label }: { to: "/games" | "/album" | "/shop" | "/chests"; emoji: string; label: string }) {
+function Tile({
+  to,
+  emoji,
+  label,
+}: {
+  to: "/games" | "/album" | "/shop" | "/chests" | "/progress" | "/settings";
+  emoji: string;
+  label: string;
+}) {
   return (
     <Link
       to={to}
