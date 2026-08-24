@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { ALBUM_SIZE } from "./stickers";
+import { MAX_LEVEL } from "./math";
 import { playSound } from "./sfx";
 
 export type Boosts = {
@@ -121,6 +122,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile>(defaultProfile);
   const [ready, setReady] = useState(false);
   const opStats = useRef<Record<string, number>>({});
+  const [now, setNow] = useState(0);
+
+  useEffect(() => {
+    setNow(Date.now());
+    const t = setInterval(() => setNow(Date.now()), 10000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     try {
@@ -239,7 +247,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         let level = p.level;
         const last40 = history.slice(-40);
         const last20 = history.slice(-20);
-        if (last40.length === 40 && last40.filter(Boolean).length >= 30 && level < 10) {
+        if (last40.length === 40 && last40.filter(Boolean).length >= 30 && level < MAX_LEVEL) {
           level += 1;
           levelUp = true;
         } else if (last20.length === 20 && last20.filter((x) => !x).length >= 15 && level > 1) {
@@ -273,7 +281,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         if (stickers.length >= 10) add("st10");
 
         const coinsFromAch = (achievements.length - p.achievements.length) * 3;
-        const gain = correct ? (Date.now() < p.boosts.doubleUntil ? 2 : 1) : 0;
+        const now = Date.now();
+        const boosted = now < p.boosts.doubleUntil || now < p.boosts.premiumUntil;
+        const gain = correct ? (boosted ? 2 : 1) : 0;
 
         return {
           ...p,
@@ -332,12 +342,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
       unlockAchievement,
       sound,
       reset,
-      premium: Date.now() < profile.boosts.premiumUntil,
-      doubling: Date.now() < profile.boosts.doubleUntil,
+      premium: (now || Date.now()) < profile.boosts.premiumUntil,
+      doubling:
+        (now || Date.now()) < profile.boosts.doubleUntil ||
+        (now || Date.now()) < profile.boosts.premiumUntil,
     }),
     [
       profile,
       ready,
+      now,
       update,
       recordAnswer,
       addCoins,

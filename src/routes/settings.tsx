@@ -78,7 +78,7 @@ function SettingsPage() {
             </button>
             <span className="text-3xl font-bold text-ink">{profile.level}</span>
             <button
-              onClick={() => update((p) => ({ level: Math.min(10, p.level + 1) }))}
+              onClick={() => update((p) => ({ level: Math.min(30, p.level + 1) }))}
               className="size-12 rounded-xl bg-muted text-2xl font-bold text-ink active:scale-95"
               aria-label="העלאת רמה"
             >

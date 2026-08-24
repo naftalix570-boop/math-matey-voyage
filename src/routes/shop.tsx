@@ -29,8 +29,22 @@ const ITEMS: Item[] = [
   { id: "hint5", title: "חבילת 5 רמזים", desc: "משתלם יותר!", emoji: "🎁", price: 40 },
   { id: "sticker", title: "מדבקת הפתעה", desc: "מדבקה אקראית לאלבום", emoji: "🎟️", price: 60 },
   { id: "double", title: "כפל מטבעות שעה", desc: "פי 2 מטבעות למשך שעה", emoji: "⏩", price: 80 },
-  { id: "premium", title: "פרימיום ליום", desc: "רמזים ללא הגבלה 24 שעות", emoji: "👑", price: 150 },
+  {
+    id: "premium",
+    title: "פרימיום ל-24 שעות",
+    desc: "רמזים ללא הגבלה + פי 2 מטבעות ל-24 שעות מלאות",
+    emoji: "👑",
+    price: 150,
+  },
+
 ];
+
+function remaining(until: number) {
+  const ms = Math.max(0, until - Date.now());
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  return h > 0 ? `${h} שע' ו-${m} דק'` : `${m} דק'`;
+}
 
 function ShopPage() {
   const { profile, spendCoins, update, grantSticker, sound, premium, doubling } = useGame();
@@ -75,13 +89,21 @@ function ShopPage() {
       {(premium || doubling) && (
         <div className="mt-3 flex flex-wrap justify-center gap-2 text-sm font-bold">
           {premium && (
-            <span className="rounded-full bg-warning px-3 py-1 text-white">👑 פרימיום פעיל</span>
+            <span className="rounded-full bg-warning px-3 py-1 text-white">
+              👑 פרימיום פעיל — נשאר {remaining(profile.boosts.premiumUntil)}
+            </span>
           )}
           {doubling && (
-            <span className="rounded-full bg-success px-3 py-1 text-white">⏩ כפל מטבעות פעיל</span>
+            <span className="rounded-full bg-success px-3 py-1 text-white">
+              ⏩ כפל מטבעות פעיל
+              {profile.boosts.doubleUntil > Date.now()
+                ? ` — נשאר ${remaining(profile.boosts.doubleUntil)}`
+                : ""}
+            </span>
           )}
         </div>
       )}
+
 
       {msg && (
         <p className="mt-3 rounded-2xl bg-card p-3 text-center font-bold text-ink shadow-card">

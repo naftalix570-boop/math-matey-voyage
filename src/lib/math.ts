@@ -29,11 +29,14 @@ export function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)] as T;
 }
 
-/** level 1-10 */
+export const MAX_LEVEL = 30;
+
+/** level 1-MAX_LEVEL */
 function rangeFor(level: number) {
-  const l = Math.max(1, Math.min(10, level));
-  return { max: Math.min(5 + l * 5, 60), mulMax: Math.min(3 + l, 12) };
+  const l = Math.max(1, Math.min(MAX_LEVEL, level));
+  return { max: Math.min(5 + l * 8, 400), mulMax: Math.min(3 + l * 2, 40) };
 }
+
 
 export function makeQuestion(level: number, op?: Op, optionCount = 3): Question {
   const { max, mulMax } = rangeFor(level);

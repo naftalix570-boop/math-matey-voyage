@@ -106,7 +106,7 @@ function Home() {
 
       <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
         <div className="flex justify-between font-bold text-ink">
-          <span>רמה {profile.level} מתוך 10</span>
+          <span>רמה {profile.level} מתוך 30</span>
           <span>{pct}%</span>
         </div>
         <div className="mt-2 h-3 overflow-hidden rounded-full bg-muted">
@@ -128,9 +128,14 @@ function Home() {
 
       <div className="mt-3 grid grid-cols-3 gap-2">
         <Tile to="/games" emoji="🎮" label="משחקים" />
+        <Tile to="/chests" emoji="🎁" label="תיבות" />
         <Tile to="/album" emoji="📗" label="אלבום" />
         <Tile to="/shop" emoji="🛒" label="חנות" />
+        <Tile to="/progress" emoji="📊" label="התקדמות" />
+        <Tile to="/settings" emoji="⚙️" label="הגדרות" />
       </div>
+
+
 
       <div className="mt-4 rounded-2xl bg-sky p-4 shadow-card">
         <p className="font-bold text-ink">📅 אתגר השבוע</p>
@@ -165,7 +170,15 @@ function Stat({ emoji, label, value }: { emoji: string; label: string; value: nu
   );
 }
 
-function Tile({ to, emoji, label }: { to: "/games" | "/album" | "/shop"; emoji: string; label: string }) {
+function Tile({
+  to,
+  emoji,
+  label,
+}: {
+  to: "/games" | "/album" | "/shop" | "/chests" | "/progress" | "/settings";
+  emoji: string;
+  label: string;
+}) {
   return (
     <Link
       to={to}

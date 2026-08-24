@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Screen } from "@/components/app-shell";
 import { GAMES } from "@/lib/games";
+import { useGame } from "@/lib/game-state";
 
 export const Route = createFileRoute("/games")({
   head: () => ({
@@ -15,17 +16,25 @@ export const Route = createFileRoute("/games")({
 });
 
 function GamesPage() {
+  const { sound } = useGame();
   return (
     <Screen title="משחקים">
       <div className="grid grid-cols-2 gap-3 pb-28">
         {GAMES.map((g) => (
-          <div key={g.id} className="rounded-2xl bg-card p-4 text-center shadow-card">
+          <Link
+            key={g.id}
+            to="/play/$gameId"
+            params={{ gameId: g.id }}
+            onClick={() => sound("click")}
+            className="rounded-2xl bg-card p-4 text-center shadow-card transition-transform active:scale-95"
+          >
             <div className="text-3xl">{g.emoji}</div>
             <p className="mt-1 font-bold text-ink">{g.title}</p>
             <p className="text-xs text-muted-foreground">{g.desc}</p>
-          </div>
+          </Link>
         ))}
       </div>
     </Screen>
   );
 }
+
