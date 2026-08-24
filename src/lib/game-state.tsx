@@ -274,7 +274,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         if (stickers.length >= 10) add("st10");
 
         const coinsFromAch = (achievements.length - p.achievements.length) * 3;
-        const gain = correct ? (Date.now() < p.boosts.doubleUntil ? 2 : 1) : 0;
+        const now = Date.now();
+        const boosted = now < p.boosts.doubleUntil || now < p.boosts.premiumUntil;
+        const gain = correct ? (boosted ? 2 : 1) : 0;
 
         return {
           ...p,
