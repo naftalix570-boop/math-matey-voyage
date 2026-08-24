@@ -342,12 +342,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
       unlockAchievement,
       sound,
       reset,
-      premium: Date.now() < profile.boosts.premiumUntil,
-      doubling: Date.now() < profile.boosts.doubleUntil,
+      premium: (now || Date.now()) < profile.boosts.premiumUntil,
+      doubling:
+        (now || Date.now()) < profile.boosts.doubleUntil ||
+        (now || Date.now()) < profile.boosts.premiumUntil,
     }),
     [
       profile,
       ready,
+      now,
       update,
       recordAnswer,
       addCoins,
