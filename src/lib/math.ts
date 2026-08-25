@@ -29,14 +29,26 @@ export function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)] as T;
 }
 
-export const MAX_LEVEL = 30;
+export const MAX_LEVEL = 10000;
 
-/** level 1-MAX_LEVEL */
+/**
+ * דירוג קושי עדין: 10,000 שלבים, כל שלב מוסיף מעט.
+ * הקושי גדל בהדרגה ומתייצב בשלבים הגבוהים.
+ */
 function rangeFor(level: number) {
-  const l = Math.max(1, Math.min(MAX_LEVEL, level));
-  return { max: Math.min(5 + l * 8, 400), mulMax: Math.min(3 + l * 2, 40) };
+  const l = Math.max(1, Math.min(MAX_LEVEL, Math.round(level)));
+  // גדילה לוגריתמית-חלקה: מהירה בהתחלה, עדינה בהמשך
+  const t = Math.log10(l + 1) / Math.log10(MAX_LEVEL + 1); // 0..1
+  const max = Math.round(5 + Math.pow(t, 1.4) * 9995);
+  const mulMax = Math.round(3 + Math.pow(t, 1.5) * 997);
+  const digits = Math.min(4, 1 + Math.floor(t * 4));
+  return { max: Math.max(5, max), mulMax: Math.max(3, mulMax), digits };
 }
 
+export function levelRangeLabel(level: number) {
+  const { max, mulMax } = rangeFor(level);
+  return `מספרים עד ${max.toLocaleString("he-IL")} · כפל עד ${mulMax.toLocaleString("he-IL")}`;
+}
 
 export function makeQuestion(level: number, op?: Op, optionCount = 3): Question {
   const { max, mulMax } = rangeFor(level);
@@ -51,15 +63,22 @@ export function makeQuestion(level: number, op?: Op, optionCount = 3): Question 
     answer = a + b;
   } else if (chosen === "sub") {
     a = rnd(2, max);
-    b = rnd(1, a - 1);
+    b = rnd(1, Math.max(1, max));
+    // באג חיסור: המספר הראשון תמיד הגדול — התוצאה תמיד חיובית
+    if (b > a) {
+      const tmp = a;
+      a = b;
+      b = tmp;
+    }
+    if (a === b) b = Math.max(1, b - 1);
     answer = a - b;
   } else if (chosen === "mul") {
     a = rnd(2, mulMax);
-    b = rnd(2, Math.max(2, Math.min(mulMax, Math.floor(100 / a))));
+    b = rnd(2, Math.max(2, Math.min(mulMax, Math.ceil(mulMax / 2))));
     answer = a * b;
   } else {
-    b = rnd(2, Math.max(2, Math.min(10, mulMax)));
-    answer = rnd(2, Math.max(2, Math.min(12, mulMax)));
+    b = rnd(2, Math.max(2, Math.min(20, mulMax)));
+    answer = rnd(2, Math.max(2, Math.min(40, mulMax)));
     a = b * answer;
   }
 
@@ -76,13 +95,28 @@ export function makeQuestion(level: number, op?: Op, optionCount = 3): Question 
 export function makeOptions(answer: number, count = 3): number[] {
   const set = new Set<number>([answer]);
   let guard = 0;
-  while (set.size < count && guard++ < 200) {
-    const delta = rnd(1, Math.max(3, Math.round(answer * 0.3) + 2));
+  while (set.size < count && guard++ < 300) {
+    const delta = rnd(1, Math.max(3, Math.round(answer * 0.25) + 2));
     const candidate = Math.random() < 0.5 ? answer - delta : answer + delta;
     if (candidate > 0 && candidate !== answer) set.add(candidate);
   }
   while (set.size < count) set.add(answer + set.size);
   return [...set].sort(() => Math.random() - 0.5);
+}
+
+/** מצב "נכון / לא נכון" — מציגים תרגיל עם תשובה והמשתמש מחליט */
+export type TrueFalseQuestion = { text: string; shown: number; isTrue: boolean };
+
+export function makeTrueFalse(level: number): TrueFalseQuestion {
+  const q = makeQuestion(level);
+  const isTrue = Math.random() < 0.5;
+  let shown = q.answer;
+  if (!isTrue) {
+    const delta = rnd(1, Math.max(2, Math.round(q.answer * 0.2) + 2));
+    shown = Math.random() < 0.5 ? Math.max(1, q.answer - delta) : q.answer + delta;
+    if (shown === q.answer) shown = q.answer + 1;
+  }
+  return { text: `${q.text} = ${shown}`, shown, isTrue: shown === q.answer };
 }
 
 export type StoryQuestion = { text: string; answer: number; options: number[] };
