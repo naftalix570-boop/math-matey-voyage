@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { Confetti } from "@/components/effects";
-import { CHESTS, useGame, type ChestKind, type ChestReward } from "@/lib/game-state";
+import { CHESTS, TICKETS, useGame, type ChestKind, type ChestReward } from "@/lib/game-state";
 import { stickerForSlot } from "@/lib/stickers";
 
 export const Route = createFileRoute("/chests")({
@@ -14,16 +14,16 @@ export const Route = createFileRoute("/chests")({
         content: "פותחים תיבות אוצר ומקבלים מטבעות, רמזים, מדבקות ובוסטים במסע המתמטיקס.",
       },
       { property: "og:title", content: "תיבות אוצר — מסע המתמטיקס" },
-      { property: "og:description", content: "תיבת עץ, כסף וזהב — פרסים בכל פתיחה." },
+      { property: "og:description", content: "תיבה רגילה, מדהימה ואגדית — פרסים בכל פתיחה." },
     ],
   }),
   component: ChestsPage,
 });
 
-const KINDS: ChestKind[] = ["wood", "silver", "gold"];
+const KINDS: ChestKind[] = ["regular", "amazing", "legendary"];
 
 function ChestsPage() {
-  const { profile, openChest, sound } = useGame();
+  const { profile, openChest, sound, premium } = useGame();
   const [reward, setReward] = useState<ChestReward | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [shaking, setShaking] = useState<string | null>(null);
@@ -54,9 +54,12 @@ function ChestsPage() {
 
       <div className="mt-4 rounded-2xl bg-sky p-4 text-center shadow-card">
         <p className="text-lg font-bold text-ink">🎉 תיבה יומית חינם</p>
-        <p className="text-sm">יש לך {profile.chests} תיבות חינם. תיבה חדשה מחכה כל יום!</p>
+        <p className="text-sm">
+          יש לך {profile.chests} תיבות חינם. תיבה חדשה מחכה כל יום!
+          {premium && " 👑 פרימיום: תיבה נוספת כל יום!"}
+        </p>
         <button
-          onClick={() => open("wood", true)}
+          onClick={() => open("regular", true)}
           disabled={profile.chests <= 0}
           className={
             "mt-3 h-12 w-full rounded-xl text-lg font-bold active:scale-95 " +
@@ -84,16 +87,26 @@ function ChestsPage() {
             {reward.hints > 0 && (
               <span className="rounded-full bg-muted px-3 py-1">💡 {reward.hints} רמזים</span>
             )}
-            {reward.sticker != null && (
+            {reward.stickers.map((slot) => (
+              <span key={slot} className="rounded-full bg-muted px-3 py-1">
+                {stickerForSlot(slot).emoji} {stickerForSlot(slot).name}
+              </span>
+            ))}
+            {reward.ticket && (
               <span className="rounded-full bg-muted px-3 py-1">
-                {stickerForSlot(reward.sticker).emoji} {stickerForSlot(reward.sticker).name}
+                {TICKETS[reward.ticket].emoji} כרטיס {TICKETS[reward.ticket].title}
               </span>
             )}
             {reward.boost === "double" && (
               <span className="rounded-full bg-success px-3 py-1 text-white">⏩ כפל מטבעות לשעה</span>
             )}
-            {reward.boost === "premium" && (
+            {reward.boost === "premium" && !reward.rarePremium && (
               <span className="rounded-full bg-warning px-3 py-1 text-white">👑 פרימיום ליום</span>
+            )}
+            {reward.rarePremium && (
+              <span className="rounded-full bg-warning px-3 py-1 text-white">
+                👑 פרימיום נדיר! (1:10,000) ליום שלם
+              </span>
             )}
           </div>
         </div>
@@ -115,7 +128,7 @@ function ChestsPage() {
                 onClick={() => open(kind, false)}
                 className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
               >
-                🪙 {c.price}
+                🪙 {c.price.toLocaleString("he-IL")}
               </button>
             </div>
           );

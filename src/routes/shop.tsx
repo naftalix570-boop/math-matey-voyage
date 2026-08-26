@@ -1,43 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
-import { useGame } from "@/lib/game-state";
+import {
+  CHESTS,
+  TICKETS,
+  useGame,
+  type ChestKind,
+  type ChestReward,
+  type TicketId,
+} from "@/lib/game-state";
 import { stickerForSlot } from "@/lib/stickers";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/shop")({
   head: () => ({
     meta: [
       { title: "חנות — מסע המתמטיקס" },
-      { name: "description", content: "חבילות רמזים, מדבקות ובוסטים במטבעות שצברת." },
+      { name: "description", content: "חבילות רמזים, תיבות, כרטיסים ובוסטים במטבעות שצברת." },
       { property: "og:title", content: "חנות — מסע המתמטיקס" },
-      { property: "og:description", content: "חבילות רמזים, מדבקות ובוסטים." },
+      { property: "og:description", content: "חבילות רמזים, תיבות, כרטיסים ובוסטים." },
     ],
   }),
   component: ShopPage,
 });
-
-type Item = {
-  id: string;
-  title: string;
-  desc: string;
-  emoji: string;
-  price: number;
-};
-
-const ITEMS: Item[] = [
-  { id: "hint1", title: "רמז אחד", desc: "עוזר בתרגיל קשה", emoji: "💡", price: 10 },
-  { id: "hint5", title: "חבילת 5 רמזים", desc: "משתלם יותר!", emoji: "🎁", price: 40 },
-  { id: "sticker", title: "מדבקת הפתעה", desc: "מדבקה אקראית לאלבום", emoji: "🎟️", price: 60 },
-  { id: "double", title: "כפל מטבעות שעה", desc: "פי 2 מטבעות למשך שעה", emoji: "⏩", price: 80 },
-  {
-    id: "premium",
-    title: "פרימיום ל-24 שעות",
-    desc: "רמזים ללא הגבלה + פי 2 מטבעות ל-24 שעות מלאות",
-    emoji: "👑",
-    price: 150,
-  },
-
-];
 
 function remaining(until: number) {
   const ms = Math.max(0, until - Date.now());
@@ -46,38 +31,78 @@ function remaining(until: number) {
   return h > 0 ? `${h} שע' ו-${m} דק'` : `${m} דק'`;
 }
 
-function ShopPage() {
-  const { profile, spendCoins, update, grantSticker, sound, premium, doubling } = useGame();
-  const [msg, setMsg] = useState<string | null>(null);
+const HINT_PACKS = [
+  { id: "h5", title: "5 רמזים", emoji: "💡", price: 350, money: 2.9, hints: 5 },
+  { id: "h15", title: "15 רמזים", emoji: "🎁", price: 600, money: 4.9, hints: 15 },
+  { id: "h40", title: "40 רמזים", emoji: "🎁", price: 1500, money: 8.9, hints: 40 },
+];
 
-  const buy = (item: Item) => {
-    if (!spendCoins(item.price)) {
+const MONEY_ITEMS = [
+  ...(["regular", "amazing", "legendary"] as ChestKind[]).map((k) => ({
+    id: `m-${k}`,
+    title: CHESTS[k].title,
+    desc: CHESTS[k].desc,
+    emoji: CHESTS[k].emoji,
+    money: CHESTS[k].money,
+  })),
+  ...HINT_PACKS.map((h) => ({
+    id: `m-${h.id}`,
+    title: h.title,
+    desc: "חבילת רמזים",
+    emoji: h.emoji,
+    money: h.money,
+  })),
+  { id: "m-wheel", title: "גלגל מזל — 3 סיבובים", desc: "3 סיבובים בגלגל המזל", emoji: "🎡", money: 3.9 },
+  {
+    id: "m-prem-m",
+    title: "פרימיום חודשי",
+    desc: "אינסוף רמזים · כפל מטבעות · תיבה יומית · גלגל חינם · 35 מטבעות בונוס ברצף · 👑 ליד השם · תיבה אגדית חינם בחודש",
+    emoji: "👑",
+    money: 24.9,
+  },
+  {
+    id: "m-prem-y",
+    title: "פרימיום שנתי",
+    desc: "כל ההטבות לשנה שלמה — מתחדש אוטומטית",
+    emoji: "👑",
+    money: 119.9,
+  },
+];
+
+function ShopPage() {
+  const { profile, spendCoins, update, grantSticker, sound, premium, doubling, openChest } =
+    useGame();
+  const [tab, setTab] = useState<"coins" | "money">("coins");
+  const [msg, setMsg] = useState<string | null>(null);
+  const [chestReward, setChestReward] = useState<ChestReward | null>(null);
+
+  const buy = (id: string, price: number, apply: () => string) => {
+    if (!spendCoins(price)) {
       sound("wrong");
       setMsg("אין מספיק מטבעות 😅 שחקו עוד כדי לצבור!");
       return;
     }
     sound("correct");
-    if (item.id === "hint1") update((p) => ({ hints: p.hints + 1 }));
-    if (item.id === "hint5") update((p) => ({ hints: p.hints + 5 }));
-    if (item.id === "sticker") {
-      const slot = grantSticker();
-      setMsg(
-        slot == null
-          ? "האלבום מלא! 🎉"
-          : `קיבלת מדבקה: ${stickerForSlot(slot).emoji} ${stickerForSlot(slot).name}`,
-      );
+    setMsg(apply());
+  };
+
+  const buyChest = (kind: ChestKind) => {
+    const r = openChest(kind, false);
+    if (!r) {
+      sound("wrong");
+      setMsg("אין מספיק מטבעות 😅 שחקו עוד כדי לצבור!");
       return;
     }
-    if (item.id === "double")
-      update((p) => ({
-        boosts: { ...p.boosts, doubleUntil: Math.max(Date.now(), p.boosts.doubleUntil) + 3600000 },
-      }));
-    if (item.id === "premium")
-      update((p) => ({
-        boosts: { ...p.boosts, premiumUntil: Math.max(Date.now(), p.boosts.premiumUntil) + 86400000 },
-      }));
-    setMsg(`הקנייה הושלמה: ${item.title} ✅`);
+    sound("levelup");
+    setChestReward(r);
+    setMsg(`נפתחה ${CHESTS[kind].title}! 🎉`);
   };
+
+  const buyTicket = (t: TicketId, price: number) =>
+    buy(`t-${t}`, price, () => {
+      update((p) => ({ tickets: { ...p.tickets, [t]: p.tickets[t] + 1 } }));
+      return `נרכש כרטיס ${TICKETS[t].title} ${TICKETS[t].emoji}`;
+    });
 
   return (
     <Screen title="חנות">
@@ -93,17 +118,36 @@ function ShopPage() {
               👑 פרימיום פעיל — נשאר {remaining(profile.boosts.premiumUntil)}
             </span>
           )}
-          {doubling && (
+          {doubling && profile.boosts.doubleUntil > Date.now() && (
             <span className="rounded-full bg-success px-3 py-1 text-white">
-              ⏩ כפל מטבעות פעיל
-              {profile.boosts.doubleUntil > Date.now()
-                ? ` — נשאר ${remaining(profile.boosts.doubleUntil)}`
-                : ""}
+              ⏩ כפל מטבעות — נשאר {remaining(profile.boosts.doubleUntil)}
             </span>
           )}
         </div>
       )}
 
+      <div className="mt-4 grid grid-cols-2 gap-2 rounded-2xl bg-muted p-1">
+        {(
+          [
+            { id: "coins", label: "🪙 מטבעות" },
+            { id: "money", label: "💳 כסף" },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.id}
+            onClick={() => {
+              sound("click");
+              setTab(t.id);
+            }}
+            className={cn(
+              "h-11 rounded-xl text-lg font-bold transition-colors",
+              tab === t.id ? "bg-card text-ink shadow-card" : "text-muted-foreground",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       {msg && (
         <p className="mt-3 rounded-2xl bg-card p-3 text-center font-bold text-ink shadow-card">
@@ -111,26 +155,198 @@ function ShopPage() {
         </p>
       )}
 
-      <div className="mt-4 grid gap-3 pb-28">
-        {ITEMS.map((item) => (
-          <div
-            key={item.id}
-            className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card"
+      {chestReward && (
+        <div className="mt-3 animate-page rounded-2xl bg-card p-4 text-center shadow-card">
+          <p className="text-lg font-bold text-ink">מה יצא? 🎉</p>
+          <div className="mt-2 flex flex-wrap justify-center gap-2 text-sm font-bold">
+            <span className="rounded-full bg-muted px-3 py-1">🪙 {chestReward.coins}</span>
+            <span className="rounded-full bg-muted px-3 py-1">💡 {chestReward.hints}</span>
+            {chestReward.stickers.map((s) => (
+              <span key={s} className="rounded-full bg-muted px-3 py-1">
+                {stickerForSlot(s).emoji} {stickerForSlot(s).name}
+              </span>
+            ))}
+            {chestReward.rarePremium && (
+              <span className="rounded-full bg-warning px-3 py-1 text-white">👑 פרימיום נדיר!</span>
+            )}
+          </div>
+          <button
+            onClick={() => setChestReward(null)}
+            className="mt-3 rounded-xl bg-muted px-4 py-2 font-bold text-ink active:scale-95"
           >
-            <span className="text-4xl">{item.emoji}</span>
+            סגור
+          </button>
+        </div>
+      )}
+
+      {tab === "coins" ? (
+        <div className="mt-4 grid gap-3 pb-28">
+          <p className="font-bold text-ink">תיבות</p>
+          {(["regular", "amazing", "legendary"] as ChestKind[]).map((k) => (
+            <div key={k} className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
+              <span className="text-4xl">{CHESTS[k].emoji}</span>
+              <div className="flex-1">
+                <p className="text-lg font-bold text-ink">{CHESTS[k].title}</p>
+                <p className="text-sm text-muted-foreground">{CHESTS[k].desc}</p>
+              </div>
+              <button
+                onClick={() => buyChest(k)}
+                className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
+              >
+                🪙 {CHESTS[k].price.toLocaleString("he-IL")}
+              </button>
+            </div>
+          ))}
+
+          <p className="mt-2 font-bold text-ink">רמזים</p>
+          {HINT_PACKS.map((h) => (
+            <div key={h.id} className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
+              <span className="text-4xl">{h.emoji}</span>
+              <div className="flex-1">
+                <p className="text-lg font-bold text-ink">{h.title}</p>
+                <p className="text-sm text-muted-foreground">עוזר בתרגילים קשים</p>
+              </div>
+              <button
+                onClick={() =>
+                  buy(h.id, h.price, () => {
+                    update((p) => ({ hints: p.hints + h.hints }));
+                    return `נוספו ${h.hints} רמזים ✅`;
+                  })
+                }
+                className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
+              >
+                🪙 {h.price.toLocaleString("he-IL")}
+              </button>
+            </div>
+          ))}
+
+          <p className="mt-2 font-bold text-ink">גלגל מזל</p>
+          <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
+            <span className="text-4xl">🎡</span>
             <div className="flex-1">
-              <p className="text-lg font-bold text-ink">{item.title}</p>
-              <p className="text-sm text-muted-foreground">{item.desc}</p>
+              <p className="text-lg font-bold text-ink">3 סיבובים</p>
+              <p className="text-sm text-muted-foreground">אין הגבלה על סיבובים בתשלום</p>
             </div>
             <button
-              onClick={() => buy(item)}
+              onClick={() =>
+                buy("wheel3", 600, () => {
+                  update((p) => ({ spins: p.spins + 3 }));
+                  return "נוספו 3 סיבובים לגלגל המזל 🎡";
+                })
+              }
               className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
             >
-              🪙 {item.price}
+              🪙 600
             </button>
           </div>
-        ))}
-      </div>
+
+          <p className="mt-2 font-bold text-ink">כרטיסים</p>
+          {(Object.keys(TICKETS) as TicketId[]).map((t) => {
+            const ticket = TICKETS[t];
+            const owned = profile.tickets[t];
+            return (
+              <div
+                key={t}
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl p-4 shadow-card",
+                  ticket.price == null ? "bg-muted opacity-70" : "bg-card",
+                )}
+              >
+                <span className="text-4xl">{ticket.emoji}</span>
+                <div className="flex-1">
+                  <p className="text-lg font-bold text-ink">
+                    {ticket.title} {owned > 0 && <span className="text-sm">×{owned}</span>}
+                  </p>
+                  <p className="text-sm text-muted-foreground">{ticket.desc}</p>
+                </div>
+                {ticket.price != null ? (
+                  <button
+                    onClick={() => buyTicket(t, ticket.price!)}
+                    className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
+                  >
+                    🪙 {ticket.price}
+                  </button>
+                ) : (
+                  <span className="rounded-xl bg-muted px-3 py-2 text-sm font-bold text-muted-foreground">
+                    לא נמכר
+                  </span>
+                )}
+              </div>
+            );
+          })}
+
+          <p className="mt-2 font-bold text-ink">עוד</p>
+          <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
+            <span className="text-4xl">🎟️</span>
+            <div className="flex-1">
+              <p className="text-lg font-bold text-ink">מדבקת הפתעה</p>
+              <p className="text-sm text-muted-foreground">מדבקה אקראית לאלבום</p>
+            </div>
+            <button
+              onClick={() =>
+                buy("sticker", 60, () => {
+                  const slot = grantSticker();
+                  return slot == null
+                    ? "האלבום מלא! 🎉"
+                    : `קיבלת מדבקה: ${stickerForSlot(slot).emoji} ${stickerForSlot(slot).name}`;
+                })
+              }
+              className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
+            >
+              🪙 60
+            </button>
+          </div>
+          <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
+            <span className="text-4xl">⏩</span>
+            <div className="flex-1">
+              <p className="text-lg font-bold text-ink">כפל מטבעות שעה</p>
+              <p className="text-sm text-muted-foreground">פי 2 מטבעות למשך שעה</p>
+            </div>
+            <button
+              onClick={() =>
+                buy("double", 80, () => {
+                  update((p) => ({
+                    boosts: {
+                      ...p.boosts,
+                      doubleUntil: Math.max(Date.now(), p.boosts.doubleUntil) + 3600000,
+                    },
+                  }));
+                  return "כפל מטבעות פעיל לשעה! ⏩";
+                })
+              }
+              className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
+            >
+              🪙 80
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-4 grid gap-3 pb-28">
+          <p className="rounded-2xl bg-sky p-3 text-center font-bold text-ink shadow-card">
+            🚧 בקרוב – חנות נפתחת
+          </p>
+          {MONEY_ITEMS.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center gap-3 rounded-2xl bg-muted p-4 opacity-70 shadow-card"
+            >
+              <span className="text-4xl grayscale">{item.emoji}</span>
+              <div className="flex-1">
+                <p className="text-lg font-bold text-ink">{item.title}</p>
+                <p className="text-sm text-muted-foreground">{item.desc}</p>
+              </div>
+              <button
+                disabled
+                className="cursor-not-allowed rounded-xl bg-muted px-3 py-2 text-sm font-bold text-muted-foreground"
+              >
+                ₪{item.money.toFixed(2)}
+                <br />
+                בעתיד יפתח
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </Screen>
   );
 }
