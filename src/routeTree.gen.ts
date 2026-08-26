@@ -13,9 +13,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AlbumRouteImport } from './routes/album'
 import { Route as ChestsRouteImport } from './routes/chests'
 import { Route as GamesRouteImport } from './routes/games'
+import { Route as MissionsRouteImport } from './routes/missions'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ShopRouteImport } from './routes/shop'
+import { Route as StreakRouteImport } from './routes/streak'
+import { Route as WheelRouteImport } from './routes/wheel'
 import { Route as PlayGameIdRouteImport } from './routes/play.$gameId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -38,6 +41,11 @@ const GamesRoute = GamesRouteImport.update({
   path: '/games',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MissionsRoute = MissionsRouteImport.update({
+  id: '/missions',
+  path: '/missions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProgressRoute = ProgressRouteImport.update({
   id: '/progress',
   path: '/progress',
@@ -53,6 +61,16 @@ const ShopRoute = ShopRouteImport.update({
   path: '/shop',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StreakRoute = StreakRouteImport.update({
+  id: '/streak',
+  path: '/streak',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WheelRoute = WheelRouteImport.update({
+  id: '/wheel',
+  path: '/wheel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlayGameIdRoute = PlayGameIdRouteImport.update({
   id: '/play/$gameId',
   path: '/play/$gameId',
@@ -64,9 +82,12 @@ export interface FileRoutesByFullPath {
   '/album': typeof AlbumRoute
   '/chests': typeof ChestsRoute
   '/games': typeof GamesRoute
+  '/missions': typeof MissionsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
+  '/streak': typeof StreakRoute
+  '/wheel': typeof WheelRoute
   '/play/$gameId': typeof PlayGameIdRoute
 }
 export interface FileRoutesByTo {
@@ -74,9 +95,12 @@ export interface FileRoutesByTo {
   '/album': typeof AlbumRoute
   '/chests': typeof ChestsRoute
   '/games': typeof GamesRoute
+  '/missions': typeof MissionsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
+  '/streak': typeof StreakRoute
+  '/wheel': typeof WheelRoute
   '/play/$gameId': typeof PlayGameIdRoute
 }
 export interface FileRoutesById {
@@ -85,9 +109,12 @@ export interface FileRoutesById {
   '/album': typeof AlbumRoute
   '/chests': typeof ChestsRoute
   '/games': typeof GamesRoute
+  '/missions': typeof MissionsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
+  '/streak': typeof StreakRoute
+  '/wheel': typeof WheelRoute
   '/play/$gameId': typeof PlayGameIdRoute
 }
 export interface FileRouteTypes {
@@ -97,9 +124,12 @@ export interface FileRouteTypes {
     | '/album'
     | '/chests'
     | '/games'
+    | '/missions'
     | '/progress'
     | '/settings'
     | '/shop'
+    | '/streak'
+    | '/wheel'
     | '/play/$gameId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -107,9 +137,12 @@ export interface FileRouteTypes {
     | '/album'
     | '/chests'
     | '/games'
+    | '/missions'
     | '/progress'
     | '/settings'
     | '/shop'
+    | '/streak'
+    | '/wheel'
     | '/play/$gameId'
   id:
     | '__root__'
@@ -117,9 +150,12 @@ export interface FileRouteTypes {
     | '/album'
     | '/chests'
     | '/games'
+    | '/missions'
     | '/progress'
     | '/settings'
     | '/shop'
+    | '/streak'
+    | '/wheel'
     | '/play/$gameId'
   fileRoutesById: FileRoutesById
 }
@@ -128,9 +164,12 @@ export interface RootRouteChildren {
   AlbumRoute: typeof AlbumRoute
   ChestsRoute: typeof ChestsRoute
   GamesRoute: typeof GamesRoute
+  MissionsRoute: typeof MissionsRoute
   ProgressRoute: typeof ProgressRoute
   SettingsRoute: typeof SettingsRoute
   ShopRoute: typeof ShopRoute
+  StreakRoute: typeof StreakRoute
+  WheelRoute: typeof WheelRoute
   PlayGameIdRoute: typeof PlayGameIdRoute
 }
 
@@ -164,6 +203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GamesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/missions': {
+      id: '/missions'
+      path: '/missions'
+      fullPath: '/missions'
+      preLoaderRoute: typeof MissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/progress': {
       id: '/progress'
       path: '/progress'
@@ -185,6 +231,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/streak': {
+      id: '/streak'
+      path: '/streak'
+      fullPath: '/streak'
+      preLoaderRoute: typeof StreakRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wheel': {
+      id: '/wheel'
+      path: '/wheel'
+      fullPath: '/wheel'
+      preLoaderRoute: typeof WheelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/play/$gameId': {
       id: '/play/$gameId'
       path: '/play/$gameId'
@@ -200,9 +260,12 @@ const rootRouteChildren: RootRouteChildren = {
   AlbumRoute: AlbumRoute,
   ChestsRoute: ChestsRoute,
   GamesRoute: GamesRoute,
+  MissionsRoute: MissionsRoute,
   ProgressRoute: ProgressRoute,
   SettingsRoute: SettingsRoute,
   ShopRoute: ShopRoute,
+  StreakRoute: StreakRoute,
+  WheelRoute: WheelRoute,
   PlayGameIdRoute: PlayGameIdRoute,
 }
 export const routeTree = rootRouteImport
