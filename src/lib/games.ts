@@ -1,5 +1,6 @@
 export type GameId =
   | "line-match"
+  | "truefalse"
   | "flash"
   | "clouds"
   | "memory"
@@ -23,7 +24,8 @@ export type GameDef = {
 
 export const GAMES: GameDef[] = [
   { id: "line-match", title: "התאמת קו", emoji: "🪢", desc: "מושכים קו מהתרגיל לתשובה" },
-  { id: "flash", title: "אתגר בזק", emoji: "⚡", desc: "60 שניות – כמה שיותר תרגילים" },
+  { id: "truefalse", title: "נכון / לא נכון", emoji: "✅", desc: "מוצג תרגיל עם תשובה — אתם מחליטים" },
+  { id: "flash", title: "אתגר מהירות", emoji: "⚡", desc: "60 שניות – כמה שיותר תרגילים" },
   { id: "clouds", title: "מסלול עננים", emoji: "☁️", desc: "קופצים ענן קדימה בכל תשובה נכונה" },
   { id: "memory", title: "זיכרון חשבוני", emoji: "🃏", desc: "מוצאים זוגות של תרגיל ותשובה" },
   { id: "time-battle", title: "קרב מול הזמן", emoji: "⏱️", desc: "10 שניות לכל תרגיל" },
