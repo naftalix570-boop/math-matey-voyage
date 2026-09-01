@@ -798,23 +798,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (p.streakClaimedDay === today) return p;
       const ev = currentEvent();
       const bonus = ev.week === 3 || Date.now() < p.boosts.premiumUntil ? 35 : 0;
-      const base = 10 + Math.min(50, p.streakDays * 2);
-      const coins = base + bonus;
+      const r = streakReward(Math.max(1, p.streakDays));
+      const coins = r.coins + bonus;
       out = { coins };
-      const day = p.streakDays % 20;
-      const hints = day % 5 === 0 ? 2 : 0;
-      const ticket: TicketId | null = day % 10 === 0 ? "shield" : null;
-      const chest = day === 0 ? 1 : 0;
       return {
         ...p,
         streakClaimedDay: today,
         coins: p.coins + coins,
-        hints: p.hints + hints,
-        chestInv: chest
-          ? { ...p.chestInv, regular: p.chestInv.regular + chest }
+        hints: p.hints + r.hints,
+        chestInv: r.chest
+          ? { ...p.chestInv, [r.chest]: p.chestInv[r.chest] + 1 }
           : p.chestInv,
-        tickets: ticket ? { ...p.tickets, [ticket]: p.tickets[ticket] + 1 } : p.tickets,
+        tickets: r.ticket ? { ...p.tickets, [r.ticket]: p.tickets[r.ticket] + 1 } : p.tickets,
       };
+
     });
     return out;
   }, []);
