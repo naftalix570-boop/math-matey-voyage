@@ -91,10 +91,14 @@ export function ResultScreen({
   correct,
   total,
   levelUp,
+  coinsStart,
   onAgain,
 }: QuizResult & { onAgain: () => void }) {
   const { profile } = useGame();
   const success = correct >= Math.ceil(total * 0.6);
+  const coinsEarned = Math.max(0, profile.coins - (coinsStart ?? profile.coins));
+  const coinsAnim = useCountUp(coinsEarned);
+  const trophyAnim = useCountUp(correct);
   const share = async () => {
     const text = `🎉 ${profile.name} עלה לרמה ${profile.level} במסע המתמטיקס! פתר ${correct}/${total} נכון! 🔥`;
     if (typeof navigator !== "undefined" && navigator.share) {
@@ -117,6 +121,20 @@ export function ResultScreen({
       <p className="text-lg">
         ענית נכון על <span className="font-bold text-success">{correct}</span> מתוך {total}
       </p>
+
+      <div className="grid w-full grid-cols-2 gap-3">
+        <div className="animate-bounce-up rounded-2xl bg-card p-4 shadow-card">
+          <div className="text-3xl">🪙</div>
+          <div className="text-2xl font-bold text-ink">+{coinsAnim}</div>
+          <div className="text-xs text-muted-foreground">מטבעות</div>
+        </div>
+        <div className="animate-bounce-up rounded-2xl bg-card p-4 shadow-card">
+          <div className="text-3xl">🏆</div>
+          <div className="text-2xl font-bold text-ink">+{trophyAnim}</div>
+          <div className="text-xs text-muted-foreground">גביעים</div>
+        </div>
+      </div>
+
       {levelUp && (
         <div className="rounded-xl bg-sky px-4 py-3 font-bold text-ink">
           ⬆️ התקדמת! בונוס 3 מטבעות 🪙
@@ -134,6 +152,7 @@ export function ResultScreen({
             📤 שתף
           </button>
         )}
+
         <button
           onClick={onAgain}
           className="h-12 w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground active:scale-95"
