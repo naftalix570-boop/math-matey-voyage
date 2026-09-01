@@ -386,9 +386,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }
       if (parsed.lastChestDay !== today) {
         parsed.lastChestDay = today;
-        const ev = currentEvent();
-        const bonus = ev.week === 0 || Date.now() < parsed.boosts.premiumUntil ? 2 : 1;
-        parsed.chests = parsed.chests + bonus;
+        // תיבה חינם אחת בלבד ליום, גם בימי אירוע
+        parsed.chests = parsed.chests + 1;
       }
       if (parsed.missionDay !== today) {
         parsed.missionDay = today;
