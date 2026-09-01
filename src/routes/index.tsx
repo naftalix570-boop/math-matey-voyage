@@ -166,18 +166,13 @@ function Home() {
         </Link>
       )}
 
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        <Tile to="/games" emoji="🎮" label="משחקים" />
-        <Tile to="/chests" emoji="🎁" label="תיבות" />
+      <div className="mt-3 grid grid-cols-4 gap-2">
         <Tile to="/album" emoji="📗" label="אלבום" />
-        <Tile to="/shop" emoji="🛒" label="חנות" />
-        <Tile to="/wheel" emoji="🎡" label="גלגל מזל" />
-        <Tile to="/streak" emoji="🔥" label="רצף יומי" />
+        <Tile to="/streak" emoji="🔥" label="רצף" />
         <Tile to="/missions" emoji="🗒️" label="משימות" />
-        <Tile to="/leaderboard" emoji="🏆" label="דירוג" />
         <Tile to="/progress" emoji="📊" label="התקדמות" />
-        <Tile to="/settings" emoji="⚙️" label="הגדרות" />
       </div>
+
 
       <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
         <p className="font-bold text-ink">
