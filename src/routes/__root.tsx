@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { GameProvider } from "../lib/game-state";
+import { I18nProvider } from "../lib/i18n";
 import { registerOfflineWorker } from "../lib/use-online";
 
 function NotFoundComponent() {
@@ -127,10 +128,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <GameProvider>
-        {/* Required: nested routes render here. */}
-        <Outlet />
-      </GameProvider>
+      <I18nProvider>
+        <GameProvider>
+          {/* Required: nested routes render here. */}
+          <Outlet />
+        </GameProvider>
+      </I18nProvider>
     </QueryClientProvider>
   );
 }
