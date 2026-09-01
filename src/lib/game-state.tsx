@@ -269,9 +269,12 @@ export type MissionMetric =
   | "chests"
   | "streakDays"
   | "stickers"
+  | "amazingStickers"
+  | "legendaryStickers"
   | "coinsEarned"
   | "hintsUsed"
   | "gameWins";
+
 
 export type Mission = {
   id: string;
