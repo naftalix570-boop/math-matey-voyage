@@ -6,6 +6,7 @@ import { PlacementTest } from "@/components/mini-games";
 import { useGame } from "@/lib/game-state";
 import { weeklyChallenge } from "@/lib/games";
 import { ALBUM_SIZE } from "@/lib/stickers";
+import { useOnline } from "@/lib/use-online";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -14,12 +15,12 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "משחקי חשבון לילדים בעברית: חיבור, חיסור, כפל וחילוק עם מדבקות, מטבעות ורמות מתקדמות.",
+          "משחקי חשבון לילדים בעברית: חיבור, חיסור, כפל וחילוק עם מדבקות, מטבעות ושלבים מתקדמים.",
       },
       { property: "og:title", content: "מסע המתמטיקס — לומדים חשבון בכיף" },
       {
         property: "og:description",
-        content: "14 משחקי חשבון לילדים עם אלבום מדבקות, מטבעות ורמות.",
+        content: "15 משחקי חשבון לילדים עם אלבום מדבקות, מטבעות ושלבים.",
       },
     ],
   }),
@@ -27,9 +28,10 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const { profile, ready, update, sound } = useGame();
+  const { profile, ready, update, sound, premium, event } = useGame();
   const [mode, setMode] = useState<"welcome" | "test">("welcome");
   const [name, setName] = useState("");
+  const online = useOnline();
 
   if (!ready) return <div className="min-h-screen bg-background" />;
 
@@ -60,11 +62,24 @@ function Home() {
             <button
               onClick={() => {
                 sound("click");
+                update({
+                  onboarded: true,
+                  guest: true,
+                  name: name.trim() || `אורח/ת ${profile.userId}`,
+                });
+              }}
+              className="h-12 w-full rounded-xl bg-card text-lg font-bold text-ink shadow-card active:scale-95"
+            >
+              🎮 התחל לשחק (ללא הרשמה)
+            </button>
+            <button
+              onClick={() => {
+                sound("click");
                 update({ onboarded: true, ...(name.trim() ? { name: name.trim() } : {}) });
               }}
               className="text-sm text-muted-foreground underline"
             >
-              דלג על מבחן הרמה
+              דלג על מבחן השלב
             </button>
           </div>
         ) : (
@@ -86,27 +101,42 @@ function Home() {
 
   const weekly = weeklyChallenge();
   const pct = Math.round((profile.history.slice(-40).filter(Boolean).length / 40) * 100);
+  const showRating = profile.correctSinceRating >= 10 && !profile.rated;
 
   return (
     <Screen back={false}>
       <Confetti show={false} />
+      {showRating && <RatingCard />}
+
       <div className="flex items-center justify-between pt-3">
         <div>
           <p className="text-sm text-muted-foreground">שלום,</p>
-          <h1 className="text-2xl font-bold text-ink">{profile.name} 👋</h1>
+          <h1 className="flex items-center gap-1 text-2xl font-bold text-ink">
+            <span>{profile.icon}</span>
+            {profile.name}
+            {premium && <span title="פרימיום">👑</span>}
+          </h1>
         </div>
         <Logo size={72} />
       </div>
 
+      {!online && (
+        <div className="mt-3 rounded-xl bg-sky px-3 py-2 text-center text-sm font-bold text-ink">
+          {premium
+            ? "👑 אין רשת — אבל הפרימיום מאפשר לך לשחק אופליין"
+            : "📴 אין קליטה — נדרש חיבור כדי לשחק (פרימיום משחק גם אופליין)"}
+        </div>
+      )}
+
       <div className="mt-4 grid grid-cols-3 gap-2 text-center">
         <Stat emoji="🪙" label="מטבעות" value={profile.coins} />
-        <Stat emoji="💡" label="רמזים" value={profile.hints} />
+        <Stat emoji="💡" label="רמזים" value={premium ? "∞" : profile.hints} />
         <Stat emoji="🔥" label="רצף ימים" value={profile.streakDays} />
       </div>
 
       <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
         <div className="flex justify-between font-bold text-ink">
-          <span>רמה {profile.level} מתוך 30</span>
+          <span>שלב {profile.level}</span>
           <span>{pct}%</span>
         </div>
         <div className="mt-2 h-3 overflow-hidden rounded-full bg-muted">
@@ -131,11 +161,19 @@ function Home() {
         <Tile to="/chests" emoji="🎁" label="תיבות" />
         <Tile to="/album" emoji="📗" label="אלבום" />
         <Tile to="/shop" emoji="🛒" label="חנות" />
+        <Tile to="/wheel" emoji="🎡" label="גלגל מזל" />
+        <Tile to="/streak" emoji="🔥" label="רצף יומי" />
+        <Tile to="/missions" emoji="🗒️" label="משימות" />
         <Tile to="/progress" emoji="📊" label="התקדמות" />
         <Tile to="/settings" emoji="⚙️" label="הגדרות" />
       </div>
 
-
+      <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
+        <p className="font-bold text-ink">
+          {event.emoji} איוונט השבוע — {event.title}
+        </p>
+        <p className="text-sm text-muted-foreground">{event.desc}</p>
+      </div>
 
       <div className="mt-4 rounded-2xl bg-sky p-4 shadow-card">
         <p className="font-bold text-ink">📅 אתגר השבוע</p>
@@ -160,7 +198,87 @@ function Home() {
   );
 }
 
-function Stat({ emoji, label, value }: { emoji: string; label: string; value: number }) {
+function RatingCard() {
+  const { update, sound } = useGame();
+  const [stars, setStars] = useState(0);
+  const [text, setText] = useState("");
+  const [sent, setSent] = useState(false);
+
+  if (sent)
+    return (
+      <div className="mt-3 rounded-2xl bg-card p-4 text-center shadow-card">
+        <p className="font-bold text-ink">תודה על המשוב! 💚</p>
+      </div>
+    );
+
+  const low = stars > 0 && stars <= 3;
+
+  return (
+    <div className="mt-3 rounded-2xl bg-card p-4 shadow-card">
+      <p className="text-center font-bold text-ink">איך היה לך עד עכשיו?</p>
+      <div className="mt-2 flex justify-center gap-1 text-3xl">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <button
+            key={s}
+            aria-label={`${s} כוכבים`}
+            onClick={() => {
+              sound("click");
+              setStars(s);
+            }}
+            className="active:scale-90"
+          >
+            {s <= stars ? "⭐" : "☆"}
+          </button>
+        ))}
+      </div>
+
+      {stars > 0 && (
+        <>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="רוצה לספר לנו עוד? (לא חובה)"
+            className="mt-3 w-full rounded-xl border-2 border-muted bg-background p-3 text-sm text-ink outline-none focus:border-primary"
+            rows={3}
+          />
+          {low ? (
+            <a
+              href={`mailto:feedback@math-journey.app?subject=${encodeURIComponent(
+                `דירוג ${stars} כוכבים`,
+              )}&body=${encodeURIComponent(text)}`}
+              onClick={() => {
+                update({ rated: true, correctSinceRating: 0 });
+                setSent(true);
+              }}
+              className="mt-3 flex h-12 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground"
+            >
+              שליחת משוב
+            </a>
+          ) : (
+            <button
+              onClick={() => {
+                update({ rated: true, correctSinceRating: 0 });
+                setSent(true);
+              }}
+              className="mt-3 h-12 w-full rounded-xl bg-primary font-bold text-primary-foreground active:scale-95"
+            >
+              ⭐ לדרג אותנו בחנות
+            </button>
+          )}
+        </>
+      )}
+
+      <button
+        onClick={() => update({ correctSinceRating: 0 })}
+        className="mt-2 w-full text-xs text-muted-foreground underline"
+      >
+        אחר כך
+      </button>
+    </div>
+  );
+}
+
+function Stat({ emoji, label, value }: { emoji: string; label: string; value: number | string }) {
   return (
     <div className="rounded-2xl bg-card p-3 shadow-card">
       <div className="text-2xl">{emoji}</div>
@@ -175,7 +293,16 @@ function Tile({
   emoji,
   label,
 }: {
-  to: "/games" | "/album" | "/shop" | "/chests" | "/progress" | "/settings";
+  to:
+    | "/games"
+    | "/album"
+    | "/shop"
+    | "/chests"
+    | "/progress"
+    | "/settings"
+    | "/wheel"
+    | "/streak"
+    | "/missions";
   emoji: string;
   label: string;
 }) {
@@ -185,7 +312,7 @@ function Tile({
       className="flex flex-col items-center rounded-2xl bg-card p-3 shadow-card active:scale-95"
     >
       <span className="text-2xl">{emoji}</span>
-      <span className="font-bold text-ink">{label}</span>
+      <span className="text-sm font-bold text-ink">{label}</span>
     </Link>
   );
 }
