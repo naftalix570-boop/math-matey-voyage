@@ -91,6 +91,16 @@ function RaritySection({ rarity, owned }: { rarity: Rarity; owned: Set<number> }
 function AlbumPage() {
   const { profile } = useGame();
   const owned = new Set(profile.stickers);
+  const [page, setPage] = useState(0);
+  const [dir, setDir] = useState(1);
+  const rarity = RARITY_ORDER[page] as Rarity;
+
+  const go = (delta: number) => {
+    const next = page + delta;
+    if (next < 0 || next >= RARITY_ORDER.length) return;
+    setDir(delta);
+    setPage(next);
+  };
 
   return (
     <Screen title="אלבום מדבקות">
@@ -109,11 +119,40 @@ function AlbumPage() {
         </div>
       </div>
 
-      <div className="pb-28">
-        {RARITY_ORDER.map((r) => (
-          <RaritySection key={r} rarity={r} owned={owned} />
-        ))}
+      <div className="mt-4 overflow-hidden rounded-3xl border-4 border-nav/20 bg-card p-4 shadow-card">
+        <div
+          key={rarity}
+          className={cn("origin-right", dir > 0 ? "animate-page-turn" : "animate-page-turn-back")}
+        >
+          <RaritySection rarity={rarity} owned={owned} />
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between pb-28">
+        <button
+          onClick={() => go(-1)}
+          disabled={page === 0}
+          className="h-11 rounded-xl bg-card px-4 font-bold text-ink shadow-card active:scale-95 disabled:opacity-40"
+        >
+          👉 הדף הקודם
+        </button>
+        <div className="flex gap-1">
+          {RARITY_ORDER.map((r, i) => (
+            <span
+              key={r}
+              className={cn("size-2.5 rounded-full", i === page ? "bg-primary" : "bg-muted")}
+            />
+          ))}
+        </div>
+        <button
+          onClick={() => go(1)}
+          disabled={page === RARITY_ORDER.length - 1}
+          className="h-11 rounded-xl bg-card px-4 font-bold text-ink shadow-card active:scale-95 disabled:opacity-40"
+        >
+          הדף הבא 👈
+        </button>
       </div>
     </Screen>
   );
 }
+
