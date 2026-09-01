@@ -38,7 +38,7 @@ function ProgressPage() {
     <Screen title="התקדמות">
       <section className="mt-2 rounded-2xl bg-card p-4 shadow-card">
         <div className="flex items-center justify-between">
-          <span className="text-lg font-bold text-ink">רמה {profile.level}</span>
+          <span className="text-lg font-bold text-ink">שלב {profile.level}</span>
           <span className="text-sm text-muted-foreground">מתוך 30</span>
         </div>
         <div className="mt-2 h-3 overflow-hidden rounded-full bg-muted">
