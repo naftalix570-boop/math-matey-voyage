@@ -25,7 +25,7 @@ type Row = {
   score: number;
 };
 
-const MEDALS = ["🥇", "🥈", "🥉"];
+const MEDAL_BG = ["bg-warning/25", "bg-muted", "bg-warning/10"];
 
 function LeaderboardPage() {
   const { profile, linked, authUid } = useGame();
@@ -117,8 +117,13 @@ function LeaderboardPage() {
                     isMe ? "bg-primary/15 ring-2 ring-primary" : "bg-card",
                   )}
                 >
-                  <span className="w-8 text-center text-lg font-bold text-ink">
-                    {MEDALS[i] ?? `#${i + 1}`}
+                  <span
+                    className={cn(
+                      "flex size-9 shrink-0 items-center justify-center rounded-full text-lg font-bold text-ink",
+                      MEDAL_BG[i] ?? "bg-sky",
+                    )}
+                  >
+                    {i + 1}
                   </span>
                   <span className="text-2xl">{r.icon}</span>
                   <div className="flex-1">
@@ -147,23 +152,23 @@ function LeaderboardPage() {
         )}
       </div>
 
-      {/* השורה שלי — תמיד למטה */}
-      <div className="fixed inset-x-0 bottom-16 z-30 px-4">
-        <div className="mx-auto flex max-w-lg items-center gap-3 rounded-2xl bg-nav p-3 text-nav-foreground shadow-pop">
-          <span className="text-2xl">{profile.icon}</span>
-          <div className="flex-1">
-            <p className="font-bold">{profile.name}</p>
-            <p className="text-xs opacity-80">
-              {myRank == null
-                ? "מחשב מיקום…"
-                : inTop
-                  ? `${tab === "world" ? "טופ עולמי" : "טופ ארצי"} #${myRank}`
-                  : `לא בטופ 100 — המקום שלך ${tab === "world" ? "בעולם" : "בארץ"}: #${myRank}`}
-            </p>
+      {/* השורה שלי — מופיעה רק כשאני מחוץ לטופ 100 */}
+      {myRank != null && !inTop && (
+        <div className="fixed inset-x-0 bottom-16 z-30 px-4">
+          <div className="mx-auto flex max-w-lg items-center gap-3 rounded-2xl bg-nav p-3 text-nav-foreground shadow-pop">
+            <span className="text-2xl">{profile.icon}</span>
+            <div className="flex-1">
+              <p className="font-bold">
+                {profile.name} <span className="opacity-80">(מקום #{myRank})</span>
+              </p>
+              <p className="text-xs opacity-80">
+                לא בטופ 100 {tab === "world" ? "העולמי" : "הארצי"} — עוד קצת ואתה שם! 💪
+              </p>
+            </div>
+            <span className="font-bold">🏆 {profile.trophies.toLocaleString("he-IL")}</span>
           </div>
-          <span className="font-bold">🏆 {profile.trophies.toLocaleString("he-IL")}</span>
         </div>
-      </div>
+      )}
     </Screen>
   );
 }

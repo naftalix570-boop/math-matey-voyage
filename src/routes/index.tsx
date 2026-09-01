@@ -174,13 +174,6 @@ function Home() {
       </div>
 
 
-      <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
-        <p className="font-bold text-ink">
-          {event.emoji} איוונט השבוע — {event.title}
-        </p>
-        <p className="text-sm text-muted-foreground">{event.desc}</p>
-      </div>
-
       <div className="mt-4 rounded-2xl bg-sky p-4 shadow-card">
         <p className="font-bold text-ink">📅 אתגר השבוע</p>
         <p className="text-sm">{weekly.text}</p>
@@ -193,13 +186,26 @@ function Home() {
         </Link>
       </div>
 
-      <div className="mt-4 rounded-2xl bg-card p-4 text-center shadow-card">
+      <Link
+        to="/album"
+        onClick={() => sound("click")}
+        className="mt-4 block rounded-2xl bg-card p-4 text-center shadow-card active:scale-95"
+      >
         <p className="font-bold text-ink">📗 אלבום המדבקות</p>
         <p className="text-sm text-muted-foreground">
           {profile.stickers.length} מתוך {ALBUM_SIZE} מדבקות · עוד {30 - profile.correctSinceSticker}{" "}
           תשובות נכונות למדבקה הבאה
         </p>
+      </Link>
+
+      <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
+        <p className="font-bold text-ink">
+          {event.emoji} איוונט השבוע — {event.title}
+        </p>
+        <p className="text-sm text-muted-foreground">{event.desc}</p>
       </div>
+
+      <div className="pb-28" />
     </Screen>
   );
 }

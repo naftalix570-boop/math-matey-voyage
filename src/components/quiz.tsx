@@ -99,16 +99,23 @@ export function ResultScreen({
   const coinsEarned = Math.max(0, profile.coins - (coinsStart ?? profile.coins));
   const coinsAnim = useCountUp(coinsEarned);
   const trophyAnim = useCountUp(correct);
+  const [copied, setCopied] = useState(false);
   const share = async () => {
-    const text = `🎉 ${profile.name} עלה לרמה ${profile.level} במסע המתמטיקס! פתר ${correct}/${total} נכון! 🔥`;
-    if (typeof navigator !== "undefined" && navigator.share) {
+    const text = `🎉 ${profile.name} פתר ${correct}/${total} נכון במסע המתמטיקס! שלב ${profile.level} עם ${profile.trophies} גביעים 🏆 בואו לשחק!`;
+    if (typeof navigator !== "undefined" && "share" in navigator) {
       try {
-        await navigator.share({ text });
+        await navigator.share({ title: "מסע המתמטיקס", text });
+        return;
       } catch {
-        /* cancelled */
+        /* cancelled — fall through to copy */
       }
-    } else {
-      await navigator.clipboard?.writeText(text);
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      prompt("העתיקו ושתפו:", text);
     }
   };
   return (
@@ -144,14 +151,12 @@ export function ResultScreen({
         {success ? "אתה משתפר משחק אחרי משחק!" : "כל טעות היא צעד אחד קדימה."}
       </p>
       <div className="flex w-full flex-col gap-2">
-        {levelUp && (
-          <button
-            onClick={share}
-            className="h-12 w-full rounded-xl bg-warning text-lg font-bold text-warning-foreground active:scale-95"
-          >
-            📤 שתף
-          </button>
-        )}
+        <button
+          onClick={share}
+          className="h-12 w-full rounded-xl bg-warning text-lg font-bold text-warning-foreground active:scale-95"
+        >
+          {copied ? "✅ הועתק! עכשיו תדביקו לחברים" : "📤 שתף את התוצאה"}
+        </button>
 
         <button
           onClick={onAgain}
