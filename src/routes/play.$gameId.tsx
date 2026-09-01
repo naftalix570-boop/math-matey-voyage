@@ -5,7 +5,7 @@ import { QuizGame, type QuizItem, type QuizVariant } from "@/components/quiz";
 import { BuilderGame, FlashGame, LineMatchGame, MemoryGame, TrueFalseGame } from "@/components/mini-games";
 import { OfflineBadge, OfflineGate } from "@/components/offline-gate";
 import { useGame } from "@/lib/game-state";
-import { gameById, weeklyChallenge } from "@/lib/games";
+import { GAME_HOWTO, gameById, weeklyChallenge } from "@/lib/games";
 import {
   hintFor,
   makeQuestion,
@@ -54,7 +54,7 @@ function quizItem(level: number, op?: Op, options = 3): QuizItem {
 
 function PlayPage() {
   const { game } = Route.useLoaderData();
-  const { profile, update } = useGame();
+  const { profile, update, markGameSeen, sound } = useGame();
   const level = profile.level;
   const [op, setOp] = useState<Op | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -67,6 +67,41 @@ function PlayPage() {
       </Screen>
     );
 
+
+  if (!profile.seenGames.includes(game.id)) {
+    return (
+      <Screen title={game.title}>
+        <div className="mt-6 rounded-3xl bg-card p-6 text-center shadow-card">
+          <div className="animate-pop text-6xl">{game.emoji}</div>
+          <h2 className="mt-2 text-2xl font-bold text-ink">{game.title}</h2>
+          <p className="text-sm text-muted-foreground">{game.desc}</p>
+          <ul className="mt-4 space-y-2 text-right">
+            {GAME_HOWTO[game.id].map((line, i) => (
+              <li
+                key={line}
+                className="animate-reveal flex items-start gap-2 rounded-2xl bg-muted p-3 text-sm font-bold text-ink"
+                style={{ animationDelay: `${i * 0.1}s` }}
+              >
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                  {i + 1}
+                </span>
+                {line}
+              </li>
+            ))}
+          </ul>
+          <button
+            onClick={() => {
+              sound("click");
+              markGameSeen(game.id);
+            }}
+            className="mt-5 h-14 w-full rounded-2xl bg-primary text-xl font-bold text-primary-foreground shadow-pop active:scale-95"
+          >
+            הבנתי, מתחילים! 🚀
+          </button>
+        </div>
+      </Screen>
+    );
+  }
 
   if (game.id === "memory") return <Screen title={game.title}><OfflineGate><MemoryGame /></OfflineGate></Screen>;
   if (game.id === "line-match") return <Screen title={game.title}><OfflineGate><LineMatchGame /></OfflineGate></Screen>;

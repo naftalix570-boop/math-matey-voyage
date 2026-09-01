@@ -23,45 +23,46 @@ export const TICKETS: Record<
   shield: {
     title: "מגן רצף",
     emoji: "🛡️",
-    rarity: "poor",
+    rarity: "rare",
     price: 150,
     desc: "מוסיף 24 שעות הגנה על הרצף",
   },
   restore: {
     title: "שובר רצף",
     emoji: "🔁",
-    rarity: "good",
+    rarity: "amazing",
     price: 400,
     desc: "משחזר רצף שנשבר",
   },
   luck: {
     title: "מזל",
     emoji: "🍀",
-    rarity: "epic",
+    rarity: "legendary",
     price: null,
     desc: "מכפיל סיכויים למדבקות נדירות (לא נמכר)",
   },
   skip: {
     title: "דילוג על שלב",
     emoji: "⏭️",
-    rarity: "good",
+    rarity: "amazing",
     price: null,
     desc: "דילוג על שלב קשה (לא נמכר)",
   },
 };
 
 export const ICONS = [
-  { id: "star", emoji: "⭐", rarity: "poor" as Rarity },
-  { id: "cat", emoji: "🐱", rarity: "poor" as Rarity },
-  { id: "ball", emoji: "⚽", rarity: "poor" as Rarity },
-  { id: "robot", emoji: "🤖", rarity: "common" as Rarity },
-  { id: "rocket", emoji: "🚀", rarity: "common" as Rarity },
-  { id: "ninja", emoji: "🥷", rarity: "good" as Rarity },
-  { id: "unicorn", emoji: "🦄", rarity: "good" as Rarity },
-  { id: "dragon", emoji: "🐉", rarity: "epic" as Rarity },
-  { id: "crown", emoji: "👑", rarity: "epic" as Rarity },
-  { id: "alien", emoji: "👽", rarity: "epic" as Rarity },
+  { id: "star", emoji: "⭐", rarity: "rare" as Rarity },
+  { id: "cat", emoji: "🐱", rarity: "rare" as Rarity },
+  { id: "ball", emoji: "⚽", rarity: "rare" as Rarity },
+  { id: "robot", emoji: "🤖", rarity: "rare" as Rarity },
+  { id: "rocket", emoji: "🚀", rarity: "amazing" as Rarity },
+  { id: "ninja", emoji: "🥷", rarity: "amazing" as Rarity },
+  { id: "unicorn", emoji: "🦄", rarity: "amazing" as Rarity },
+  { id: "dragon", emoji: "🐉", rarity: "legendary" as Rarity },
+  { id: "crown", emoji: "👑", rarity: "legendary" as Rarity },
+  { id: "alien", emoji: "👽", rarity: "legendary" as Rarity },
 ];
+
 
 export type Profile = {
   onboarded: boolean;
@@ -89,10 +90,20 @@ export type Profile = {
   weeklyDone: string;
   subscribed: boolean;
   boosts: Boosts;
+  /** תיבות חינם יומיות (מקסימום 1 ליום) */
   chests: number;
   lastChestDay: string;
   chestsOpened: number;
+  /** מלאי תיבות שהתקבלו ממשימות / רצף / חנות */
+  chestInv: Record<"regular" | "amazing" | "legendary", number>;
   tickets: Tickets;
+  /** גביעים — אחד על כל תרגיל שנפתר נכון */
+  trophies: number;
+  /** ניצחונות לפי משחק */
+  gameWins: Record<string, number>;
+  /** משחקים שכבר ראו את מסך ההסבר */
+  seenGames: string[];
+
   /** streak */
   streakClaimedDay: string;
   streakShieldUntil: number;
@@ -151,7 +162,11 @@ const defaultProfile: Profile = {
   chests: 1,
   lastChestDay: "",
   chestsOpened: 0,
+  chestInv: { regular: 0, amazing: 0, legendary: 0 },
   tickets: { shield: 0, restore: 0, luck: 0, skip: 0 },
+  trophies: 0,
+  gameWins: {},
+  seenGames: [],
   streakClaimedDay: "",
   streakShieldUntil: 0,
   spins: 0,
@@ -171,9 +186,9 @@ const defaultProfile: Profile = {
   country: "IL",
 };
 
-/** ניקוד הדירוג העולמי — נגזר מההתקדמות הכוללת */
-export const scoreOf = (p: Profile) =>
-  p.level * 100 + p.totalCorrect * 2 + p.bestStreakCorrect * 5 + p.stickers.length * 10;
+/** ניקוד הדירוג — מספר הגביעים (גביע על כל תרגיל שנפתר נכון) */
+export const scoreOf = (p: Profile) => p.trophies || p.totalCorrect;
+
 
 export type Achievement = { id: string; title: string; emoji: string };
 
@@ -248,11 +263,24 @@ export function currentEvent(now = Date.now()): EventInfo {
 
 /* ---------------- missions ---------------- */
 
+export type MissionMetric =
+  | "answers"
+  | "nomiss"
+  | "chests"
+  | "streakDays"
+  | "stickers"
+  | "coinsEarned"
+  | "hintsUsed"
+  | "gameWins";
+
 export type Mission = {
   id: string;
   title: string;
+  desc?: string;
   goal: number;
-  metric: "answers" | "nomiss" | "chests" | "streakDays";
+  metric: MissionMetric;
+  /** מזהה משחק — למשימות מסוג gameWins */
+  gameId?: string;
   reward: { coins?: number; hints?: number; chest?: ChestKind; ticket?: TicketId; title?: string };
   premiumOnly?: boolean;
 };
@@ -260,35 +288,99 @@ export type Mission = {
 export const DAILY_MISSIONS: Mission[] = [
   { id: "d10", title: "10 תרגילים", goal: 10, metric: "answers", reward: { coins: 20, hints: 1 } },
   { id: "d15", title: "15 תרגילים ללא טעות", goal: 15, metric: "nomiss", reward: { coins: 40, hints: 2 } },
-  { id: "d20", title: "20 תרגילים ללא טעות", goal: 20, metric: "nomiss", reward: { chest: "legendary" } },
+  {
+    id: "d20",
+    title: "20 תרגילים ללא טעות",
+    goal: 20,
+    metric: "nomiss",
+    reward: { chest: "regular", coins: 60 },
+  },
 ];
 
+/** 10 משימות חודשיות קשות — רק אחת מעניקה תיבה אגדית */
 export const MONTHLY_MISSIONS: Mission[] = [
-  { id: "m300", title: "300 תרגילים החודש", goal: 300, metric: "answers", reward: { coins: 100, hints: 5 } },
   {
-    id: "m500",
-    title: "500 תרגילים החודש",
-    goal: 500,
+    id: "m-ans-800",
+    title: "800 תרגילים החודש",
+    desc: "מרתון של ממש",
+    goal: 800,
     metric: "answers",
-    reward: { chest: "legendary", coins: 200, hints: 10 },
+    reward: { coins: 400 },
   },
   {
-    id: "p30",
-    title: "פתיחת 30 תיבות",
-    goal: 30,
+    id: "m-hints",
+    title: "משימת הרמזים — 1,500 תרגילים",
+    desc: "פרס: 25 רמזים",
+    goal: 1500,
+    metric: "answers",
+    reward: { hints: 25 },
+  },
+  {
+    id: "m-money",
+    title: "משימת הכסף — 2,000 תרגילים",
+    desc: "פרס: 2,000 מטבעות",
+    goal: 2000,
+    metric: "answers",
+    reward: { coins: 2000 },
+  },
+  {
+    id: "m-nomiss-60",
+    title: "60 תרגילים ברצף ללא טעות",
+    desc: "דיוק מושלם",
+    goal: 60,
+    metric: "nomiss",
+    reward: { coins: 500, hints: 10 },
+  },
+  {
+    id: "m-chest-40",
+    title: "לפתוח 40 תיבות החודש",
+    desc: "פרס: תיבה רגילה",
+    goal: 40,
     metric: "chests",
-    reward: { ticket: "restore", coins: 100 },
-    premiumOnly: true,
+    reward: { chest: "regular", coins: 150 },
   },
   {
-    id: "p35",
-    title: "35 ימי רצף",
-    goal: 35,
-    metric: "streakDays",
-    reward: { chest: "legendary", title: "אלוף הרצף" },
-    premiumOnly: true,
+    id: "m-stickers-50",
+    title: "לאסוף 50 מדבקות באלבום",
+    desc: "אספן רציני",
+    goal: 50,
+    metric: "stickers",
+    reward: { chest: "amazing" },
+  },
+  {
+    id: "m-clouds-25",
+    title: "25 ניצחונות ב״מסלול עננים״",
+    goal: 25,
+    metric: "gameWins",
+    gameId: "clouds",
+    reward: { coins: 350 },
+  },
+  {
+    id: "m-tower-20",
+    title: "20 ניצחונות ב״מגדל המספרים״",
+    goal: 20,
+    metric: "gameWins",
+    gameId: "tower",
+    reward: { hints: 15 },
+  },
+  {
+    id: "m-fort-20",
+    title: "20 ניצחונות ב״הגנת המבצר״",
+    goal: 20,
+    metric: "gameWins",
+    gameId: "fort",
+    reward: { chest: "amazing" },
+  },
+  {
+    id: "m-legendary",
+    title: "🏆 המשימה האגדית — 3,000 תרגילים + 28 ימי רצף",
+    desc: "הפרס היחיד של תיבה אגדית בחודש",
+    goal: 3000,
+    metric: "answers",
+    reward: { chest: "legendary", title: "אגדה חיה", coins: 1000 },
   },
 ];
+
 
 type Ctx = {
   profile: Profile;
@@ -299,7 +391,10 @@ type Ctx = {
   spendCoins: (n: number) => boolean;
   useHint: () => boolean;
   grantSticker: () => number | null;
-  openChest: (kind: ChestKind, free?: boolean) => ChestReward | null;
+  /** src: "free" = תיבה יומית · "inv" = מהמלאי · "coins" = קנייה במטבעות */
+  openChest: (kind: ChestKind, src?: "free" | "inv" | "coins") => ChestReward | null;
+  recordGameWin: (gameId: string) => void;
+  markGameSeen: (gameId: string) => void;
   claimStreak: () => { coins: number } | null;
   spinWheel: (free: boolean) => WheelPrize | null;
   claimMission: (m: Mission, scope: "daily" | "monthly") => boolean;
@@ -345,8 +440,8 @@ function drawStickers(owned: number[], count: number, guaranteed?: Rarity, lucky
   };
   if (guaranteed) take(guaranteed);
   while (picked.length < count) {
-    const roll = Math.random() * (lucky ? 0.7 : 1);
-    const rarity: Rarity = roll < 0.5 ? "poor" : roll < 0.8 ? "common" : roll < 0.95 ? "good" : "epic";
+    const roll = Math.random() * (lucky ? 0.75 : 1);
+    const rarity: Rarity = roll < 0.68 ? "rare" : roll < 0.93 ? "amazing" : "legendary";
     const before = picked.length;
     take(rarity);
     if (picked.length === before) {
@@ -376,6 +471,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         ? { ...defaultProfile, ...(JSON.parse(raw) as Partial<Profile>) }
         : { ...defaultProfile, userId: rnd(3, 999) };
       parsed.tickets = { ...defaultProfile.tickets, ...(parsed.tickets ?? {}) };
+      parsed.chestInv = { ...defaultProfile.chestInv, ...(parsed.chestInv ?? {}) };
+      parsed.gameWins = { ...(parsed.gameWins ?? {}) };
+      parsed.seenGames = parsed.seenGames ?? [];
+      if (!parsed.trophies) parsed.trophies = parsed.totalCorrect;
       const today = todayKey();
       if (parsed.lastDay !== today) {
         const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
@@ -386,8 +485,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }
       if (parsed.lastChestDay !== today) {
         parsed.lastChestDay = today;
-        // תיבה חינם אחת בלבד ליום, גם בימי אירוע
-        parsed.chests = parsed.chests + 1;
+        // תיבה חינם אחת בלבד ליום — לא נצברת ולא כפולה בימי אירוע
+        parsed.chests = 1;
+      } else {
+        parsed.chests = Math.min(1, parsed.chests);
       }
       if (parsed.missionDay !== today) {
         parsed.missionDay = today;
@@ -508,18 +609,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return granted;
   }, []);
 
-  const openChest = useCallback<Ctx["openChest"]>((kind, free = false) => {
+  const openChest = useCallback<Ctx["openChest"]>((kind, src = "coins") => {
     const cfg = CHESTS[kind];
     let reward: ChestReward | null = null;
     setProfile((p) => {
-      if (free ? p.chests <= 0 : p.coins < cfg.price) return p;
+      if (src === "free" && (kind !== "regular" || p.chests <= 0)) return p;
+      if (src === "inv" && p.chestInv[kind] <= 0) return p;
+      if (src === "coins" && p.coins < cfg.price) return p;
       const lucky = p.tickets.luck > 0;
       const coins =
         kind === "regular" ? rnd(20, 100) : kind === "amazing" ? rnd(100, 300) : rnd(300, 700);
       const hints = kind === "regular" ? rnd(1, 3) : kind === "amazing" ? rnd(4, 8) : rnd(8, 15);
       const count = kind === "regular" ? rnd(2, 3) : kind === "amazing" ? rnd(3, 5) : rnd(4, 8);
       const guaranteed: Rarity | undefined =
-        kind === "amazing" ? "good" : kind === "legendary" ? "epic" : undefined;
+        kind === "amazing" ? "amazing" : kind === "legendary" ? "legendary" : undefined;
       const picked = drawStickers(p.stickers, count, guaranteed, lucky);
 
       // פרימיום נדיר — 1 ל-10,000 בתיבה אגדית
@@ -550,9 +653,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
       return {
         ...p,
-        coins: p.coins - (free ? 0 : cfg.price) + coins,
+        coins: p.coins - (src === "coins" ? cfg.price : 0) + coins,
         hints: p.hints + hints,
-        chests: free ? p.chests - 1 : p.chests,
+        chests: src === "free" ? p.chests - 1 : p.chests,
+        chestInv:
+          src === "inv" ? { ...p.chestInv, [kind]: p.chestInv[kind] - 1 } : p.chestInv,
         chestsOpened: p.chestsOpened + 1,
         monthlyChests: p.monthlyChests + 1,
         stickers: [...p.stickers, ...picked],
@@ -569,6 +674,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
     });
     return reward;
   }, []);
+
+  const recordGameWin = useCallback<Ctx["recordGameWin"]>((gameId) => {
+    setProfile((p) => ({
+      ...p,
+      gameWins: { ...p.gameWins, [gameId]: (p.gameWins[gameId] ?? 0) + 1 },
+    }));
+  }, []);
+
+  const markGameSeen = useCallback<Ctx["markGameSeen"]>((gameId) => {
+    setProfile((p) =>
+      p.seenGames.includes(gameId) ? p : { ...p, seenGames: [...p.seenGames, gameId] },
+    );
+  }, []);
+
 
   const claimStreak = useCallback<Ctx["claimStreak"]>(() => {
     const today = todayKey();
@@ -589,7 +708,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         streakClaimedDay: today,
         coins: p.coins + coins,
         hints: p.hints + hints,
-        chests: p.chests + chest,
+        chestInv: chest
+          ? { ...p.chestInv, regular: p.chestInv.regular + chest }
+          : p.chestInv,
         tickets: ticket ? { ...p.tickets, [ticket]: p.tickets[ticket] + 1 } : p.tickets,
       };
     });
@@ -638,19 +759,31 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return out;
   }, []);
 
+  const progressOf = (p: Profile, m: Mission, scope: "daily" | "monthly") => {
+    switch (m.metric) {
+      case "answers":
+        return scope === "daily" ? p.dailyAnswers : p.monthlyAnswers;
+      case "nomiss":
+        return p.dailyNoMissBest;
+      case "chests":
+        return p.monthlyChests;
+      case "streakDays":
+        return p.streakDays;
+      case "stickers":
+        return p.stickers.length;
+      case "gameWins":
+        return p.gameWins[m.gameId ?? ""] ?? 0;
+      case "coinsEarned":
+        return p.coins;
+      case "hintsUsed":
+        return p.hints;
+      default:
+        return 0;
+    }
+  };
+
   const missionProgress = useCallback<Ctx["missionProgress"]>(
-    (m) => {
-      switch (m.metric) {
-        case "answers":
-          return DAILY_MISSIONS.includes(m) ? profile.dailyAnswers : profile.monthlyAnswers;
-        case "nomiss":
-          return profile.dailyNoMissBest;
-        case "chests":
-          return profile.monthlyChests;
-        case "streakDays":
-          return profile.streakDays;
-      }
-    },
+    (m) => progressOf(profile, m, DAILY_MISSIONS.includes(m) ? "daily" : "monthly"),
     [profile],
   );
 
@@ -659,28 +792,21 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setProfile((p) => {
       const claimed = scope === "daily" ? p.dailyClaimed : p.monthlyClaimed;
       if (claimed.includes(m.id)) return p;
-      const prog =
-        m.metric === "answers"
-          ? scope === "daily"
-            ? p.dailyAnswers
-            : p.monthlyAnswers
-          : m.metric === "nomiss"
-            ? p.dailyNoMissBest
-            : m.metric === "chests"
-              ? p.monthlyChests
-              : p.streakDays;
-      if (prog < m.goal) return p;
+      if (progressOf(p, m, scope) < m.goal) return p;
       ok = true;
       const month = monthKey();
       const canLegendary =
         m.reward.chest !== "legendary" ||
         Date.now() < p.boosts.premiumUntil ||
         p.lastLegendaryMonth !== month;
+      const gotChest = m.reward.chest && canLegendary ? m.reward.chest : null;
       return {
         ...p,
         coins: p.coins + (m.reward.coins ?? 0),
         hints: p.hints + (m.reward.hints ?? 0),
-        chests: p.chests + (m.reward.chest && canLegendary ? 1 : 0),
+        chestInv: gotChest
+          ? { ...p.chestInv, [gotChest]: p.chestInv[gotChest] + 1 }
+          : p.chestInv,
         lastLegendaryMonth:
           m.reward.chest === "legendary" && canLegendary ? month : p.lastLegendaryMonth,
         tickets: m.reward.ticket
@@ -692,6 +818,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     });
     return ok;
   }, []);
+
 
   const unlockAchievement = useCallback((id: string) => {
     setProfile((p) =>
@@ -767,6 +894,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         currentStreakCorrect,
         bestStreakCorrect: Math.max(p.bestStreakCorrect, currentStreakCorrect),
         totalCorrect,
+        trophies: p.trophies + (correct ? 1 : 0),
         totalAnswered: total,
         dailyAnswers: p.dailyAnswers + 1,
         monthlyAnswers: p.monthlyAnswers + 1,
@@ -817,6 +945,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       useHint,
       grantSticker,
       openChest,
+      recordGameWin,
+      markGameSeen,
       claimStreak,
       spinWheel,
       claimMission,
@@ -846,6 +976,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       useHint,
       grantSticker,
       openChest,
+      recordGameWin,
+      markGameSeen,
       claimStreak,
       spinWheel,
       claimMission,

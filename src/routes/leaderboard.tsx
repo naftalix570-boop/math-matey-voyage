@@ -134,7 +134,7 @@ function LeaderboardPage() {
                         <p className="text-xs text-muted-foreground">{r.country}</p>
                       )}
                     </div>
-                    <span className="font-bold text-primary">{r.score.toLocaleString("he-IL")}</span>
+                    <span className="font-bold text-primary">🏆 {r.score.toLocaleString("he-IL")}</span>
                   </div>
                 ))}
               </div>

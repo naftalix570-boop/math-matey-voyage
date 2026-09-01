@@ -66,14 +66,19 @@ function MissionCard({
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="font-bold text-ink">
-          {mission.title}
-          {mission.premiumOnly && <span className="mr-1">👑</span>}
-        </p>
-        <span className="text-sm font-bold text-muted-foreground">
-          {Math.min(progress, mission.goal)}/{mission.goal}
+        <div>
+          <p className="font-bold text-ink">
+            {mission.title}
+            {mission.premiumOnly && <span className="mr-1">👑</span>}
+          </p>
+          {mission.desc && <p className="text-xs text-muted-foreground">{mission.desc}</p>}
+        </div>
+        <span className="shrink-0 text-sm font-bold text-muted-foreground">
+          {Math.min(progress, mission.goal).toLocaleString("he-IL")}/
+          {mission.goal.toLocaleString("he-IL")}
         </span>
       </div>
+
       <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted">
         <div
           className={cn("h-full rounded-full transition-all", claimed ? "bg-success" : "bg-primary")}
