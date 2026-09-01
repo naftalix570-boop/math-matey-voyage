@@ -5,6 +5,7 @@ import { QuizGame, type QuizItem, type QuizVariant } from "@/components/quiz";
 import { BuilderGame, FlashGame, LineMatchGame, MemoryGame, TrueFalseGame } from "@/components/mini-games";
 import { OfflineBadge, OfflineGate } from "@/components/offline-gate";
 import { useGame } from "@/lib/game-state";
+import { useI18n, GAME_I18N } from "@/lib/i18n";
 import { GAME_HOWTO, gameById, weeklyChallenge } from "@/lib/games";
 import {
   hintFor,
@@ -53,7 +54,10 @@ function quizItem(level: number, op?: Op, options = 3): QuizItem {
 }
 
 function PlayPage() {
-  const { game } = Route.useLoaderData();
+  const { game: rawGame } = Route.useLoaderData();
+  const { lang } = useI18n();
+  const tx = GAME_I18N[lang]?.[rawGame.id];
+  const game = tx ? { ...rawGame, title: tx.title, desc: tx.desc } : rawGame;
   const { profile, update, markGameSeen, sound } = useGame();
   const level = profile.level;
   const [op, setOp] = useState<Op | null>(null);
