@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { GameProvider } from "../lib/game-state";
+import { registerOfflineWorker } from "../lib/use-online";
 
 function NotFoundComponent() {
   return (
@@ -120,6 +121,9 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => {
+    registerOfflineWorker();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

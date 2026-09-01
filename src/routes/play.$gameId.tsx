@@ -2,7 +2,8 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { QuizGame, type QuizItem, type QuizVariant } from "@/components/quiz";
-import { BuilderGame, FlashGame, LineMatchGame, MemoryGame } from "@/components/mini-games";
+import { BuilderGame, FlashGame, LineMatchGame, MemoryGame, TrueFalseGame } from "@/components/mini-games";
+import { OfflineBadge, OfflineGate } from "@/components/offline-gate";
 import { useGame } from "@/lib/game-state";
 import { gameById, weeklyChallenge } from "@/lib/games";
 import {
@@ -67,10 +68,11 @@ function PlayPage() {
     );
 
 
-  if (game.id === "memory") return <Screen title={game.title}><MemoryGame /></Screen>;
-  if (game.id === "line-match") return <Screen title={game.title}><LineMatchGame /></Screen>;
-  if (game.id === "builder") return <Screen title={game.title}><BuilderGame /></Screen>;
-  if (game.id === "flash") return <Screen title={game.title}><FlashGame /></Screen>;
+  if (game.id === "memory") return <Screen title={game.title}><OfflineGate><MemoryGame /></OfflineGate></Screen>;
+  if (game.id === "line-match") return <Screen title={game.title}><OfflineGate><LineMatchGame /></OfflineGate></Screen>;
+  if (game.id === "builder") return <Screen title={game.title}><OfflineGate><BuilderGame /></OfflineGate></Screen>;
+  if (game.id === "flash") return <Screen title={game.title}><OfflineGate><FlashGame /></OfflineGate></Screen>;
+  if (game.id === "truefalse") return <Screen title={game.title}><OfflineGate><TrueFalseGame /></OfflineGate></Screen>;
 
   if (game.id === "topic" && !op) {
     return (
@@ -136,6 +138,8 @@ function PlayPage() {
 
   return (
     <Screen title={game.title}>
+      <OfflineBadge />
+      <OfflineGate>
       <QuizGame
         makeItem={makeItem}
         count={count}
@@ -148,6 +152,7 @@ function PlayPage() {
           }
         }}
       />
+      </OfflineGate>
     </Screen>
   );
 }

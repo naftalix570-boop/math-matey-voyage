@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useGame } from "@/lib/game-state";
 import { cn } from "@/lib/utils";
 import { Confetti, Logo } from "@/components/effects";
-import { makeOptions, makeQuestion, OP_SIGN, pick, type Op } from "@/lib/math";
+import { makeOptions, makeQuestion, makeTrueFalse, OP_SIGN, pick, type Op } from "@/lib/math";
 import { ResultScreen, type QuizResult } from "@/components/quiz";
 
 /* ---------------- Memory: match exercise to answer ---------------- */
@@ -101,16 +101,19 @@ export function MemoryGame() {
   );
 }
 
-/* ---------------- Line match: tap exercise then its answer ---------------- */
+/* ---------------- Line match: drag a real line from exercise to answer ---------------- */
 
 export function LineMatchGame() {
   const { profile, recordAnswer, sound } = useGame();
   const [round, setRound] = useState(0);
   const [pairs, setPairs] = useState(() => buildPairs(profile.level));
-  const [picked, setPicked] = useState<number | null>(null);
+  const [dragFrom, setDragFrom] = useState<number | null>(null);
+  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [solved, setSolved] = useState<number[]>([]);
   const [correct, setCorrect] = useState(0);
   const [result, setResult] = useState<QuizResult | null>(null);
+  const boardRef = useRef<HTMLDivElement | null>(null);
+  const nodes = useRef<Record<string, HTMLElement | null>>({});
 
   function buildPairs(level: number) {
     const qs = Array.from({ length: 4 }, () => makeQuestion(level, undefined, 2));
@@ -122,86 +125,244 @@ export function LineMatchGame() {
 
   const restart = () => {
     setPairs(buildPairs(profile.level));
-    setPicked(null);
+    setDragFrom(null);
+    setCursor(null);
     setSolved([]);
     setCorrect(0);
     setRound(0);
     setResult(null);
   };
 
-  const chooseRight = (i: number) => {
-    if (picked === null || solved.includes(i)) return;
-    const hit = picked === i;
+  const center = (key: string) => {
+    const el = nodes.current[key];
+    const board = boardRef.current;
+    if (!el || !board) return null;
+    const r = el.getBoundingClientRect();
+    const b = board.getBoundingClientRect();
+    return { x: r.left - b.left + r.width / 2, y: r.top - b.top + r.height / 2 };
+  };
+
+  const toLocal = (e: { clientX: number; clientY: number }) => {
+    const b = boardRef.current?.getBoundingClientRect();
+    if (!b) return null;
+    return { x: e.clientX - b.left, y: e.clientY - b.top };
+  };
+
+  const finishRound = (nextSolved: number[], nextCorrect: number) => {
+    if (nextSolved.length < 4) return;
+    if (round >= 2) {
+      setResult({ correct: nextCorrect, total: 12, levelUp: false });
+    } else {
+      setTimeout(() => {
+        setRound((r) => r + 1);
+        setPairs(buildPairs(profile.level));
+        setSolved([]);
+      }, 500);
+    }
+  };
+
+  const drop = (e: React.PointerEvent) => {
+    const from = dragFrom;
+    setDragFrom(null);
+    setCursor(null);
+    if (from === null) return;
+    const target = document
+      .elementFromPoint(e.clientX, e.clientY)
+      ?.closest("[data-right]") as HTMLElement | null;
+    if (!target) return;
+    const i = Number(target.dataset["right"]);
+    if (solved.includes(i)) return;
+    const hit = from === i;
     recordAnswer(hit);
     sound(hit ? "correct" : "wrong");
     if (hit) {
       const nextSolved = [...solved, i];
+      const nextCorrect = correct + 1;
       setSolved(nextSolved);
-      setCorrect((c) => c + 1);
-      if (nextSolved.length === 4) {
-        if (round >= 2) {
-          setResult({ correct: correct + 1, total: 12, levelUp: false });
-        } else {
-          setTimeout(() => {
-            setRound((r) => r + 1);
-            setPairs(buildPairs(profile.level));
-            setSolved([]);
-          }, 500);
-        }
-      }
+      setCorrect(nextCorrect);
+      finishRound(nextSolved, nextCorrect);
     }
-    setPicked(null);
   };
 
   if (result) return <ResultScreen {...result} onAgain={restart} />;
 
+  const liveFrom = dragFrom !== null ? center(`l${dragFrom}`) : null;
+
   return (
     <div className="pt-2">
-      <p className="mb-3 text-center font-bold text-ink">סבב {round + 1}/3 — חבר תרגיל לתשובה</p>
-      <div className="flex gap-3">
+      <p className="mb-3 text-center font-bold text-ink">
+        סבב {round + 1}/3 — משכו קו מהתרגיל לתשובה
+      </p>
+      <div
+        ref={boardRef}
+        className="relative flex touch-none gap-3"
+        onPointerMove={(e) => {
+          if (dragFrom === null) return;
+          const p = toLocal(e);
+          if (p) setCursor(p);
+        }}
+        onPointerUp={drop}
+        onPointerCancel={() => {
+          setDragFrom(null);
+          setCursor(null);
+        }}
+      >
+        <svg className="pointer-events-none absolute inset-0 size-full">
+          {solved.map((i) => {
+            const a = center(`l${i}`);
+            const b = center(`r${i}`);
+            if (!a || !b) return null;
+            return (
+              <line
+                key={i}
+                x1={a.x}
+                y1={a.y}
+                x2={b.x}
+                y2={b.y}
+                className="stroke-success"
+                strokeWidth={4}
+                strokeLinecap="round"
+              />
+            );
+          })}
+          {liveFrom && cursor && (
+            <line
+              x1={liveFrom.x}
+              y1={liveFrom.y}
+              x2={cursor.x}
+              y2={cursor.y}
+              className="stroke-primary"
+              strokeWidth={4}
+              strokeDasharray="8 6"
+              strokeLinecap="round"
+            />
+          )}
+        </svg>
+
         <div className="flex flex-1 flex-col gap-2">
           {pairs.left.map((l) => (
-            <button
+            <div
               key={l.i}
-              disabled={solved.includes(l.i)}
-              onClick={() => {
+              ref={(el) => {
+                nodes.current[`l${l.i}`] = el;
+              }}
+              onPointerDown={(e) => {
+                if (solved.includes(l.i)) return;
+                (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
                 sound("click");
-                setPicked(l.i);
+                setDragFrom(l.i);
+                const p = toLocal(e);
+                if (p) setCursor(p);
               }}
               className={cn(
-                "h-14 rounded-xl text-xl font-bold active:scale-95",
+                "flex h-14 select-none items-center justify-center rounded-xl text-xl font-bold",
                 solved.includes(l.i)
                   ? "bg-success text-success-foreground"
-                  : picked === l.i
+                  : dragFrom === l.i
                     ? "bg-warning text-warning-foreground"
                     : "bg-primary text-primary-foreground",
               )}
             >
               {l.text}
-            </button>
+            </div>
           ))}
         </div>
         <div className="flex flex-1 flex-col gap-2">
           {pairs.right.map((r) => (
-            <button
+            <div
               key={r.i}
-              disabled={solved.includes(r.i)}
-              onClick={() => chooseRight(r.i)}
+              data-right={r.i}
+              ref={(el) => {
+                nodes.current[`r${r.i}`] = el;
+              }}
               className={cn(
-                "h-14 rounded-xl text-xl font-bold active:scale-95",
-                solved.includes(r.i)
-                  ? "bg-success text-success-foreground"
-                  : "bg-sky text-ink",
+                "flex h-14 select-none items-center justify-center rounded-xl text-xl font-bold",
+                solved.includes(r.i) ? "bg-success text-success-foreground" : "bg-sky text-ink",
               )}
             >
               {r.text}
-            </button>
+            </div>
           ))}
         </div>
       </div>
     </div>
   );
 }
+
+/* ---------------- True / False ---------------- */
+
+export function TrueFalseGame() {
+  const { profile, recordAnswer, sound } = useGame();
+  const [q, setQ] = useState<{ text: string; isTrue: boolean } | null>(null);
+  const [idx, setIdx] = useState(0);
+  const [correct, setCorrect] = useState(0);
+  const [feedback, setFeedback] = useState<"ok" | "bad" | null>(null);
+  const [result, setResult] = useState<QuizResult | null>(null);
+
+  useEffect(() => {
+    setQ(makeTrueFalse(profile.level));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idx, profile.level]);
+
+  const answer = (choice: boolean) => {
+    if (!q || feedback) return;
+    const hit = choice === q.isTrue;
+    recordAnswer(hit);
+    sound(hit ? "correct" : "wrong");
+    setFeedback(hit ? "ok" : "bad");
+    if (hit) setCorrect((c) => c + 1);
+    setTimeout(() => {
+      setFeedback(null);
+      if (idx >= 9) setResult({ correct: correct + (hit ? 1 : 0), total: 10, levelUp: false });
+      else setIdx((i) => i + 1);
+    }, 700);
+  };
+
+  if (result)
+    return (
+      <ResultScreen
+        {...result}
+        onAgain={() => {
+          setIdx(0);
+          setCorrect(0);
+          setResult(null);
+        }}
+      />
+    );
+
+  return (
+    <div className="pt-4">
+      <p className="text-center font-bold text-muted-foreground">תרגיל {idx + 1}/10</p>
+      <div
+        className={cn(
+          "mt-4 flex h-40 items-center justify-center rounded-2xl text-4xl font-bold shadow-card transition-colors",
+          feedback === "ok"
+            ? "bg-success text-success-foreground"
+            : feedback === "bad"
+              ? "bg-destructive text-destructive-foreground"
+              : "bg-card text-ink",
+        )}
+      >
+        {q?.text ?? "…"}
+      </div>
+      <div className="mt-6 grid grid-cols-2 gap-3 pb-28">
+        <button
+          onClick={() => answer(true)}
+          className="h-20 rounded-2xl bg-success text-2xl font-bold text-success-foreground active:scale-95"
+        >
+          ✅ נכון
+        </button>
+        <button
+          onClick={() => answer(false)}
+          className="h-20 rounded-2xl bg-destructive text-2xl font-bold text-destructive-foreground active:scale-95"
+        >
+          ❌ לא נכון
+        </button>
+      </div>
+    </div>
+  );
+}
+
 
 /* ---------------- Builder: build an exercise, then answer it ---------------- */
 
