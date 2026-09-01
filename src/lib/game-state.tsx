@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ALBUM_SIZE, stickerForSlot, type Rarity } from "./stickers";
 import { MAX_LEVEL } from "./math";
 import { playSound } from "./sfx";
+import { supabase } from "@/integrations/supabase/client";
 
 export type Boosts = {
   /** epoch ms until which coins are doubled */
@@ -112,6 +113,8 @@ export type Profile = {
   /** rating */
   correctSinceRating: number;
   rated: boolean;
+  /** ISO country code for national leaderboard */
+  country: string;
 };
 
 const KEY = "math-journey-v1";
@@ -165,7 +168,12 @@ const defaultProfile: Profile = {
   lastLegendaryMonth: "",
   correctSinceRating: 0,
   rated: false,
+  country: "IL",
 };
+
+/** ניקוד הדירוג העולמי — נגזר מההתקדמות הכוללת */
+export const scoreOf = (p: Profile) =>
+  p.level * 100 + p.totalCorrect * 2 + p.bestStreakCorrect * 5 + p.stickers.length * 10;
 
 export type Achievement = { id: string; title: string; emoji: string };
 
@@ -302,6 +310,10 @@ type Ctx = {
   premium: boolean;
   doubling: boolean;
   event: EventInfo;
+  /** cloud account */
+  linked: boolean;
+  authEmail: string | null;
+  authUid: string | null;
 };
 
 export type WheelPrize = {
@@ -406,6 +418,75 @@ export function GameProvider({ children }: { children: ReactNode }) {
       /* storage full */
     }
   }, [profile, ready]);
+
+  /* ---------------- cloud sync ---------------- */
+
+  const [authUid, setAuthUid] = useState<string | null>(null);
+  const [authEmail, setAuthEmail] = useState<string | null>(null);
+  const pulledRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      setAuthUid(data.session?.user.id ?? null);
+      setAuthEmail(data.session?.user.email ?? null);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        setAuthUid(session?.user.id ?? null);
+        setAuthEmail(session?.user.email ?? null);
+      }
+    });
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  // משיכת פרופיל מהענן בכניסה — אם קיים, הוא גובר (מעבר מכשיר); אם לא, המקומי יידחף למעלה
+  useEffect(() => {
+    if (!authUid || !ready || pulledRef.current === authUid) return;
+    pulledRef.current = authUid;
+    void (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("display_name, icon, country, data")
+        .eq("user_id", authUid)
+        .maybeSingle();
+      if (data?.data && typeof data.data === "object" && Object.keys(data.data).length) {
+        const cloud = data.data as Partial<Profile>;
+        setProfile((p) => ({
+          ...defaultProfile,
+          ...cloud,
+          tickets: { ...defaultProfile.tickets, ...(cloud.tickets ?? {}) },
+          boosts: { ...defaultProfile.boosts, ...(cloud.boosts ?? {}) },
+          name: data.display_name || cloud.name || p.name,
+          icon: data.icon || cloud.icon || p.icon,
+          country: data.country || "IL",
+          guest: false,
+        }));
+      } else {
+        setProfile((p) => ({ ...p, guest: false }));
+      }
+    })();
+  }, [authUid, ready]);
+
+  // דחיפת שינויים לענן (debounce) — שומר מטבעות, מדבקות, שלבים וניקוד דירוג
+  useEffect(() => {
+    if (!authUid || !ready) return;
+    const t = setTimeout(() => {
+      void supabase.from("profiles").upsert({
+        user_id: authUid,
+        display_name: profile.name,
+        icon: profile.icon,
+        country: profile.country,
+        score: scoreOf(profile),
+        data: JSON.parse(JSON.stringify(profile)),
+      });
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [authUid, ready, profile]);
 
   const update: Ctx["update"] = useCallback((patch) => {
     setProfile((p) => ({ ...p, ...(typeof patch === "function" ? patch(p) : patch) }));
@@ -749,8 +830,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
         (now || Date.now()) < profile.boosts.doubleUntil ||
         (now || Date.now()) < profile.boosts.premiumUntil,
       event: currentEvent(now || Date.now()),
+      linked: !!authUid,
+      authEmail,
+      authUid,
     }),
     [
+      authUid,
+      authEmail,
       profile,
       ready,
       now,
