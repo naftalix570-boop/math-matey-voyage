@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
+import { useI18n } from "@/lib/i18n";
 import { Confetti } from "@/components/effects";
 import { streakReward, useGame } from "@/lib/game-state";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ function dayReward(day: number) {
 
 
 function StreakPage() {
+  const { t } = useI18n();
   const { profile, claimStreak, sound, premium, event, update } = useGame();
   const [claimed, setClaimed] = useState<number | null>(null);
   const [shieldMsg, setShieldMsg] = useState<string | null>(null);
@@ -56,7 +58,7 @@ function StreakPage() {
   };
 
   return (
-    <Screen title="רצף יומי">
+    <Screen title={t("title.streak")}>
       <Confetti show={claimed != null} />
 
       <div className="mt-2 rounded-2xl bg-card p-4 text-center shadow-card">

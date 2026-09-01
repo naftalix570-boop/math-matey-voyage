@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
+import { useI18n } from "@/lib/i18n";
 import { Confetti } from "@/components/effects";
 import { useGame, type WheelPrize } from "@/lib/game-state";
 
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/wheel")({
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
 function WheelPage() {
+  const { t } = useI18n();
   const { profile, spinWheel, sound, premium, event } = useGame();
   const [spinning, setSpinning] = useState(false);
   const [prize, setPrize] = useState<WheelPrize | null>(null);
@@ -45,7 +47,7 @@ function WheelPage() {
   };
 
   return (
-    <Screen title="גלגל המזל">
+    <Screen title={t("title.wheel")}>
       <Confetti show={!!prize} />
       <div className="mt-2 flex items-center justify-center gap-3 text-lg font-bold text-ink">
         <span className="rounded-full bg-card px-4 py-1 shadow-card">🪙 {profile.coins}</span>

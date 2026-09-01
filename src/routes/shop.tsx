@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
+import { useI18n } from "@/lib/i18n";
 import {
   CHESTS,
   TICKETS,
@@ -72,6 +73,7 @@ const MONEY_ITEMS = [
 ];
 
 function ShopPage() {
+  const { t } = useI18n();
   const { profile, spendCoins, update, grantSticker, sound, premium, doubling, openChest } =
     useGame();
   const [tab, setTab] = useState<"coins" | "money">("coins");
@@ -120,7 +122,7 @@ function ShopPage() {
     });
 
   return (
-    <Screen title="חנות">
+    <Screen title={t("title.shop")}>
       <div className="mt-2 flex items-center justify-center gap-3 text-lg font-bold text-ink">
         <span className="rounded-full bg-card px-4 py-1 shadow-card">🪙 {profile.coins}</span>
         <span className="rounded-full bg-card px-4 py-1 shadow-card">💡 {profile.hints}</span>

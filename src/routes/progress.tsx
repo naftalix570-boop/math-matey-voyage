@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Screen } from "@/components/app-shell";
+import { useI18n } from "@/lib/i18n";
 import { ACHIEVEMENTS, WORLD_SIZE, useGame, worldInfo, worldOf } from "@/lib/game-state";
 import { MAX_LEVEL } from "@/lib/math";
 import { ALBUM_SIZE } from "@/lib/stickers";
@@ -28,6 +29,7 @@ function Stat({ emoji, label, value }: { emoji: string; label: string; value: st
 }
 
 function ProgressPage() {
+  const { t } = useI18n();
   const { profile } = useGame();
   const acc =
     profile.totalAnswered > 0
@@ -36,7 +38,7 @@ function ProgressPage() {
   const toSticker = Math.max(0, 30 - profile.correctSinceSticker);
 
   return (
-    <Screen title="התקדמות">
+    <Screen title={t("title.progress")}>
       <section className="mt-2 rounded-2xl bg-card p-4 shadow-card">
         <div className="flex items-center justify-between">
           <span className="text-lg font-bold text-ink">

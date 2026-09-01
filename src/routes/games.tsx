@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Screen } from "@/components/app-shell";
 import { GAMES } from "@/lib/games";
 import { useGame, DAILY_MISSIONS, MONTHLY_MISSIONS } from "@/lib/game-state";
+import { useI18n, GAME_I18N } from "@/lib/i18n";
 
 export const Route = createFileRoute("/games")({
   head: () => ({
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/games")({
 
 function GamesPage() {
   const { sound, profile, missionProgress } = useGame();
+  const { t, lang } = useI18n();
   const claimed = [...profile.dailyClaimed, ...profile.monthlyClaimed];
   const activeByGame = [...DAILY_MISSIONS, ...MONTHLY_MISSIONS]
     .filter((m) => m.gameId && !claimed.includes(m.id))
@@ -26,10 +28,11 @@ function GamesPage() {
     }, {});
 
   return (
-    <Screen title="משחקים">
+    <Screen title={t("title.games")}>
       <div className="grid grid-cols-2 gap-3 pb-28">
         {GAMES.map((g) => {
           const missions = activeByGame[g.id] ?? [];
+          const txt = GAME_I18N[lang]?.[g.id] ?? { title: g.title, desc: g.desc };
           return (
             <Link
               key={g.id}
@@ -44,8 +47,8 @@ function GamesPage() {
                 </span>
               )}
               <div className="text-3xl">{g.emoji}</div>
-              <p className="mt-1 font-bold text-ink">{g.title}</p>
-              <p className="text-xs text-muted-foreground">{g.desc}</p>
+              <p className="mt-1 font-bold text-ink">{txt.title}</p>
+              <p className="text-xs text-muted-foreground">{txt.desc}</p>
               {missions.length > 0 && (
                 <p className="mt-1 rounded-lg bg-muted px-2 py-1 text-[11px] text-muted-foreground">
                   יש לך משימה: {missions[0]!.title} (

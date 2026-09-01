@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
+import { useI18n } from "@/lib/i18n";
 import { ChestOpenOverlay } from "@/components/effects";
 import { CHESTS, useGame, type ChestKind, type ChestReward } from "@/lib/game-state";
 import { rewardItems } from "@/lib/chest-rewards";
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/chests")({
 const KINDS: ChestKind[] = ["regular", "amazing", "legendary"];
 
 function ChestsPage() {
+  const { t } = useI18n();
   const { profile, openChest, sound, premium } = useGame();
   const [reward, setReward] = useState<ChestReward | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -40,7 +42,7 @@ function ChestsPage() {
   };
 
   return (
-    <Screen title="תיבות אוצר">
+    <Screen title={t("title.chests")}>
       {reward && (
         <ChestOpenOverlay
           emoji={CHESTS[reward.kind].emoji}

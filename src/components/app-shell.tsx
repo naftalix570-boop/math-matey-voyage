@@ -2,14 +2,15 @@ import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { ArrowLeft, Home, Gamepad2, Trophy, ShoppingCart, Settings } from "lucide-react";
 import { useGame } from "@/lib/game-state";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { to: "/", label: "בית", icon: Home },
-  { to: "/games", label: "משחקים", icon: Gamepad2 },
-  { to: "/shop", label: "חנות", icon: ShoppingCart },
-  { to: "/leaderboard", label: "טופ", icon: Trophy },
-  { to: "/settings", label: "הגדרות", icon: Settings },
+  { to: "/", key: "nav.home", icon: Home },
+  { to: "/games", key: "nav.games", icon: Gamepad2 },
+  { to: "/shop", key: "nav.shop", icon: ShoppingCart },
+  { to: "/leaderboard", key: "nav.top", icon: Trophy },
+  { to: "/settings", key: "nav.settings", icon: Settings },
 ] as const;
 
 
@@ -17,10 +18,11 @@ const NAV = [
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { sound } = useGame();
+  const { t } = useI18n();
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-lg justify-around bg-nav px-1 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-nav-foreground">
-      {NAV.map(({ to, label, icon: Icon }) => {
+      {NAV.map(({ to, key, icon: Icon }) => {
         const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
         return (
           <Link
@@ -33,7 +35,7 @@ export function BottomNav() {
             )}
           >
             <Icon className="size-5" strokeWidth={active ? 2.6 : 2} />
-            {label}
+            {t(key)}
           </Link>
         );
       })}
@@ -44,10 +46,11 @@ export function BottomNav() {
 export function BackButton({ to }: { to?: string }) {
   const router = useRouter();
   const { sound } = useGame();
+  const { t } = useI18n();
   return (
     <button
       type="button"
-      aria-label="חזרה"
+      aria-label={t("common.back")}
       onClick={() => {
         sound("click");
         if (to) router.navigate({ to });
@@ -73,8 +76,9 @@ export function Screen({
   right?: ReactNode;
   nav?: boolean;
 }) {
+  const { dir } = useI18n();
   return (
-    <div dir="rtl" className="mx-auto min-h-screen max-w-lg bg-background">
+    <div dir={dir} className="mx-auto min-h-screen max-w-lg bg-background">
       <div className="animate-page screen-pad">
         {(back || title) && (
           <header className="sticky top-0 z-30 -mx-4 flex items-center gap-2 bg-background/90 px-2 py-2 backdrop-blur">

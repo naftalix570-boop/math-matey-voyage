@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Heart, HelpCircle, Lightbulb, Timer } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 import { useGame } from "@/lib/game-state";
 import { cn } from "@/lib/utils";
 import { Confetti, Logo, Sparkles } from "@/components/effects";
@@ -50,12 +51,13 @@ export function TopicHelpSheet({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t: tr } = useI18n();
   if (!open) return null;
   const topics = topicId ? TOPICS.filter((t) => t.id === topicId) : TOPICS;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-4" dir="rtl">
       <div className="animate-pop w-full max-w-lg rounded-2xl bg-card p-5 shadow-card">
-        <h3 className="mb-3 text-xl font-bold text-ink">📖 הסבר</h3>
+        <h3 className="mb-3 text-xl font-bold text-ink">{tr("quiz.explain")}</h3>
         <div className="space-y-3">
           {topics.map((t) => (
             <div key={t.id} className="rounded-xl bg-sky p-3">
@@ -71,7 +73,7 @@ export function TopicHelpSheet({
           onClick={onClose}
           className="mt-4 h-12 w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground active:scale-95"
         >
-          הבנתי!
+          {tr("common.gotIt")}
         </button>
       </div>
     </div>
@@ -95,6 +97,7 @@ export function ResultScreen({
   onAgain,
 }: QuizResult & { onAgain: () => void }) {
   const { profile } = useGame();
+  const { t } = useI18n();
   const success = correct >= Math.ceil(total * 0.6);
   const coinsEarned = Math.max(0, profile.coins - (coinsStart ?? profile.coins));
   const coinsAnim = useCountUp(coinsEarned);
@@ -123,52 +126,50 @@ export function ResultScreen({
       <Confetti show={success} />
       <Logo size={110} bounce={1} />
       <h2 className="text-2xl font-bold text-ink">
-        {success ? "כל הכבוד! 🎉" : "כמעט! נסה שוב 💪"}
+        {success ? t("quiz.great") : t("quiz.almost")}
       </h2>
-      <p className="text-lg">
-        ענית נכון על <span className="font-bold text-success">{correct}</span> מתוך {total}
-      </p>
+      <p className="text-lg">{t("quiz.correctOf", { a: correct, b: total })}</p>
 
       <div className="grid w-full grid-cols-2 gap-3">
         <div className="animate-bounce-up rounded-2xl bg-card p-4 shadow-card">
           <div className="text-3xl">🪙</div>
           <div className="text-2xl font-bold text-ink">+{coinsAnim}</div>
-          <div className="text-xs text-muted-foreground">מטבעות</div>
+          <div className="text-xs text-muted-foreground">{t("stat.coins")}</div>
         </div>
         <div className="animate-bounce-up rounded-2xl bg-card p-4 shadow-card">
           <div className="text-3xl">🏆</div>
           <div className="text-2xl font-bold text-ink">+{trophyAnim}</div>
-          <div className="text-xs text-muted-foreground">גביעים</div>
+          <div className="text-xs text-muted-foreground">{t("stat.trophies")}</div>
         </div>
       </div>
 
       {levelUp && (
         <div className="rounded-xl bg-sky px-4 py-3 font-bold text-ink">
-          ⬆️ התקדמת! בונוס 3 מטבעות 🪙
+          {t("quiz.levelUp")}
         </div>
       )}
       <p className="text-muted-foreground">
-        {success ? "אתה משתפר משחק אחרי משחק!" : "כל טעות היא צעד אחד קדימה."}
+        {success ? t("quiz.encourageGood") : t("quiz.encourageBad")}
       </p>
       <div className="flex w-full flex-col gap-2">
         <button
           onClick={share}
           className="h-12 w-full rounded-xl bg-warning text-lg font-bold text-warning-foreground active:scale-95"
         >
-          {copied ? "✅ הועתק! עכשיו תדביקו לחברים" : "📤 שתף את התוצאה"}
+          {copied ? t("quiz.copied") : t("quiz.share")}
         </button>
 
         <button
           onClick={onAgain}
           className="h-12 w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground active:scale-95"
         >
-          שחק שוב
+          {t("common.playAgain")}
         </button>
         <Link
           to="/games"
           className="flex h-12 w-full items-center justify-center rounded-xl bg-secondary text-lg font-bold text-secondary-foreground active:scale-95"
         >
-          לרשימת המשחקים
+          {t("common.gamesList")}
         </Link>
       </div>
     </div>
@@ -195,6 +196,7 @@ export function QuizGame({
   onDone?: (r: QuizResult) => void;
 }) {
   const { profile, recordAnswer, useHint, sound, premium, recordGameWin } = useGame();
+  const { t } = useI18n();
   const [index, setIndex] = useState(0);
   const [item, setItem] = useState<QuizItem>(() => makeItem(0, null));
   const [correct, setCorrect] = useState(0);
@@ -468,7 +470,7 @@ export function QuizGame({
           onClick={onHint}
           className="flex h-11 items-center gap-2 rounded-xl bg-warning px-4 font-bold text-warning-foreground active:scale-95"
         >
-          <Lightbulb className="size-5" /> רמז ({premium ? "∞" : profile.hints})
+          <Lightbulb className="size-5" /> {t("quiz.hint")} ({premium ? "∞" : profile.hints})
         </button>
         <button
           onClick={() => setShowHelp(true)}

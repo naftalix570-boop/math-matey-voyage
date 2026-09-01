@@ -4,6 +4,7 @@ import { Screen } from "@/components/app-shell";
 import { ICONS, useGame } from "@/lib/game-state";
 import { MAX_LEVEL } from "@/lib/math";
 import { cn } from "@/lib/utils";
+import { useI18n, LANGS } from "@/lib/i18n";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -32,13 +33,36 @@ const COUNTRIES = [
 
 function SettingsPage() {
   const { profile, update, sound, reset, linked, authEmail } = useGame();
+  const { t, lang, setLang } = useI18n();
   const [confirming, setConfirming] = useState(false);
 
   return (
-    <Screen title="הגדרות">
+    <Screen title={t("title.settings")}>
       <div className="mt-2 grid gap-3 pb-28">
         <section className="rounded-2xl bg-card p-4 shadow-card">
-          <p className="text-lg font-bold text-ink">☁️ חשבון ושמירת ענן</p>
+          <p className="text-lg font-bold text-ink">{t("settings.language")}</p>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {LANGS.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => {
+                  sound("click");
+                  setLang(l.code);
+                }}
+                className={cn(
+                  "rounded-xl px-2 py-3 text-sm font-bold transition-all",
+                  lang === l.code ? "bg-primary/15 text-ink ring-2 ring-primary" : "bg-muted text-ink",
+                )}
+              >
+                <span className="block text-xl">{l.flag}</span>
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-2xl bg-card p-4 shadow-card">
+          <p className="text-lg font-bold text-ink">{t("settings.account")}</p>
           {linked ? (
             <p className="mt-1 text-sm text-muted-foreground">
               מחובר כ-<span dir="ltr" className="font-bold text-ink">{authEmail}</span> — ההתקדמות
@@ -54,7 +78,7 @@ function SettingsPage() {
                 to="/auth"
                 className="mt-3 flex h-11 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground shadow-pop active:scale-95"
               >
-                🔗 קישור חשבון (גוגל / אימייל)
+                {t("settings.link")}
               </Link>
             </>
           )}
@@ -62,7 +86,7 @@ function SettingsPage() {
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <label htmlFor="country" className="text-lg font-bold text-ink">
-            📍 מדינה (לדירוג הארצי)
+            {t("settings.country")}
           </label>
           <select
             id="country"
@@ -80,7 +104,7 @@ function SettingsPage() {
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <label htmlFor="name" className="text-lg font-bold text-ink">
-            שם השחקן/ית
+            {t("settings.playerName")}
           </label>
           <input
             id="name"
@@ -93,8 +117,8 @@ function SettingsPage() {
 
         <section className="flex items-center justify-between rounded-2xl bg-card p-4 shadow-card">
           <div>
-            <p className="text-lg font-bold text-ink">צלילים</p>
-            <p className="text-sm text-muted-foreground">אפקטים קוליים במשחקים</p>
+            <p className="text-lg font-bold text-ink">{t("settings.sounds")}</p>
+            <p className="text-sm text-muted-foreground">{t("settings.soundsSub")}</p>
           </div>
           <button
             role="switch"
@@ -119,10 +143,8 @@ function SettingsPage() {
         </section>
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
-          <p className="text-lg font-bold text-ink">האייקון שלי</p>
-          <p className="text-sm text-muted-foreground">
-            אייקונים נוספים נפתחים בגלגל המזל ובתיבות.
-          </p>
+          <p className="text-lg font-bold text-ink">{t("settings.icon")}</p>
+          <p className="text-sm text-muted-foreground">{t("settings.iconSub")}</p>
           <div className="mt-3 grid grid-cols-5 gap-2">
             {ICONS.map((ic) => {
               const owned = profile.icons.includes(ic.emoji);
@@ -150,7 +172,7 @@ function SettingsPage() {
         </section>
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
-          <p className="text-lg font-bold text-ink">הדירוג שלי</p>
+          <p className="text-lg font-bold text-ink">{t("settings.myRank")}</p>
           <p className="mt-1 text-sm text-muted-foreground">
             🏆 {profile.trophies.toLocaleString("he-IL")} גביעים
             {profile.guest && " · חשבון אורח"}
@@ -159,13 +181,13 @@ function SettingsPage() {
             to="/leaderboard"
             className="mt-3 flex h-11 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground active:scale-95"
           >
-            לצפייה במיקום שלי בטופ
+            {t("settings.viewRank")}
           </Link>
         </section>
 
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
-          <p className="text-lg font-bold text-ink">שלב הקושי</p>
+          <p className="text-lg font-bold text-ink">{t("settings.difficulty")}</p>
           <p className="text-sm text-muted-foreground">
             השלב מתעדכן אוטומטית לפי ההצלחות שלך (מתוך {MAX_LEVEL.toLocaleString("he-IL")}), אבל אפשר לשנות ידנית.
           </p>
@@ -189,10 +211,8 @@ function SettingsPage() {
         </section>
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
-          <p className="text-lg font-bold text-ink">התחלה מחדש</p>
-          <p className="text-sm text-muted-foreground">
-            מוחק את כל ההתקדמות, המדבקות והמטבעות.
-          </p>
+          <p className="text-lg font-bold text-ink">{t("settings.reset")}</p>
+          <p className="text-sm text-muted-foreground">{t("settings.resetSub")}</p>
           {confirming ? (
             <div className="mt-3 flex gap-3">
               <button
@@ -202,13 +222,13 @@ function SettingsPage() {
                 }}
                 className="flex-1 rounded-xl bg-destructive px-4 py-3 font-bold text-destructive-foreground active:scale-95"
               >
-                כן, למחוק הכול
+                {t("settings.resetYes")}
               </button>
               <button
                 onClick={() => setConfirming(false)}
                 className="flex-1 rounded-xl bg-muted px-4 py-3 font-bold text-ink active:scale-95"
               >
-                ביטול
+                {t("settings.cancel")}
               </button>
             </div>
           ) : (
@@ -216,7 +236,7 @@ function SettingsPage() {
               onClick={() => setConfirming(true)}
               className="mt-3 w-full rounded-xl bg-muted px-4 py-3 font-bold text-ink active:scale-95"
             >
-              איפוס התקדמות
+              {t("settings.resetBtn")}
             </button>
           )}
         </section>
