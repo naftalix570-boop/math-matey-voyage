@@ -37,13 +37,14 @@ export const MAX_LEVEL = 10000;
  */
 function rangeFor(level: number) {
   const l = Math.max(1, Math.min(MAX_LEVEL, Math.round(level)));
-  // גדילה לוגריתמית-חלקה: מהירה בהתחלה, עדינה בהמשך
+  // התחלה קלה מאוד ועלייה איטית: שלב 1 = מספרים עד 5, שלב 10 ≈ עד 20
   const t = Math.log10(l + 1) / Math.log10(MAX_LEVEL + 1); // 0..1
-  const max = Math.round(5 + Math.pow(t, 1.4) * 9995);
-  const mulMax = Math.round(3 + Math.pow(t, 1.5) * 997);
-  const digits = Math.min(4, 1 + Math.floor(t * 4));
-  return { max: Math.max(5, max), mulMax: Math.max(3, mulMax), digits };
+  const max = Math.round(5 + Math.pow(t, 4) * 9995);
+  const mulMax = Math.round(2 + Math.pow(t, 4.5) * 998);
+  const digits = Math.min(4, 1 + Math.floor(Math.pow(t, 2) * 4));
+  return { max: Math.max(5, max), mulMax: Math.max(2, mulMax), digits };
 }
+
 
 export function levelRangeLabel(level: number) {
   const { max, mulMax } = rangeFor(level);
