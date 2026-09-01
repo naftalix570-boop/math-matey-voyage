@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
-import { useGame } from "@/lib/game-state";
+import { ICONS, useGame } from "@/lib/game-state";
+import { MAX_LEVEL } from "@/lib/math";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/settings")({
@@ -64,23 +65,62 @@ function SettingsPage() {
         </section>
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
-          <p className="text-lg font-bold text-ink">רמת קושי</p>
+          <p className="text-lg font-bold text-ink">האייקון שלי</p>
           <p className="text-sm text-muted-foreground">
-            הרמה מתעדכנת אוטומטית, אבל אפשר לשנות ידנית.
+            אייקונים נוספים נפתחים בגלגל המזל ובתיבות.
+          </p>
+          <div className="mt-3 grid grid-cols-5 gap-2">
+            {ICONS.map((ic) => {
+              const owned = profile.icons.includes(ic.emoji);
+              const active = profile.icon === ic.emoji;
+              return (
+                <button
+                  key={ic.id}
+                  disabled={!owned}
+                  aria-label={`אייקון ${ic.emoji}`}
+                  onClick={() => {
+                    sound("click");
+                    update({ icon: ic.emoji });
+                  }}
+                  className={cn(
+                    "flex aspect-square items-center justify-center rounded-xl text-2xl transition-all",
+                    active ? "bg-primary/15 ring-2 ring-primary" : "bg-muted",
+                    !owned && "opacity-40 grayscale",
+                  )}
+                >
+                  {owned ? ic.emoji : "🔒"}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="rounded-2xl bg-card p-4 shadow-card">
+          <p className="text-lg font-bold text-ink">מזהה משתמש</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            מספר השחקן/ית שלך: <span className="font-bold text-ink">#{profile.userId}</span>
+            {profile.guest && " · חשבון אורח"}
+          </p>
+        </section>
+
+        <section className="rounded-2xl bg-card p-4 shadow-card">
+          <p className="text-lg font-bold text-ink">שלב הקושי</p>
+          <p className="text-sm text-muted-foreground">
+            השלב מתעדכן אוטומטית לפי ההצלחות שלך (מתוך {MAX_LEVEL.toLocaleString("he-IL")}), אבל אפשר לשנות ידנית.
           </p>
           <div className="mt-3 flex items-center justify-between gap-3">
             <button
               onClick={() => update((p) => ({ level: Math.max(1, p.level - 1) }))}
               className="size-12 rounded-xl bg-muted text-2xl font-bold text-ink active:scale-95"
-              aria-label="הורדת רמה"
+              aria-label="הורדת שלב"
             >
               −
             </button>
-            <span className="text-3xl font-bold text-ink">{profile.level}</span>
+            <span className="text-3xl font-bold text-ink">{profile.level.toLocaleString("he-IL")}</span>
             <button
-              onClick={() => update((p) => ({ level: Math.min(30, p.level + 1) }))}
+              onClick={() => update((p) => ({ level: Math.min(MAX_LEVEL, p.level + 1) }))}
               className="size-12 rounded-xl bg-muted text-2xl font-bold text-ink active:scale-95"
-              aria-label="העלאת רמה"
+              aria-label="העלאת שלב"
             >
               +
             </button>
