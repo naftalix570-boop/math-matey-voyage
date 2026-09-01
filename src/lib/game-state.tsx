@@ -665,11 +665,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (!authUid || !ready || pulledRef.current === authUid) return;
     pulledRef.current = authUid;
     void (async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("display_name, icon, country, data")
-        .eq("user_id", authUid)
-        .maybeSingle();
+      const { data: rows } = await supabase.rpc("get_my_profile");
+      const data = Array.isArray(rows) ? rows[0] : null;
       if (data?.data && typeof data.data === "object" && Object.keys(data.data).length) {
         const cloud = data.data as Partial<Profile>;
         setProfile((p) => ({

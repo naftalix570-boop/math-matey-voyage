@@ -1,9 +1,15 @@
 /* מסע המתמטיקס — service worker לשחק גם בלי אינטרנט */
-const CACHE = "math-journey-v1";
+const CACHE = "math-journey-v2";
+const PRECACHE = ["/", "/manifest.json", "/manifest.webmanifest", "/favicon.png"];
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/"]).catch(() => undefined)));
+  e.waitUntil(
+    caches
+      .open(CACHE)
+      .then((c) => Promise.allSettled(PRECACHE.map((u) => c.add(u))))
+      .catch(() => undefined),
+  );
 });
 
 self.addEventListener("activate", (e) => {
