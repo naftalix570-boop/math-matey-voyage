@@ -26,8 +26,9 @@ function dayReward(day: number) {
 
 
 function StreakPage() {
-  const { profile, claimStreak, sound, premium, event } = useGame();
+  const { profile, claimStreak, sound, premium, event, update } = useGame();
   const [claimed, setClaimed] = useState<number | null>(null);
+  const [shieldMsg, setShieldMsg] = useState<string | null>(null);
 
   const claimedToday = profile.streakClaimedDay === todayKey();
   const shieldActive = Date.now() < profile.streakShieldUntil;
@@ -38,6 +39,20 @@ function StreakPage() {
     if (!r) return;
     sound("levelup");
     setClaimed(r.coins);
+  };
+
+  const activateShield = () => {
+    if (profile.tickets.shield <= 0) {
+      sound("wrong");
+      setShieldMsg("אין לך מגן רצף — אפשר לקנות בחנות 🛡️");
+      return;
+    }
+    sound("levelup");
+    update((p) => ({
+      tickets: { ...p.tickets, shield: p.tickets.shield - 1 },
+      streakShieldUntil: Math.max(Date.now(), p.streakShieldUntil) + 7 * 86400000,
+    }));
+    setShieldMsg("מגן הרצף הופעל לשבוע! 🛡️");
   };
 
   return (
@@ -55,6 +70,7 @@ function StreakPage() {
             {premium ? "👑 פרימיום" : "🎉 איוונט"}: +35 מטבעות בונוס בלחיצה!
           </p>
         )}
+
         {claimed != null ? (
           <p className="animate-pop mt-3 rounded-xl bg-success px-4 py-3 font-bold text-success-foreground">
             קיבלת {claimed} מטבעות! 🪙
@@ -74,6 +90,32 @@ function StreakPage() {
           </button>
         )}
       </div>
+
+      <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
+        <div className="flex items-center gap-3">
+          <span className="text-4xl">🛡️</span>
+          <div className="flex-1">
+            <p className="text-lg font-bold text-ink">מגן הרצף</p>
+            <p className="text-sm text-muted-foreground">
+              {shieldActive
+                ? "מגן פעיל — הרצף שלך שמור גם אם תפספסו יום"
+                : `שומר על הרצף לשבוע שלם · יש לך ${profile.tickets.shield}`}
+            </p>
+          </div>
+          <button
+            onClick={activateShield}
+            className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
+          >
+            הפעלה
+          </button>
+        </div>
+        {shieldMsg && (
+          <p className="animate-pop mt-3 rounded-xl bg-sky px-3 py-2 text-center font-bold text-ink">
+            {shieldMsg}
+          </p>
+        )}
+      </div>
+
 
       <h2 className="mt-5 text-lg font-bold text-ink">30 הימים הקרובים</h2>
       <div className="mt-2 grid grid-cols-5 gap-2">

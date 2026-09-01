@@ -364,7 +364,7 @@ function ShopPage() {
             </div>
             <button
               onClick={() =>
-                buy("double", 80, () => {
+                buy("double", 100, () => {
                   update((p) => ({
                     boosts: {
                       ...p.boosts,
@@ -376,8 +376,9 @@ function ShopPage() {
               }
               className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
             >
-              🪙 80
+              🪙 100
             </button>
+
           </div>
         </div>
       ) : (

@@ -994,9 +994,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const eventDouble = ev.week === 2 && p.dailyAnswers < 5;
       const boosted =
         nowMs < p.boosts.doubleUntil || nowMs < p.boosts.premiumUntil || eventDouble;
-      // מטבעות: 5 לכל תשובה נכונה (×2 עם בוסט) + בונוס 10 על כל 5 ברצף
-      const streakBonus = correct && currentStreakCorrect % 5 === 0 ? 10 : 0;
-      const gain = correct ? (boosted ? 10 : 5) + streakBonus : 0;
+      // מטבעות: מטבע אחד לכל תשובה נכונה (×2 עם בוסט כפל מטבעות)
+      const gain = correct ? (boosted ? 2 : 1) : 0;
+
 
 
       return {
