@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Screen } from "@/components/app-shell";
+import { useI18n } from "@/lib/i18n";
 import { useGame } from "@/lib/game-state";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ type Row = {
 const MEDAL_BG = ["bg-warning/25", "bg-muted", "bg-warning/10"];
 
 function LeaderboardPage() {
+  const { t } = useI18n();
   const { profile, linked, authUid } = useGame();
   const [tab, setTab] = useState<"world" | "country">("world");
   const [rows, setRows] = useState<Row[] | null>(null);
@@ -79,7 +81,7 @@ function LeaderboardPage() {
   const inTop = list?.some((r) => r.user_id === me.user_id && list.indexOf(r) < 100) ?? false;
 
   return (
-    <Screen title="🏆 דירוג האלופים">
+    <Screen title={t("title.leaderboard")}>
       <div className="mt-2 grid gap-3 pb-40">
         {/* עולמי / ארצי — הכי למעלה */}
         <div className="grid grid-cols-2 gap-2">

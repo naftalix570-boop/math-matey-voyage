@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
+import { useI18n } from "@/lib/i18n";
 import {
   CHESTS,
   DAILY_MISSIONS,
@@ -124,12 +125,13 @@ function MissionCard({
 }
 
 function MissionsPage() {
+  const { t } = useI18n();
   const { profile } = useGame();
   const daily = DAILY_MISSIONS.filter((m) => !profile.dailyClaimed.includes(m.id));
   const monthly = MONTHLY_MISSIONS.filter((m) => !profile.monthlyClaimed.includes(m.id));
 
   return (
-    <Screen title="משימות">
+    <Screen title={t("title.missions")}>
       <h2 className="mt-2 text-lg font-bold text-ink">📅 משימות יומיות</h2>
       <div className="mt-2 grid gap-3">
         {daily.length === 0 ? (
