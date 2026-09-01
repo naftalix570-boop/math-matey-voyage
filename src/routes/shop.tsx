@@ -279,6 +279,13 @@ function ShopPage() {
               🪙 600
             </button>
           </div>
+          <Link
+            to="/wheel"
+            className="flex h-12 items-center justify-center rounded-2xl bg-sky font-bold text-ink shadow-card active:scale-95"
+          >
+            🎡 לסובב את גלגל המזל ({profile.spins})
+          </Link>
+
 
           <p className="mt-2 font-bold text-ink">כרטיסים</p>
           {(Object.keys(TICKETS) as TicketId[]).map((t) => {
