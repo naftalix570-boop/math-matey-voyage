@@ -200,12 +200,7 @@ function Home() {
         </p>
       </Link>
 
-      <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
-        <p className="font-bold text-ink">
-          {event.emoji} איוונט השבוע — {event.title}
-        </p>
-        <p className="text-sm text-muted-foreground">{event.desc}</p>
-      </div>
+      <EventCard />
 
       <div className="pb-28" />
     </Screen>
