@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { Screen } from "@/components/app-shell";
+
 import { useGame } from "@/lib/game-state";
 import {
   ALBUM_SIZE,
