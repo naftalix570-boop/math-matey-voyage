@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { ICONS, useGame } from "@/lib/game-state";
@@ -17,13 +17,67 @@ export const Route = createFileRoute("/settings")({
   component: SettingsPage,
 });
 
+const COUNTRIES = [
+  { code: "IL", name: "ישראל 🇮🇱" },
+  { code: "US", name: "ארצות הברית 🇺🇸" },
+  { code: "GB", name: "בריטניה 🇬🇧" },
+  { code: "DE", name: "גרמניה 🇩🇪" },
+  { code: "FR", name: "צרפת 🇫🇷" },
+  { code: "ES", name: "ספרד 🇪🇸" },
+  { code: "BR", name: "ברזיל 🇧🇷" },
+  { code: "AE", name: "איחוד האמירויות 🇦🇪" },
+  { code: "CA", name: "קנדה 🇨🇦" },
+  { code: "AU", name: "אוסטרליה 🇦🇺" },
+];
+
 function SettingsPage() {
-  const { profile, update, sound, reset } = useGame();
+  const { profile, update, sound, reset, linked, authEmail } = useGame();
   const [confirming, setConfirming] = useState(false);
 
   return (
     <Screen title="הגדרות">
       <div className="mt-2 grid gap-3 pb-28">
+        <section className="rounded-2xl bg-card p-4 shadow-card">
+          <p className="text-lg font-bold text-ink">☁️ חשבון ושמירת ענן</p>
+          {linked ? (
+            <p className="mt-1 text-sm text-muted-foreground">
+              מחובר כ-<span dir="ltr" className="font-bold text-ink">{authEmail}</span> — ההתקדמות
+              נשמרת בענן ומסתנכרנת בין מכשירים.
+            </p>
+          ) : (
+            <>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {profile.guest ? "חשבון אורח — ההתקדמות נשמרת רק במכשיר הזה." : "לא מחובר."} קשרו
+                חשבון כדי לא לאבד התקדמות בהחלפת מכשיר.
+              </p>
+              <Link
+                to="/auth"
+                className="mt-3 flex h-11 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground shadow-pop active:scale-95"
+              >
+                🔗 קישור חשבון (גוגל / אימייל)
+              </Link>
+            </>
+          )}
+        </section>
+
+        <section className="rounded-2xl bg-card p-4 shadow-card">
+          <label htmlFor="country" className="text-lg font-bold text-ink">
+            📍 מדינה (לדירוג הארצי)
+          </label>
+          <select
+            id="country"
+            value={profile.country}
+            onChange={(e) => update({ country: e.target.value })}
+            className="mt-2 w-full rounded-xl border-2 border-muted bg-background p-3 text-lg text-ink outline-none focus:border-primary"
+          >
+            {COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </section>
+
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <label htmlFor="name" className="text-lg font-bold text-ink">
             שם השחקן/ית

@@ -156,6 +156,15 @@ function Home() {
         ▶️ שחק עכשיו
       </Link>
 
+      {profile.guest && (
+        <Link
+          to="/auth"
+          className="mt-3 flex items-center justify-center gap-2 rounded-2xl bg-sky px-4 py-3 font-bold text-ink shadow-card active:scale-95"
+        >
+          ☁️ שמור את ההתקדמות בענן — קישור חשבון
+        </Link>
+      )}
+
       <div className="mt-3 grid grid-cols-3 gap-2">
         <Tile to="/games" emoji="🎮" label="משחקים" />
         <Tile to="/chests" emoji="🎁" label="תיבות" />
@@ -164,6 +173,7 @@ function Home() {
         <Tile to="/wheel" emoji="🎡" label="גלגל מזל" />
         <Tile to="/streak" emoji="🔥" label="רצף יומי" />
         <Tile to="/missions" emoji="🗒️" label="משימות" />
+        <Tile to="/leaderboard" emoji="🏆" label="דירוג" />
         <Tile to="/progress" emoji="📊" label="התקדמות" />
         <Tile to="/settings" emoji="⚙️" label="הגדרות" />
       </div>
@@ -302,7 +312,8 @@ function Tile({
     | "/settings"
     | "/wheel"
     | "/streak"
-    | "/missions";
+    | "/missions"
+    | "/leaderboard";
   emoji: string;
   label: string;
 }) {

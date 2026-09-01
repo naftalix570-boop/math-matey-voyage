@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AlbumRouteImport } from './routes/album'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ChestsRouteImport } from './routes/chests'
 import { Route as GamesRouteImport } from './routes/games'
+import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as MissionsRouteImport } from './routes/missions'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -31,6 +33,11 @@ const AlbumRoute = AlbumRouteImport.update({
   path: '/album',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChestsRoute = ChestsRouteImport.update({
   id: '/chests',
   path: '/chests',
@@ -39,6 +46,11 @@ const ChestsRoute = ChestsRouteImport.update({
 const GamesRoute = GamesRouteImport.update({
   id: '/games',
   path: '/games',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeaderboardRoute = LeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MissionsRoute = MissionsRouteImport.update({
@@ -80,8 +92,10 @@ const PlayGameIdRoute = PlayGameIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/album': typeof AlbumRoute
+  '/auth': typeof AuthRoute
   '/chests': typeof ChestsRoute
   '/games': typeof GamesRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/missions': typeof MissionsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
@@ -93,8 +107,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/album': typeof AlbumRoute
+  '/auth': typeof AuthRoute
   '/chests': typeof ChestsRoute
   '/games': typeof GamesRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/missions': typeof MissionsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
@@ -107,8 +123,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/album': typeof AlbumRoute
+  '/auth': typeof AuthRoute
   '/chests': typeof ChestsRoute
   '/games': typeof GamesRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/missions': typeof MissionsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
@@ -122,8 +140,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/album'
+    | '/auth'
     | '/chests'
     | '/games'
+    | '/leaderboard'
     | '/missions'
     | '/progress'
     | '/settings'
@@ -135,8 +155,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/album'
+    | '/auth'
     | '/chests'
     | '/games'
+    | '/leaderboard'
     | '/missions'
     | '/progress'
     | '/settings'
@@ -148,8 +170,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/album'
+    | '/auth'
     | '/chests'
     | '/games'
+    | '/leaderboard'
     | '/missions'
     | '/progress'
     | '/settings'
@@ -162,8 +186,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlbumRoute: typeof AlbumRoute
+  AuthRoute: typeof AuthRoute
   ChestsRoute: typeof ChestsRoute
   GamesRoute: typeof GamesRoute
+  LeaderboardRoute: typeof LeaderboardRoute
   MissionsRoute: typeof MissionsRoute
   ProgressRoute: typeof ProgressRoute
   SettingsRoute: typeof SettingsRoute
@@ -189,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlbumRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chests': {
       id: '/chests'
       path: '/chests'
@@ -201,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/games'
       fullPath: '/games'
       preLoaderRoute: typeof GamesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leaderboard': {
+      id: '/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof LeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/missions': {
@@ -258,8 +298,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlbumRoute: AlbumRoute,
+  AuthRoute: AuthRoute,
   ChestsRoute: ChestsRoute,
   GamesRoute: GamesRoute,
+  LeaderboardRoute: LeaderboardRoute,
   MissionsRoute: MissionsRoute,
   ProgressRoute: ProgressRoute,
   SettingsRoute: SettingsRoute,
