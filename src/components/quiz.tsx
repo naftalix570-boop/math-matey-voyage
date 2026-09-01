@@ -51,12 +51,13 @@ export function TopicHelpSheet({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t: tr } = useI18n();
   if (!open) return null;
   const topics = topicId ? TOPICS.filter((t) => t.id === topicId) : TOPICS;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-4" dir="rtl">
       <div className="animate-pop w-full max-w-lg rounded-2xl bg-card p-5 shadow-card">
-        <h3 className="mb-3 text-xl font-bold text-ink">{t("quiz.explain")}</h3>
+        <h3 className="mb-3 text-xl font-bold text-ink">{tr("quiz.explain")}</h3>
         <div className="space-y-3">
           {topics.map((t) => (
             <div key={t.id} className="rounded-xl bg-sky p-3">
@@ -72,7 +73,7 @@ export function TopicHelpSheet({
           onClick={onClose}
           className="mt-4 h-12 w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground active:scale-95"
         >
-          {t("common.gotIt")}
+          {tr("common.gotIt")}
         </button>
       </div>
     </div>
@@ -195,6 +196,7 @@ export function QuizGame({
   onDone?: (r: QuizResult) => void;
 }) {
   const { profile, recordAnswer, useHint, sound, premium, recordGameWin } = useGame();
+  const { t } = useI18n();
   const [index, setIndex] = useState(0);
   const [item, setItem] = useState<QuizItem>(() => makeItem(0, null));
   const [correct, setCorrect] = useState(0);
