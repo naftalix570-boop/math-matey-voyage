@@ -20,12 +20,10 @@ export const Route = createFileRoute("/streak")({
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
 function dayReward(day: number) {
-  const d = day % 20;
-  if (d === 0) return { emoji: "🏆", label: "תיבה חינם" };
-  if (d % 10 === 0) return { emoji: "🛡️", label: "כרטיס מגן רצף" };
-  if (d % 5 === 0) return { emoji: "💡", label: "2 רמזים" };
-  return { emoji: "🪙", label: `${10 + Math.min(50, day * 2)} מטבעות` };
+  const r = streakReward(Math.max(1, day));
+  return { emoji: r.emoji, label: r.label };
 }
+
 
 function StreakPage() {
   const { profile, claimStreak, sound, premium, event } = useGame();
