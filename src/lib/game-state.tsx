@@ -168,7 +168,12 @@ const defaultProfile: Profile = {
   lastLegendaryMonth: "",
   correctSinceRating: 0,
   rated: false,
+  country: "IL",
 };
+
+/** ניקוד הדירוג העולמי — נגזר מההתקדמות הכוללת */
+export const scoreOf = (p: Profile) =>
+  p.level * 100 + p.totalCorrect * 2 + p.bestStreakCorrect * 5 + p.stickers.length * 10;
 
 export type Achievement = { id: string; title: string; emoji: string };
 
@@ -305,6 +310,10 @@ type Ctx = {
   premium: boolean;
   doubling: boolean;
   event: EventInfo;
+  /** cloud account */
+  linked: boolean;
+  authEmail: string | null;
+  authUid: string | null;
 };
 
 export type WheelPrize = {
