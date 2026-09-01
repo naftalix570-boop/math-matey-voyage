@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ALBUM_SIZE, stickerForSlot, type Rarity } from "./stickers";
 import { MAX_LEVEL } from "./math";
 import { playSound } from "./sfx";
+import { supabase } from "@/integrations/supabase/client";
 
 export type Boosts = {
   /** epoch ms until which coins are doubled */
@@ -112,6 +113,8 @@ export type Profile = {
   /** rating */
   correctSinceRating: number;
   rated: boolean;
+  /** ISO country code for national leaderboard */
+  country: string;
 };
 
 const KEY = "math-journey-v1";
