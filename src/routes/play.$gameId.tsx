@@ -176,6 +176,7 @@ function PlayPage() {
       <OfflineBadge />
       <OfflineGate>
       <QuizGame
+      gameId={game.id}
         makeItem={makeItem}
         count={count}
         timerSec={timerSec}
