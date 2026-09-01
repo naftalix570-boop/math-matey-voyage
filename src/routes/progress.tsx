@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Screen } from "@/components/app-shell";
 import { ACHIEVEMENTS, useGame } from "@/lib/game-state";
+import { MAX_LEVEL } from "@/lib/math";
 import { ALBUM_SIZE } from "@/lib/stickers";
 import { cn } from "@/lib/utils";
 
@@ -38,13 +39,17 @@ function ProgressPage() {
     <Screen title="התקדמות">
       <section className="mt-2 rounded-2xl bg-card p-4 shadow-card">
         <div className="flex items-center justify-between">
-          <span className="text-lg font-bold text-ink">שלב {profile.level}</span>
-          <span className="text-sm text-muted-foreground">מתוך 30</span>
+          <span className="text-lg font-bold text-ink">
+            שלב {profile.level.toLocaleString("he-IL")}
+          </span>
+          <span className="text-sm text-muted-foreground">
+            מתוך {MAX_LEVEL.toLocaleString("he-IL")}
+          </span>
         </div>
         <div className="mt-2 h-3 overflow-hidden rounded-full bg-muted">
           <div
             className="h-full rounded-full bg-primary transition-all"
-            style={{ width: `${(profile.level / 30) * 100}%` }}
+            style={{ width: `${Math.min(100, Math.max(3, (profile.level / MAX_LEVEL) * 100))}%` }}
           />
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
