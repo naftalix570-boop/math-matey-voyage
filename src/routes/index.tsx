@@ -174,17 +174,19 @@ function Home() {
       </div>
 
 
-      <div className="mt-4 rounded-2xl bg-sky p-4 shadow-card">
-        <p className="font-bold text-ink">📅 אתגר השבוע</p>
-        <p className="text-sm">{weekly.text}</p>
-        <Link
-          to="/play/$gameId"
-          params={{ gameId: "weekly" }}
-          className="mt-3 flex h-11 items-center justify-center rounded-xl bg-warning font-bold text-warning-foreground active:scale-95"
-        >
-          {profile.weeklyDone === weekly.weekKey ? "הושלם ✅ — שחק שוב" : "לאתגר"}
-        </Link>
-      </div>
+      {profile.weeklyDone !== weekly.weekKey && (
+        <div className="mt-4 rounded-2xl bg-sky p-4 shadow-card">
+          <p className="font-bold text-ink">📅 אתגר השבוע</p>
+          <p className="text-sm">{weekly.text}</p>
+          <Link
+            to="/play/$gameId"
+            params={{ gameId: "weekly" }}
+            className="mt-3 flex h-11 items-center justify-center rounded-xl bg-warning font-bold text-warning-foreground active:scale-95"
+          >
+            לאתגר
+          </Link>
+        </div>
+      )}
 
       <Link
         to="/album"
