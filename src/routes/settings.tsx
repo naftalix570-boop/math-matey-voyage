@@ -150,12 +150,19 @@ function SettingsPage() {
         </section>
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
-          <p className="text-lg font-bold text-ink">מזהה משתמש</p>
+          <p className="text-lg font-bold text-ink">הדירוג שלי</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            מספר השחקן/ית שלך: <span className="font-bold text-ink">#{profile.userId}</span>
+            🏆 {profile.trophies.toLocaleString("he-IL")} גביעים
             {profile.guest && " · חשבון אורח"}
           </p>
+          <Link
+            to="/leaderboard"
+            className="mt-3 flex h-11 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground active:scale-95"
+          >
+            לצפייה במיקום שלי בטופ
+          </Link>
         </section>
+
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <p className="text-lg font-bold text-ink">שלב הקושי</p>
