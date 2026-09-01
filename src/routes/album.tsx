@@ -121,39 +121,48 @@ function AlbumPage() {
         </div>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-3xl border-4 border-nav/20 bg-card p-4 shadow-card">
+      <div className="relative mt-4 overflow-hidden rounded-3xl border-4 border-nav/20 bg-card p-4 pb-8 shadow-card">
         <div
           key={rarity}
           className={cn("origin-right", dir > 0 ? "animate-page-turn" : "animate-page-turn-back")}
         >
           <RaritySection rarity={rarity} owned={owned} />
         </div>
-      </div>
 
-      <div className="mt-3 flex items-center justify-between pb-28">
-        <button
-          onClick={() => go(-1)}
-          disabled={page === 0}
-          className="h-11 rounded-xl bg-card px-4 font-bold text-ink shadow-card active:scale-95 disabled:opacity-40"
-        >
-          👉 הדף הקודם
-        </button>
-        <div className="flex gap-1">
+        {/* אזורי לחיצה להעברת דף — צמודים לצדדים, בגובה כל הדף */}
+        {page > 0 && (
+          <button
+            aria-label="הדף הקודם"
+            onClick={() => go(-1)}
+            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center bg-gradient-to-l from-nav/10 to-transparent text-2xl active:bg-nav/20"
+          >
+            <span className="rounded-full bg-card/90 px-2 py-3 shadow-card">👉</span>
+          </button>
+        )}
+        {page < RARITY_ORDER.length - 1 && (
+          <button
+            aria-label="הדף הבא"
+            onClick={() => go(1)}
+            className="absolute inset-y-0 left-0 flex w-12 items-center justify-center bg-gradient-to-r from-nav/10 to-transparent text-2xl active:bg-nav/20"
+          >
+            <span className="rounded-full bg-card/90 px-2 py-3 shadow-card">👈</span>
+          </button>
+        )}
+
+        <div className="absolute inset-x-0 bottom-2 flex justify-center gap-1">
           {RARITY_ORDER.map((r, i) => (
-            <span
+            <button
               key={r}
+              aria-label={r}
+              onClick={() => go(i - page)}
               className={cn("size-2.5 rounded-full", i === page ? "bg-primary" : "bg-muted")}
             />
           ))}
         </div>
-        <button
-          onClick={() => go(1)}
-          disabled={page === RARITY_ORDER.length - 1}
-          className="h-11 rounded-xl bg-card px-4 font-bold text-ink shadow-card active:scale-95 disabled:opacity-40"
-        >
-          הדף הבא 👈
-        </button>
       </div>
+
+      <div className="pb-28" />
+
     </Screen>
   );
 }
