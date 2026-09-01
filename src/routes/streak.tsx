@@ -26,8 +26,9 @@ function dayReward(day: number) {
 
 
 function StreakPage() {
-  const { profile, claimStreak, sound, premium, event } = useGame();
+  const { profile, claimStreak, sound, premium, event, update } = useGame();
   const [claimed, setClaimed] = useState<number | null>(null);
+  const [shieldMsg, setShieldMsg] = useState<string | null>(null);
 
   const claimedToday = profile.streakClaimedDay === todayKey();
   const shieldActive = Date.now() < profile.streakShieldUntil;
@@ -38,6 +39,20 @@ function StreakPage() {
     if (!r) return;
     sound("levelup");
     setClaimed(r.coins);
+  };
+
+  const activateShield = () => {
+    if (profile.tickets.shield <= 0) {
+      sound("wrong");
+      setShieldMsg("אין לך מגן רצף — אפשר לקנות בחנות 🛡️");
+      return;
+    }
+    sound("levelup");
+    update((p) => ({
+      tickets: { ...p.tickets, shield: p.tickets.shield - 1 },
+      streakShieldUntil: Math.max(Date.now(), p.streakShieldUntil) + 7 * 86400000,
+    }));
+    setShieldMsg("מגן הרצף הופעל לשבוע! 🛡️");
   };
 
   return (
@@ -55,6 +70,7 @@ function StreakPage() {
             {premium ? "👑 פרימיום" : "🎉 איוונט"}: +35 מטבעות בונוס בלחיצה!
           </p>
         )}
+
         {claimed != null ? (
           <p className="animate-pop mt-3 rounded-xl bg-success px-4 py-3 font-bold text-success-foreground">
             קיבלת {claimed} מטבעות! 🪙

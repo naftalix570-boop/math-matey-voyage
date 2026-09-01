@@ -34,7 +34,6 @@ function LeaderboardPage() {
   const [myRank, setMyRank] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!linked) return;
     let cancelled = false;
     setRows(null);
     setMyRank(null);
@@ -43,133 +42,129 @@ function LeaderboardPage() {
         .from("profiles")
         .select("user_id, display_name, icon, country, score")
         .order("score", { ascending: false })
-        .limit(50);
+        .limit(100);
       if (tab === "country") q = q.eq("country", profile.country);
       const { data } = await q;
       if (cancelled) return;
       const list = (data ?? []) as Row[];
       setRows(list);
-      if (authUid) {
-        const idx = list.findIndex((r) => r.user_id === authUid);
-        setMyRank(idx >= 0 ? idx + 1 : null);
-      }
+
+      // המיקום המדויק שלי — גם אם אני מחוץ ל-100 הראשונים
+      let cq = supabase
+        .from("profiles")
+        .select("user_id", { count: "exact", head: true })
+        .gt("score", profile.trophies);
+      if (tab === "country") cq = cq.eq("country", profile.country);
+      const { count } = await cq;
+      if (cancelled) return;
+      setMyRank((count ?? 0) + 1);
     })();
     return () => {
       cancelled = true;
     };
-  }, [tab, linked, authUid, profile.country]);
+  }, [tab, linked, authUid, profile.country, profile.trophies]);
+
+  const me: Row = {
+    user_id: authUid ?? "me",
+    display_name: profile.name,
+    icon: profile.icon,
+    country: profile.country,
+    score: profile.trophies,
+  };
+  const list = rows
+    ? [...(rows.some((r) => r.user_id === me.user_id) ? rows : [...rows, me])].sort(
+        (a, b) => b.score - a.score,
+      )
+    : null;
+  const inTop = list?.some((r) => r.user_id === me.user_id && list.indexOf(r) < 100) ?? false;
 
   return (
     <Screen title="🏆 דירוג האלופים">
-      <div className="mt-2 grid gap-3 pb-28">
-        <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
-          <span className="text-3xl">{profile.icon}</span>
-          <div className="flex-1">
-            <p className="font-bold text-ink">{profile.name}</p>
-            <p className="text-sm text-muted-foreground">הניקוד שלך מתעדכן בכל תרגיל נכון</p>
-          </div>
-          <span className="text-xl font-bold text-ink">🏆 {profile.trophies}</span>
+      <div className="mt-2 grid gap-3 pb-40">
+        {/* עולמי / ארצי — הכי למעלה */}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => setTab("world")}
+            className={cn(
+              "rounded-xl px-3 py-3 text-lg font-bold",
+              tab === "world" ? "bg-primary text-primary-foreground shadow-pop" : "bg-card text-ink shadow-card",
+            )}
+          >
+            🌍 עולמי
+          </button>
+          <button
+            onClick={() => setTab("country")}
+            className={cn(
+              "rounded-xl px-3 py-3 text-lg font-bold",
+              tab === "country" ? "bg-primary text-primary-foreground shadow-pop" : "bg-card text-ink shadow-card",
+            )}
+          >
+            📍 ארצי
+          </button>
         </div>
-        {!linked ? (
 
-          <section className="rounded-2xl bg-card p-5 text-center shadow-card">
-            <p className="text-4xl">☁️</p>
-            <p className="mt-2 text-lg font-bold text-ink">הדירוג פתוח לשחקנים מחוברים</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              התחברו כדי לשמור את ההתקדמות בענן ולהתחרות מול שחקנים מכל העולם.
-            </p>
-            <Link
-              to="/auth"
-              className="mt-4 flex h-12 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground shadow-pop active:scale-95"
-            >
-              התחברות / הרשמה
-            </Link>
-          </section>
+        {list === null ? (
+          <p className="py-10 text-center text-muted-foreground">טוען דירוג…</p>
         ) : (
-          <>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setTab("world")}
-                className={cn(
-                  "rounded-xl px-3 py-2 font-bold",
-                  tab === "world" ? "bg-primary text-primary-foreground" : "bg-card text-ink shadow-card",
-                )}
-              >
-                🌍 עולמי
-              </button>
-              <button
-                onClick={() => setTab("country")}
-                className={cn(
-                  "rounded-xl px-3 py-2 font-bold",
-                  tab === "country" ? "bg-primary text-primary-foreground" : "bg-card text-ink shadow-card",
-                )}
-              >
-                📍 ארצי
-              </button>
-            </div>
-
-            {myRank && (
-              <div className="rounded-xl bg-gold/20 px-4 py-2 text-center font-bold text-ink">
-                המקום שלך: #{myRank} 🎉
-              </div>
-            )}
-
-            {rows === null ? (
-              <p className="py-10 text-center text-muted-foreground">טוען דירוג…</p>
-            ) : (
-              (() => {
-                const me: Row = {
-                  user_id: authUid ?? "me",
-                  display_name: profile.name,
-                  icon: profile.icon,
-                  country: profile.country,
-                  score: profile.trophies,
-                };
-                const list = rows.some((r) => r.user_id === me.user_id) ? rows : [...rows, me];
-                list.sort((a, b) => b.score - a.score);
-                return (
-                  <div className="grid gap-2">
-                    {list.map((r, i) => {
-                      const isMe = r.user_id === me.user_id;
-                      return (
-                        <div
-                          key={r.user_id}
-                          className={cn(
-                            "flex items-center gap-3 rounded-2xl p-3 shadow-card",
-                            isMe ? "bg-primary/15 ring-2 ring-primary" : "bg-card",
-                          )}
-                        >
-                          <span className="w-8 text-center text-lg font-bold text-ink">
-                            {MEDALS[i] ?? `#${i + 1}`}
-                          </span>
-                          <span className="text-2xl">{r.icon}</span>
-                          <div className="flex-1">
-                            <p className="font-bold text-ink">
-                              {r.display_name}
-                              {isMe && " (את/ה)"}
-                            </p>
-                            {tab === "world" && (
-                              <p className="text-xs text-muted-foreground">{r.country}</p>
-                            )}
-                          </div>
-                          <span className="font-bold text-primary">
-                            🏆 {r.score.toLocaleString("he-IL")}
-                          </span>
-                        </div>
-                      );
-                    })}
+          <div className="grid gap-2">
+            {list.slice(0, 100).map((r, i) => {
+              const isMe = r.user_id === me.user_id;
+              return (
+                <div
+                  key={r.user_id}
+                  className={cn(
+                    "flex items-center gap-3 rounded-2xl p-3 shadow-card",
+                    isMe ? "bg-primary/15 ring-2 ring-primary" : "bg-card",
+                  )}
+                >
+                  <span className="w-8 text-center text-lg font-bold text-ink">
+                    {MEDALS[i] ?? `#${i + 1}`}
+                  </span>
+                  <span className="text-2xl">{r.icon}</span>
+                  <div className="flex-1">
+                    <p className="font-bold text-ink">
+                      {r.display_name}
+                      {isMe && " (את/ה)"}
+                    </p>
+                    {tab === "world" && <p className="text-xs text-muted-foreground">{r.country}</p>}
                   </div>
-                );
-              })()
-            )}
-
-
-            <p className="text-center text-xs text-muted-foreground">
-              הניקוד מחושב משלבים, תשובות נכונות, רצפים ומדבקות.
-            </p>
-          </>
+                  <span className="font-bold text-primary">
+                    🏆 {r.score.toLocaleString("he-IL")}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         )}
+
+        {!linked && (
+          <Link
+            to="/auth"
+            className="flex h-12 items-center justify-center rounded-xl bg-secondary font-bold text-secondary-foreground active:scale-95"
+          >
+            התחברות — כדי לשמור את המקום שלך בענן
+          </Link>
+        )}
+      </div>
+
+      {/* השורה שלי — תמיד למטה */}
+      <div className="fixed inset-x-0 bottom-16 z-30 px-4">
+        <div className="mx-auto flex max-w-lg items-center gap-3 rounded-2xl bg-nav p-3 text-nav-foreground shadow-pop">
+          <span className="text-2xl">{profile.icon}</span>
+          <div className="flex-1">
+            <p className="font-bold">{profile.name}</p>
+            <p className="text-xs opacity-80">
+              {myRank == null
+                ? "מחשב מיקום…"
+                : inTop
+                  ? `${tab === "world" ? "טופ עולמי" : "טופ ארצי"} #${myRank}`
+                  : `לא בטופ 100 — המקום שלך ${tab === "world" ? "בעולם" : "בארץ"}: #${myRank}`}
+            </p>
+          </div>
+          <span className="font-bold">🏆 {profile.trophies.toLocaleString("he-IL")}</span>
+        </div>
       </div>
     </Screen>
   );
 }
+
