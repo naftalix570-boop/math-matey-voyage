@@ -21,7 +21,25 @@ export type QuizResult = {
   correct: number;
   total: number;
   levelUp: boolean;
+  coinsStart?: number;
 };
+
+/** ספירה מונפשת של מספר מ-0 עד value */
+function useCountUp(value: number, ms = 900) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (value <= 0) return setN(0);
+    const start = Date.now();
+    const id = setInterval(() => {
+      const p = Math.min(1, (Date.now() - start) / ms);
+      setN(Math.round(value * (1 - Math.pow(1 - p, 3))));
+      if (p >= 1) clearInterval(id);
+    }, 40);
+    return () => clearInterval(id);
+  }, [value, ms]);
+  return n;
+}
+
 
 export function TopicHelpSheet({
   topicId,
