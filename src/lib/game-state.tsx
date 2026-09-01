@@ -873,6 +873,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
         return p.streakDays;
       case "stickers":
         return p.stickers.length;
+      case "amazingStickers":
+        return p.stickers.filter((s) => stickerForSlot(s).rarity === "amazing").length;
+      case "legendaryStickers":
+        return p.stickers.filter((s) => stickerForSlot(s).rarity === "legendary").length;
+
       case "gameWins":
         return p.gameWins[m.gameId ?? ""] ?? 0;
       case "coinsEarned":
