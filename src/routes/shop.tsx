@@ -197,22 +197,22 @@ function ShopPage() {
       {tab === "coins" ? (
         <div className="mt-4 grid gap-3 pb-28">
           <p className="font-bold text-ink">🎁 התיבות שלי</p>
-          <div className="rounded-2xl bg-sky p-4 text-center shadow-card">
-            <p className="text-lg font-bold text-ink">תיבה יומית חינם</p>
-            <p className="text-sm">תיבה אחת חינם בכל יום — לא נצברת.</p>
-            <button
-              onClick={() => openOwned("regular", "free")}
-              disabled={profile.chests <= 0}
-              className={cn(
-                "mt-3 h-12 w-full rounded-xl text-lg font-bold active:scale-95",
-                profile.chests > 0
-                  ? "bg-warning text-warning-foreground shadow-pop"
-                  : "bg-muted text-muted-foreground",
-              )}
-            >
-              {profile.chests > 0 ? "פתחו תיבה חינם 📦" : "חזרו מחר 🕒"}
-            </button>
-          </div>
+          {profile.chests > 0 ? (
+            <div className="rounded-2xl bg-sky p-4 text-center shadow-card">
+              <p className="text-lg font-bold text-ink">תיבה יומית חינם</p>
+              <p className="text-sm">תיבה אחת חינם בכל יום — לא נצברת.</p>
+              <button
+                onClick={() => openOwned("regular", "free")}
+                className="mt-3 h-12 w-full rounded-xl bg-warning text-lg font-bold text-warning-foreground shadow-pop active:scale-95"
+              >
+                פתחו תיבה חינם 📦
+              </button>
+            </div>
+          ) : (
+            <p className="rounded-2xl bg-card p-3 text-center text-sm font-bold text-muted-foreground shadow-card">
+              🕒 התיבה היומית הבאה בעוד {countdown}
+            </p>
+          )}
           {(["regular", "amazing", "legendary"] as ChestKind[]).map((k) => {
             const count = profile.chestInv[k];
             if (count <= 0) return null;

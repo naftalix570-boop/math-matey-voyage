@@ -57,25 +57,25 @@ function ChestsPage() {
         <span className="rounded-full bg-card px-4 py-1 shadow-card">💡 {profile.hints}</span>
       </div>
 
-      <div className="mt-4 rounded-2xl bg-sky p-4 text-center shadow-card">
-        <p className="text-lg font-bold text-ink">🎉 תיבה יומית חינם</p>
-        <p className="text-sm">
-          תיבה אחת חינם בכל יום — לא נצברת.
-          {premium && " 👑 פרימיום: בונוסים גדולים יותר!"}
+      {profile.chests > 0 ? (
+        <div className="mt-4 rounded-2xl bg-sky p-4 text-center shadow-card">
+          <p className="text-lg font-bold text-ink">🎉 תיבה יומית חינם</p>
+          <p className="text-sm">
+            תיבה אחת חינם בכל יום — לא נצברת.
+            {premium && " 👑 פרימיום: בונוסים גדולים יותר!"}
+          </p>
+          <button
+            onClick={() => open("regular", "free")}
+            className="mt-3 h-12 w-full rounded-xl bg-warning text-lg font-bold text-warning-foreground shadow-pop active:scale-95"
+          >
+            פתחו תיבה חינם 📦
+          </button>
+        </div>
+      ) : (
+        <p className="mt-4 rounded-2xl bg-card p-3 text-center text-sm font-bold text-muted-foreground shadow-card">
+          🕒 התיבה היומית הבאה בעוד {countdown}
         </p>
-        <button
-          onClick={() => open("regular", "free")}
-          disabled={profile.chests <= 0}
-          className={
-            "mt-3 h-12 w-full rounded-xl text-lg font-bold active:scale-95 " +
-            (profile.chests > 0
-              ? "bg-warning text-warning-foreground shadow-pop"
-              : "bg-muted text-muted-foreground")
-          }
-        >
-          {profile.chests > 0 ? "פתחו תיבה חינם 📦" : "חזרו מחר 🕒"}
-        </button>
-      </div>
+      )}
 
       {msg && (
         <p className="mt-3 rounded-2xl bg-card p-3 text-center font-bold text-ink shadow-card">
