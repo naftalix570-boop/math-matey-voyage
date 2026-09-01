@@ -7,6 +7,7 @@ import { useGame, EVENTS, nextEventChange } from "@/lib/game-state";
 import { weeklyChallenge } from "@/lib/games";
 import { ALBUM_SIZE } from "@/lib/stickers";
 import { useOnline } from "@/lib/use-online";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const { profile, ready, update, sound, premium, event } = useGame();
+  const { t } = useI18n();
   const [mode, setMode] = useState<"welcome" | "test">("welcome");
   const [name, setName] = useState("");
   const online = useOnline();
@@ -41,12 +43,12 @@ function Home() {
         {mode === "welcome" ? (
           <div className="flex flex-col items-center gap-4 pt-10 text-center">
             <Logo size={130} bounce={1} />
-            <h1 className="text-3xl font-bold text-ink">מסע המתמטיקס</h1>
-            <p className="text-muted-foreground">לומדים חשבון בכיף — משחק אחרי משחק 🚀</p>
+            <h1 className="text-3xl font-bold text-ink">{t("app.name")}</h1>
+            <p className="text-muted-foreground">{t("home.tagline")}</p>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="איך קוראים לך?"
+              placeholder={t("home.namePlaceholder")}
               className="h-12 w-full rounded-xl border border-input bg-card px-4 text-center text-lg"
             />
             <button
@@ -57,7 +59,7 @@ function Home() {
               }}
               className="h-14 w-full rounded-xl bg-primary text-xl font-bold text-primary-foreground shadow-pop active:scale-95"
             >
-              בוא נתחיל! 🎯
+              {t("home.start")}
             </button>
             <button
               onClick={() => {
@@ -70,7 +72,7 @@ function Home() {
               }}
               className="h-12 w-full rounded-xl bg-card text-lg font-bold text-ink shadow-card active:scale-95"
             >
-              🎮 התחל לשחק (ללא הרשמה)
+              {t("home.guest")}
             </button>
             <button
               onClick={() => {
@@ -79,13 +81,13 @@ function Home() {
               }}
               className="text-sm text-muted-foreground underline"
             >
-              דלג על מבחן השלב
+              {t("home.skipTest")}
             </button>
           </div>
         ) : (
           <div className="pt-6">
             <h2 className="mb-3 text-center text-xl font-bold text-ink">
-              מבחן רמה קצר — נגלה מאיפה מתחילים
+              {t("home.testTitle")}
             </h2>
             <PlacementTest
               onDone={(level) => {
@@ -110,7 +112,7 @@ function Home() {
 
       <div className="flex items-center justify-between pt-3">
         <div>
-          <p className="text-sm text-muted-foreground">שלום,</p>
+          <p className="text-sm text-muted-foreground">{t("common.hello")}</p>
           <h1 className="flex items-center gap-1 text-2xl font-bold text-ink">
             <span>{profile.icon}</span>
             {profile.name}
@@ -122,29 +124,27 @@ function Home() {
 
       {!online && (
         <div className="mt-3 rounded-xl bg-sky px-3 py-2 text-center text-sm font-bold text-ink">
-          {premium
-            ? "👑 אין רשת — אבל הפרימיום מאפשר לך לשחק אופליין"
-            : "📴 אין קליטה — נדרש חיבור כדי לשחק (פרימיום משחק גם אופליין)"}
+          {premium ? t("offline.premium") : t("offline.free")}
         </div>
       )}
 
       <div className="mt-4 grid grid-cols-4 gap-2 text-center">
-        <Stat emoji="🏆" label="גביעים" value={profile.trophies} />
-        <Stat emoji="🪙" label="מטבעות" value={profile.coins} />
-        <Stat emoji="💡" label="רמזים" value={premium ? "∞" : profile.hints} />
-        <Stat emoji="🔥" label="רצף" value={profile.streakDays} />
+        <Stat emoji="🏆" label={t("stat.trophies")} value={profile.trophies} />
+        <Stat emoji="🪙" label={t("stat.coins")} value={profile.coins} />
+        <Stat emoji="💡" label={t("stat.hints")} value={premium ? "∞" : profile.hints} />
+        <Stat emoji="🔥" label={t("stat.streak")} value={profile.streakDays} />
       </div>
 
       <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
         <div className="flex justify-between font-bold text-ink">
-          <span>שלב {profile.level}</span>
+          <span>{t("common.stage")} {profile.level}</span>
           <span>{pct}%</span>
         </div>
         <div className="mt-2 h-3 overflow-hidden rounded-full bg-muted">
           <div className="h-full rounded-full bg-progress transition-all" style={{ width: `${pct}%` }} />
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          פתרת {profile.totalCorrect} תרגילים נכון מתוך {profile.totalAnswered}
+          {t("home.solvedOf", { a: profile.totalCorrect, b: profile.totalAnswered })}
         </p>
       </div>
 
@@ -154,7 +154,7 @@ function Home() {
         onClick={() => sound("click")}
         className="mt-4 flex h-16 w-full items-center justify-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground shadow-pop active:scale-95"
       >
-        ▶️ שחק עכשיו
+        {t("common.play")}
       </Link>
 
       {profile.guest && (
@@ -162,28 +162,27 @@ function Home() {
           to="/auth"
           className="mt-3 flex items-center justify-center gap-2 rounded-2xl bg-sky px-4 py-3 font-bold text-ink shadow-card active:scale-95"
         >
-          ☁️ שמור את ההתקדמות בענן — קישור חשבון
+          {t("home.saveCloud")}
         </Link>
       )}
 
-      <div className="mt-3 grid grid-cols-4 gap-2">
-        <Tile to="/album" emoji="📗" label="אלבום" />
-        <Tile to="/streak" emoji="🔥" label="רצף" />
-        <Tile to="/missions" emoji="🗒️" label="משימות" />
-        <Tile to="/progress" emoji="📊" label="התקדמות" />
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <Tile to="/streak" emoji="🔥" label={t("tile.streak")} />
+        <Tile to="/missions" emoji="🗒️" label={t("tile.missions")} />
+        <Tile to="/progress" emoji="📊" label={t("tile.progress")} />
       </div>
 
 
       {profile.weeklyDone !== weekly.weekKey && (
         <div className="mt-4 rounded-2xl bg-sky p-4 shadow-card">
-          <p className="font-bold text-ink">📅 אתגר השבוע</p>
+          <p className="font-bold text-ink">{t("home.weekly")}</p>
           <p className="text-sm">{weekly.text}</p>
           <Link
             to="/play/$gameId"
             params={{ gameId: "weekly" }}
             className="mt-3 flex h-11 items-center justify-center rounded-xl bg-warning font-bold text-warning-foreground active:scale-95"
           >
-            לאתגר
+            {t("home.toChallenge")}
           </Link>
         </div>
       )}
@@ -193,10 +192,13 @@ function Home() {
         onClick={() => sound("click")}
         className="mt-4 block rounded-2xl bg-card p-4 text-center shadow-card active:scale-95"
       >
-        <p className="font-bold text-ink">📗 אלבום המדבקות</p>
+        <p className="font-bold text-ink">{t("home.albumTitle")}</p>
         <p className="text-sm text-muted-foreground">
-          {profile.stickers.length} מתוך {ALBUM_SIZE} מדבקות · עוד {30 - profile.correctSinceSticker}{" "}
-          תשובות נכונות למדבקה הבאה
+          {t("home.albumSub", {
+            a: profile.stickers.length,
+            b: ALBUM_SIZE,
+            c: 30 - profile.correctSinceSticker,
+          })}
         </p>
       </Link>
 
@@ -209,9 +211,10 @@ function Home() {
 
 function EventCard() {
   const { event, sound } = useGame();
+  const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
   const next = nextEventChange();
-  const dateStr = next.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" });
+  const dateStr = next.toLocaleDateString(lang === "he" ? "he-IL" : lang, { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
@@ -224,15 +227,15 @@ function EventCard() {
         className="w-full text-right"
       >
         <p className="font-bold text-ink">
-          {event.emoji} איוונט השבוע — {event.title}
+          {event.emoji} {t("home.event")} — {event.title}
           <span className="mr-1 text-xs text-muted-foreground">{open ? "▲" : "▼"}</span>
         </p>
         <p className="text-sm text-muted-foreground">{event.desc}</p>
       </button>
       {open && (
         <div className="mt-3 border-t border-muted pt-3">
-          <p className="text-sm font-bold text-ink">🔁 האיוונט מתחלף ב{dateStr}</p>
-          <p className="mt-1 mb-2 text-xs text-muted-foreground">כל האיוונטים במחזור:</p>
+          <p className="text-sm font-bold text-ink">{t("home.eventChange", { d: dateStr })}</p>
+          <p className="mt-1 mb-2 text-xs text-muted-foreground">{t("home.eventAll")}</p>
           <div className="grid gap-2">
             {EVENTS.map((ev) => (
               <div
@@ -247,7 +250,7 @@ function EventCard() {
                   {ev.emoji} {ev.title}
                   {ev.week === event.week && (
                     <span className="mr-1 rounded-md bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground">
-                      פעיל עכשיו
+                      {t("home.eventActive")}
                     </span>
                   )}
                 </p>
@@ -263,6 +266,7 @@ function EventCard() {
 
 function RatingCard() {
   const { update, sound } = useGame();
+  const { t } = useI18n();
   const [stars, setStars] = useState(0);
   const [text, setText] = useState("");
   const [sent, setSent] = useState(false);
@@ -270,7 +274,7 @@ function RatingCard() {
   if (sent)
     return (
       <div className="mt-3 rounded-2xl bg-card p-4 text-center shadow-card">
-        <p className="font-bold text-ink">תודה על המשוב! 💚</p>
+        <p className="font-bold text-ink">{t("home.rateThanks")}</p>
       </div>
     );
 
@@ -278,7 +282,7 @@ function RatingCard() {
 
   return (
     <div className="mt-3 rounded-2xl bg-card p-4 shadow-card">
-      <p className="text-center font-bold text-ink">איך היה לך עד עכשיו?</p>
+      <p className="text-center font-bold text-ink">{t("home.rateQ")}</p>
       <div className="mt-2 flex justify-center gap-1 text-3xl">
         {[1, 2, 3, 4, 5].map((s) => (
           <button
@@ -300,7 +304,7 @@ function RatingCard() {
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="רוצה לספר לנו עוד? (לא חובה)"
+            placeholder={t("home.rateMore")}
             className="mt-3 w-full rounded-xl border-2 border-muted bg-background p-3 text-sm text-ink outline-none focus:border-primary"
             rows={3}
           />
@@ -315,7 +319,7 @@ function RatingCard() {
               }}
               className="mt-3 flex h-12 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground"
             >
-              שליחת משוב
+              {t("home.rateSend")}
             </a>
           ) : (
             <button
@@ -325,7 +329,7 @@ function RatingCard() {
               }}
               className="mt-3 h-12 w-full rounded-xl bg-primary font-bold text-primary-foreground active:scale-95"
             >
-              ⭐ לדרג אותנו בחנות
+              {t("home.rateStore")}
             </button>
           )}
         </>
@@ -335,7 +339,7 @@ function RatingCard() {
         onClick={() => update({ correctSinceRating: 0 })}
         className="mt-2 w-full text-xs text-muted-foreground underline"
       >
-        אחר כך
+        {t("common.later")}
       </button>
     </div>
   );
