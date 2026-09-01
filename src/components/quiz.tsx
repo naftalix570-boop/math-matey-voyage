@@ -352,6 +352,8 @@ export function QuizGame({
 
   const restart = () => {
     levelUpRef.current = false;
+    coinsStartRef.current = profile.coins;
+
     setFinished(null);
     setCorrect(0);
     setHearts(heartsMax);
