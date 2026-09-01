@@ -25,7 +25,7 @@ type Row = {
   score: number;
 };
 
-const MEDALS = ["🥇", "🥈", "🥉"];
+const MEDAL_BG = ["bg-warning/25", "bg-muted", "bg-warning/10"];
 
 function LeaderboardPage() {
   const { profile, linked, authUid } = useGame();
@@ -117,8 +117,13 @@ function LeaderboardPage() {
                     isMe ? "bg-primary/15 ring-2 ring-primary" : "bg-card",
                   )}
                 >
-                  <span className="w-8 text-center text-lg font-bold text-ink">
-                    {MEDALS[i] ?? `#${i + 1}`}
+                  <span
+                    className={cn(
+                      "flex size-9 shrink-0 items-center justify-center rounded-full text-lg font-bold text-ink",
+                      MEDAL_BG[i] ?? "bg-sky",
+                    )}
+                  >
+                    {i + 1}
                   </span>
                   <span className="text-2xl">{r.icon}</span>
                   <div className="flex-1">
