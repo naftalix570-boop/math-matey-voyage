@@ -116,38 +116,53 @@ function LeaderboardPage() {
 
             {rows === null ? (
               <p className="py-10 text-center text-muted-foreground">טוען דירוג…</p>
-            ) : rows.length === 0 ? (
-              <p className="py-10 text-center text-muted-foreground">
-                עוד אין שחקנים בדירוג — תהיו הראשונים! 🚀
-              </p>
             ) : (
-              <div className="grid gap-2">
-                {rows.map((r, i) => (
-                  <div
-                    key={r.user_id}
-                    className={cn(
-                      "flex items-center gap-3 rounded-2xl p-3 shadow-card",
-                      r.user_id === authUid ? "bg-primary/15 ring-2 ring-primary" : "bg-card",
-                    )}
-                  >
-                    <span className="w-8 text-center text-lg font-bold text-ink">
-                      {MEDALS[i] ?? `#${i + 1}`}
-                    </span>
-                    <span className="text-2xl">{r.icon}</span>
-                    <div className="flex-1">
-                      <p className="font-bold text-ink">
-                        {r.display_name}
-                        {r.user_id === authUid && " (את/ה)"}
-                      </p>
-                      {tab === "world" && (
-                        <p className="text-xs text-muted-foreground">{r.country}</p>
-                      )}
-                    </div>
-                    <span className="font-bold text-primary">🏆 {r.score.toLocaleString("he-IL")}</span>
+              (() => {
+                const me: Row = {
+                  user_id: authUid ?? "me",
+                  display_name: profile.name,
+                  icon: profile.icon,
+                  country: profile.country,
+                  score: profile.trophies,
+                };
+                const list = rows.some((r) => r.user_id === me.user_id) ? rows : [...rows, me];
+                list.sort((a, b) => b.score - a.score);
+                return (
+                  <div className="grid gap-2">
+                    {list.map((r, i) => {
+                      const isMe = r.user_id === me.user_id;
+                      return (
+                        <div
+                          key={r.user_id}
+                          className={cn(
+                            "flex items-center gap-3 rounded-2xl p-3 shadow-card",
+                            isMe ? "bg-primary/15 ring-2 ring-primary" : "bg-card",
+                          )}
+                        >
+                          <span className="w-8 text-center text-lg font-bold text-ink">
+                            {MEDALS[i] ?? `#${i + 1}`}
+                          </span>
+                          <span className="text-2xl">{r.icon}</span>
+                          <div className="flex-1">
+                            <p className="font-bold text-ink">
+                              {r.display_name}
+                              {isMe && " (את/ה)"}
+                            </p>
+                            {tab === "world" && (
+                              <p className="text-xs text-muted-foreground">{r.country}</p>
+                            )}
+                          </div>
+                          <span className="font-bold text-primary">
+                            🏆 {r.score.toLocaleString("he-IL")}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
+                );
+              })()
             )}
+
 
             <p className="text-center text-xs text-muted-foreground">
               הניקוד מחושב משלבים, תשובות נכונות, רצפים ומדבקות.

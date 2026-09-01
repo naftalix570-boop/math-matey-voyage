@@ -165,10 +165,23 @@ function ShopPage() {
       </div>
 
       {msg && (
-        <p className="mt-3 rounded-2xl bg-card p-3 text-center font-bold text-ink shadow-card">
-          {msg}
-        </p>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-nav/50 p-6"
+          onClick={() => setMsg(null)}
+        >
+          <div className="animate-pop w-full max-w-xs rounded-3xl bg-card p-6 text-center shadow-pop">
+            <p className="text-4xl">🪙</p>
+            <p className="mt-2 text-lg font-bold text-ink">{msg}</p>
+            <button
+              onClick={() => setMsg(null)}
+              className="mt-4 h-11 w-full rounded-xl bg-primary font-bold text-primary-foreground active:scale-95"
+            >
+              הבנתי
+            </button>
+          </div>
+        </div>
       )}
+
 
       {chestReward && (
         <ChestOpenOverlay

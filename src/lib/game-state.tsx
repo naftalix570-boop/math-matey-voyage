@@ -269,9 +269,12 @@ export type MissionMetric =
   | "chests"
   | "streakDays"
   | "stickers"
+  | "amazingStickers"
+  | "legendaryStickers"
   | "coinsEarned"
   | "hintsUsed"
   | "gameWins";
+
 
 export type Mission = {
   id: string;
@@ -286,18 +289,49 @@ export type Mission = {
 };
 
 export const DAILY_MISSIONS: Mission[] = [
-  { id: "d10", title: "10 תרגילים", goal: 10, metric: "answers", reward: { coins: 20, hints: 1 } },
-  { id: "d15", title: "15 תרגילים ללא טעות", goal: 15, metric: "nomiss", reward: { coins: 40, hints: 2 } },
   {
-    id: "d20",
-    title: "20 תרגילים ללא טעות",
-    goal: 20,
+    id: "d15",
+    title: "15 תרגילים היום",
+    desc: "חימום יומי",
+    goal: 15,
+    metric: "answers",
+    reward: { coins: 25 },
+  },
+  {
+    id: "d40",
+    title: "40 תרגילים היום",
+    desc: "יום של אימון רציני",
+    goal: 40,
+    metric: "answers",
+    reward: { coins: 60, hints: 1 },
+  },
+  {
+    id: "d-nomiss25",
+    title: "25 תרגילים ברצף ללא טעות",
+    desc: "דיוק מלא",
+    goal: 25,
     metric: "nomiss",
-    reward: { chest: "regular", coins: 60 },
+    reward: { coins: 80, ticket: "shield" },
+  },
+  {
+    id: "d-win3",
+    title: "3 ניצחונות ב״מסלול עננים״",
+    goal: 3,
+    metric: "gameWins",
+    gameId: "clouds",
+    reward: { coins: 50, hints: 1 },
+  },
+  {
+    id: "d-nomiss45",
+    title: "45 תרגילים ברצף ללא טעות",
+    desc: "משימת אלופים",
+    goal: 45,
+    metric: "nomiss",
+    reward: { chest: "regular", ticket: "skip" },
   },
 ];
 
-/** 10 משימות חודשיות קשות — רק אחת מעניקה תיבה אגדית */
+/** 10 משימות חודשיות קשות — פרסים מעורבים, רק אחת מעניקה תיבה אגדית */
 export const MONTHLY_MISSIONS: Mission[] = [
   {
     id: "m-ans-800",
@@ -305,23 +339,31 @@ export const MONTHLY_MISSIONS: Mission[] = [
     desc: "מרתון של ממש",
     goal: 800,
     metric: "answers",
-    reward: { coins: 400 },
+    reward: { coins: 250 },
   },
   {
     id: "m-hints",
     title: "משימת הרמזים — 1,500 תרגילים",
-    desc: "פרס: 25 רמזים",
+    desc: "פרס: 10 רמזים",
     goal: 1500,
     metric: "answers",
-    reward: { hints: 25 },
+    reward: { hints: 10 },
   },
   {
-    id: "m-money",
-    title: "משימת הכסף — 2,000 תרגילים",
-    desc: "פרס: 2,000 מטבעות",
+    id: "m-shield",
+    title: "משימת המגן — 20 ימי רצף",
+    desc: "פרס: מגן רצף 🛡️",
+    goal: 20,
+    metric: "streakDays",
+    reward: { ticket: "shield", coins: 100 },
+  },
+  {
+    id: "m-restore",
+    title: "משימת השחזור — 2,000 תרגילים",
+    desc: "פרס: שובר שחזור רצף 🔁",
     goal: 2000,
     metric: "answers",
-    reward: { coins: 2000 },
+    reward: { ticket: "restore", coins: 150 },
   },
   {
     id: "m-nomiss-60",
@@ -329,7 +371,23 @@ export const MONTHLY_MISSIONS: Mission[] = [
     desc: "דיוק מושלם",
     goal: 60,
     metric: "nomiss",
-    reward: { coins: 500, hints: 10 },
+    reward: { coins: 200, hints: 5 },
+  },
+  {
+    id: "m-stickers-3",
+    title: "לאסוף 3 מדבקות מדהימות 💜",
+    desc: "לא פשוט להשיג",
+    goal: 3,
+    metric: "amazingStickers",
+    reward: { ticket: "skip", coins: 120 },
+  },
+  {
+    id: "m-stickers-legend-2",
+    title: "לאסוף 2 מדבקות אגדיות 👑",
+    desc: "המשימה הכי נדירה בחודש",
+    goal: 2,
+    metric: "legendaryStickers",
+    reward: { chest: "amazing", ticket: "luck" },
   },
   {
     id: "m-chest-40",
@@ -337,31 +395,7 @@ export const MONTHLY_MISSIONS: Mission[] = [
     desc: "פרס: תיבה רגילה",
     goal: 40,
     metric: "chests",
-    reward: { chest: "regular", coins: 150 },
-  },
-  {
-    id: "m-stickers-50",
-    title: "לאסוף 50 מדבקות באלבום",
-    desc: "אספן רציני",
-    goal: 50,
-    metric: "stickers",
-    reward: { chest: "amazing" },
-  },
-  {
-    id: "m-clouds-25",
-    title: "25 ניצחונות ב״מסלול עננים״",
-    goal: 25,
-    metric: "gameWins",
-    gameId: "clouds",
-    reward: { coins: 350 },
-  },
-  {
-    id: "m-tower-20",
-    title: "20 ניצחונות ב״מגדל המספרים״",
-    goal: 20,
-    metric: "gameWins",
-    gameId: "tower",
-    reward: { hints: 15 },
+    reward: { chest: "regular", coins: 100 },
   },
   {
     id: "m-fort-20",
@@ -369,17 +403,88 @@ export const MONTHLY_MISSIONS: Mission[] = [
     goal: 20,
     metric: "gameWins",
     gameId: "fort",
-    reward: { chest: "amazing" },
+    reward: { hints: 8, coins: 120 },
   },
   {
     id: "m-legendary",
-    title: "🏆 המשימה האגדית — 3,000 תרגילים + 28 ימי רצף",
+    title: "🏆 המשימה האגדית — 3,000 תרגילים",
     desc: "הפרס היחיד של תיבה אגדית בחודש",
     goal: 3000,
     metric: "answers",
-    reward: { chest: "legendary", title: "אגדה חיה", coins: 1000 },
+    reward: { chest: "legendary", title: "אגדה חיה", coins: 300 },
   },
 ];
+
+/* ---------------- streak rewards ---------------- */
+
+export const STREAK_CYCLE = 30;
+
+export type StreakReward = {
+  coins: number;
+  hints: number;
+  ticket: TicketId | null;
+  chest: ChestKind | null;
+  emoji: string;
+  label: string;
+};
+
+/** תגמול הרצף ליום מסוים — מעורבב: מטבעות, רמזים, שוברים, ותיבה מדהימה פעם ב-30 יום */
+export function streakReward(day: number): StreakReward {
+  const coins = 10 + Math.min(60, day * 2);
+  const d = ((day - 1) % STREAK_CYCLE) + 1;
+  if (d === STREAK_CYCLE)
+    return {
+      coins,
+      hints: 3,
+      ticket: null,
+      chest: "amazing",
+      emoji: "🎁",
+      label: "תיבה מדהימה!",
+    };
+  if (d % 15 === 0)
+    return { coins, hints: 0, ticket: "restore", chest: null, emoji: "🔁", label: "שובר רצף" };
+  if (d % 10 === 0)
+    return { coins, hints: 0, ticket: "shield", chest: null, emoji: "🛡️", label: "מגן רצף" };
+  if (d % 7 === 0)
+    return { coins, hints: 0, ticket: "skip", chest: null, emoji: "⏭️", label: "דילוג על שלב" };
+  if (d % 5 === 0)
+    return { coins, hints: 3, ticket: null, chest: null, emoji: "💡", label: "3 רמזים" };
+  if (d % 3 === 0)
+    return { coins, hints: 1, ticket: null, chest: null, emoji: "💡", label: "רמז + מטבעות" };
+  return { coins, hints: 0, ticket: null, chest: null, emoji: "🪙", label: `${coins} מטבעות` };
+}
+
+/* ---------------- worlds ---------------- */
+
+export const WORLD_SIZE = 25;
+
+const WORLD_NAMES = [
+  "עולם המתחילים",
+  "עמק החיבור",
+  "יער החיסור",
+  "מגדל הכפל",
+  "מערת החילוק",
+  "אי המספרים",
+  "מדבר התרגילים",
+  "הרי האלופים",
+  "ממלכת הגאונים",
+  "גלקסיית החשבון",
+];
+
+export const worldOf = (level: number) => Math.max(1, Math.floor((level - 1) / WORLD_SIZE) + 1);
+
+export function worldInfo(world: number) {
+  const name = WORLD_NAMES[(world - 1) % WORLD_NAMES.length] as string;
+  const cycle = Math.floor((world - 1) / WORLD_NAMES.length);
+  return {
+    world,
+    title: cycle > 0 ? `${name} ${cycle + 1}` : name,
+    from: (world - 1) * WORLD_SIZE + 1,
+    to: world * WORLD_SIZE,
+    emoji: ["🌱", "➕", "➖", "✖️", "➗", "🏝️", "🏜️", "⛰️", "👑", "🌌"][(world - 1) % 10] as string,
+  };
+}
+
 
 
 type Ctx = {
@@ -696,23 +801,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (p.streakClaimedDay === today) return p;
       const ev = currentEvent();
       const bonus = ev.week === 3 || Date.now() < p.boosts.premiumUntil ? 35 : 0;
-      const base = 10 + Math.min(50, p.streakDays * 2);
-      const coins = base + bonus;
+      const r = streakReward(Math.max(1, p.streakDays));
+      const coins = r.coins + bonus;
       out = { coins };
-      const day = p.streakDays % 20;
-      const hints = day % 5 === 0 ? 2 : 0;
-      const ticket: TicketId | null = day % 10 === 0 ? "shield" : null;
-      const chest = day === 0 ? 1 : 0;
       return {
         ...p,
         streakClaimedDay: today,
         coins: p.coins + coins,
-        hints: p.hints + hints,
-        chestInv: chest
-          ? { ...p.chestInv, regular: p.chestInv.regular + chest }
+        hints: p.hints + r.hints,
+        chestInv: r.chest
+          ? { ...p.chestInv, [r.chest]: p.chestInv[r.chest] + 1 }
           : p.chestInv,
-        tickets: ticket ? { ...p.tickets, [ticket]: p.tickets[ticket] + 1 } : p.tickets,
+        tickets: r.ticket ? { ...p.tickets, [r.ticket]: p.tickets[r.ticket] + 1 } : p.tickets,
       };
+
     });
     return out;
   }, []);
@@ -771,6 +873,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
         return p.streakDays;
       case "stickers":
         return p.stickers.length;
+      case "amazingStickers":
+        return p.stickers.filter((s) => stickerForSlot(s).rarity === "amazing").length;
+      case "legendaryStickers":
+        return p.stickers.filter((s) => stickerForSlot(s).rarity === "legendary").length;
+
       case "gameWins":
         return p.gameWins[m.gameId ?? ""] ?? 0;
       case "coinsEarned":
@@ -843,14 +950,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
         const last10 = history.slice(-10);
         const acc = last10.filter(Boolean).length / last10.length;
         const step = Math.max(1, Math.round(level * 0.01));
-        if (acc >= 0.8) {
-          level = Math.min(MAX_LEVEL, level + step * 3);
+        if (acc >= 0.9) {
+          level = Math.min(MAX_LEVEL, level + step * 2);
+          levelUp = true;
+        } else if (acc >= 0.8) {
+          level = Math.min(MAX_LEVEL, level + step);
           levelUp = true;
         } else if (acc < 0.4) {
           level = Math.max(1, level - step * 2);
-        } else {
-          level = Math.min(MAX_LEVEL, level + Math.max(1, Math.round(step / 2)));
         }
+
       }
 
       const currentStreakCorrect = correct ? p.currentStreakCorrect + 1 : 0;
@@ -885,7 +994,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const eventDouble = ev.week === 2 && p.dailyAnswers < 5;
       const boosted =
         nowMs < p.boosts.doubleUntil || nowMs < p.boosts.premiumUntil || eventDouble;
-      const gain = correct ? (boosted ? 2 : 1) : 0;
+      // מטבעות: 5 לכל תשובה נכונה (×2 עם בוסט) + בונוס 10 על כל 5 ברצף
+      const streakBonus = correct && currentStreakCorrect % 5 === 0 ? 10 : 0;
+      const gain = correct ? (boosted ? 10 : 5) + streakBonus : 0;
+
 
       return {
         ...p,

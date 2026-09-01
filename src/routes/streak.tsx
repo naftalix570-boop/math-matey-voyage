@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { Confetti } from "@/components/effects";
-import { useGame } from "@/lib/game-state";
+import { streakReward, useGame } from "@/lib/game-state";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/streak")({
@@ -20,12 +20,10 @@ export const Route = createFileRoute("/streak")({
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
 function dayReward(day: number) {
-  const d = day % 20;
-  if (d === 0) return { emoji: "🏆", label: "תיבה חינם" };
-  if (d % 10 === 0) return { emoji: "🛡️", label: "כרטיס מגן רצף" };
-  if (d % 5 === 0) return { emoji: "💡", label: "2 רמזים" };
-  return { emoji: "🪙", label: `${10 + Math.min(50, day * 2)} מטבעות` };
+  const r = streakReward(Math.max(1, day));
+  return { emoji: r.emoji, label: r.label };
 }
+
 
 function StreakPage() {
   const { profile, claimStreak, sound, premium, event } = useGame();
@@ -77,9 +75,10 @@ function StreakPage() {
         )}
       </div>
 
-      <h2 className="mt-5 text-lg font-bold text-ink">20 הימים הקרובים</h2>
+      <h2 className="mt-5 text-lg font-bold text-ink">30 הימים הקרובים</h2>
       <div className="mt-2 grid grid-cols-5 gap-2">
-        {Array.from({ length: 20 }, (_, i) => {
+        {Array.from({ length: 30 }, (_, i) => {
+
           const day = profile.streakDays + i;
           const r = dayReward(day);
           const isToday = i === 0;
