@@ -115,20 +115,32 @@ function MissionCard({
 }
 
 function MissionsPage() {
+  const { profile } = useGame();
+  const daily = DAILY_MISSIONS.filter((m) => !profile.dailyClaimed.includes(m.id));
+  const monthly = MONTHLY_MISSIONS.filter((m) => !profile.monthlyClaimed.includes(m.id));
+
   return (
     <Screen title="משימות">
       <h2 className="mt-2 text-lg font-bold text-ink">📅 משימות יומיות</h2>
       <div className="mt-2 grid gap-3">
-        {DAILY_MISSIONS.map((m) => (
-          <MissionCard key={m.id} mission={m} scope="daily" />
-        ))}
+        {daily.length === 0 ? (
+          <p className="rounded-2xl bg-card p-4 text-center text-sm text-muted-foreground shadow-card">
+            סיימת את כל המשימות להיום! 🎉 חזור מחר.
+          </p>
+        ) : (
+          daily.map((m) => <MissionCard key={m.id} mission={m} scope="daily" />)
+        )}
       </div>
 
       <h2 className="mt-6 text-lg font-bold text-ink">🗓️ משימות חודשיות</h2>
       <div className="mt-2 grid gap-3 pb-28">
-        {MONTHLY_MISSIONS.map((m) => (
-          <MissionCard key={m.id} mission={m} scope="monthly" />
-        ))}
+        {monthly.length === 0 ? (
+          <p className="rounded-2xl bg-card p-4 text-center text-sm text-muted-foreground shadow-card">
+            כל משימות החודש הושלמו! 🏆
+          </p>
+        ) : (
+          monthly.map((m) => <MissionCard key={m.id} mission={m} scope="monthly" />)
+        )}
       </div>
     </Screen>
   );
