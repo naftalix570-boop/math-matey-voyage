@@ -249,16 +249,27 @@ export type ChestReward = {
 
 export type EventInfo = { week: number; title: string; desc: string; emoji: string };
 
+/** כל האיוונטים במחזור */
+export const EVENTS: EventInfo[] = [
+  { week: 0, title: "תיבה יומית חינם", desc: "כל יום תיבה רגילה חינם", emoji: "📦" },
+  { week: 1, title: "גלגל מזל חינם יומי", desc: "סיבוב חינם כל יום", emoji: "🎡" },
+  { week: 2, title: "כפל מטבעות", desc: "×2 מטבעות ב-5 התרגילים הראשונים ביום", emoji: "⏩" },
+  { week: 3, title: "בונוס רצף", desc: "35 מטבעות בונוס בלחיצת הרצף", emoji: "🔥" },
+];
+
 /** מתחלף במוצאי שבת — מחזור של 4 שבועות */
 export function currentEvent(now = Date.now()): EventInfo {
   const week = Math.floor((now + 86400000) / (7 * 86400000)) % 4;
-  const list: EventInfo[] = [
-    { week: 0, title: "תיבה יומית חינם", desc: "כל יום תיבה רגילה חינם", emoji: "📦" },
-    { week: 1, title: "גלגל מזל חינם יומי", desc: "סיבוב חינם כל יום", emoji: "🎡" },
-    { week: 2, title: "כפל מטבעות", desc: "×2 מטבעות ב-5 התרגילים הראשונים ביום", emoji: "⏩" },
-    { week: 3, title: "בונוס רצף", desc: "35 מטבעות בונוס בלחיצת הרצף", emoji: "🔥" },
-  ];
-  return list[week] as EventInfo;
+  return EVENTS[week] as EventInfo;
+}
+
+/** תאריך החלפת האיוונט הבא (לפי שעון מקומי) */
+export function nextEventChange(now = new Date()): Date {
+  const start = new Date(now);
+  start.setDate(start.getDate() - ((start.getDay() + 1) % 7)); // תחילת שבוע האיוונט
+  const next = new Date(start);
+  next.setDate(next.getDate() + 7);
+  return next;
 }
 
 /* ---------------- missions ---------------- */
