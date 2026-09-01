@@ -950,14 +950,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
         const last10 = history.slice(-10);
         const acc = last10.filter(Boolean).length / last10.length;
         const step = Math.max(1, Math.round(level * 0.01));
-        if (acc >= 0.8) {
-          level = Math.min(MAX_LEVEL, level + step * 3);
+        if (acc >= 0.9) {
+          level = Math.min(MAX_LEVEL, level + step * 2);
+          levelUp = true;
+        } else if (acc >= 0.8) {
+          level = Math.min(MAX_LEVEL, level + step);
           levelUp = true;
         } else if (acc < 0.4) {
           level = Math.max(1, level - step * 2);
-        } else {
-          level = Math.min(MAX_LEVEL, level + Math.max(1, Math.round(step / 2)));
         }
+
       }
 
       const currentStreakCorrect = correct ? p.currentStreakCorrect + 1 : 0;
