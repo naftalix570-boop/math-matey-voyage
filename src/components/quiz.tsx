@@ -207,6 +207,8 @@ export function QuizGame({
   const [towers, setTowers] = useState(variant === "fort" ? 3 : 0);
   const [finished, setFinished] = useState<QuizResult | null>(null);
   const levelUpRef = useRef(false);
+  const coinsStartRef = useRef(profile.coins);
+
 
   const showToast = useCallback((text: string, ms = 2000) => {
     setToast(text);
@@ -215,7 +217,13 @@ export function QuizGame({
 
   const finish = useCallback(
     (finalCorrect: number) => {
-      const res = { correct: finalCorrect, total: count, levelUp: levelUpRef.current };
+      const res = {
+        correct: finalCorrect,
+        total: count,
+        levelUp: levelUpRef.current,
+        coinsStart: coinsStartRef.current,
+      };
+
       const won = finalCorrect >= count * 0.8;
       sound(finalCorrect >= count * 0.6 ? "win" : "click");
       if (won && gameId) recordGameWin(gameId);
