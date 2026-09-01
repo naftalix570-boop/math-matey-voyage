@@ -116,11 +116,19 @@ function LeaderboardPage() {
 
             {rows === null ? (
               <p className="py-10 text-center text-muted-foreground">טוען דירוג…</p>
-            ) : rows.length === 0 ? (
-              <p className="py-10 text-center text-muted-foreground">
-                עוד אין שחקנים בדירוג — תהיו הראשונים! 🚀
-              </p>
             ) : (
+              (() => {
+                const me: Row = {
+                  user_id: authUid ?? "me",
+                  display_name: profile.name,
+                  icon: profile.icon,
+                  country: profile.country,
+                  score: profile.trophies,
+                };
+                const list = rows.some((r) => r.user_id === me.user_id) ? rows : [...rows, me];
+                list.sort((a, b) => b.score - a.score);
+                return (
+
               <div className="grid gap-2">
                 {rows.map((r, i) => (
                   <div
