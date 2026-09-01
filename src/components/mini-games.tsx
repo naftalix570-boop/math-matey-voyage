@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useGame } from "@/lib/game-state";
 import { cn } from "@/lib/utils";
 import { Confetti, Logo } from "@/components/effects";
-import { makeOptions, makeQuestion, OP_SIGN, pick, type Op } from "@/lib/math";
+import { makeOptions, makeQuestion, makeTrueFalse, OP_SIGN, pick, type Op } from "@/lib/math";
 import { ResultScreen, type QuizResult } from "@/components/quiz";
 
 /* ---------------- Memory: match exercise to answer ---------------- */
