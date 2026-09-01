@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { Confetti } from "@/components/effects";
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/wheel")({
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
 function WheelPage() {
-  const { profile, spinWheel, spendCoins, update, sound, premium, event } = useGame();
+  const { profile, spinWheel, sound, premium, event } = useGame();
   const [spinning, setSpinning] = useState(false);
   const [prize, setPrize] = useState<WheelPrize | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -42,17 +42,6 @@ function WheelPage() {
       sound("levelup");
       setPrize(p);
     }, 1200);
-  };
-
-  const buySpins = () => {
-    if (!spendCoins(600)) {
-      sound("wrong");
-      setMsg("אין מספיק מטבעות 😅");
-      return;
-    }
-    sound("correct");
-    update((p) => ({ spins: p.spins + 3 }));
-    setMsg("נוספו 3 סיבובים! 🎡");
   };
 
   return (
@@ -108,12 +97,14 @@ function WheelPage() {
         >
           {profile.spins > 0 ? `סובבו! (נשארו ${profile.spins})` : "אין סיבובים"}
         </button>
-        <button
-          onClick={buySpins}
-          className="h-12 w-full rounded-2xl bg-secondary text-lg font-bold text-secondary-foreground active:scale-95"
+        <Link
+          to="/shop"
+          onClick={() => sound("click")}
+          className="flex h-12 w-full items-center justify-center rounded-2xl bg-shop text-lg font-bold text-white active:scale-95"
         >
-          🪙 קנו 3 סיבובים ב-600 מטבעות
-        </button>
+          🛒 לקנות סיבובים בחנות
+        </Link>
+
         <p className="text-center text-xs text-muted-foreground">
           {event.week === 1
             ? "🎉 איוונט השבוע: סיבוב חינם כל יום!"

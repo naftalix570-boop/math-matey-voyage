@@ -73,3 +73,80 @@ export function Logo({ size = 96, bounce = 0 }: { size?: number; bounce?: number
     </div>
   );
 }
+
+/** אנימציית פתיחת תיבה — רעידה, פיצוץ אור וחשיפת פרסים */
+export function ChestOpenOverlay({
+  emoji,
+  title,
+  items,
+  onClose,
+}: {
+  emoji: string;
+  title: string;
+  items: { key: string; label: string; highlight?: boolean }[];
+  onClose: () => void;
+}) {
+  const [stage, setStage] = useState<"shake" | "open">("shake");
+  useEffect(() => {
+    const t = setTimeout(() => setStage("open"), 1100);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/70 p-5 backdrop-blur-sm">
+      <Confetti show={stage === "open"} />
+      <div className="relative w-full max-w-sm rounded-3xl bg-card p-6 text-center shadow-card">
+        <div className="relative mx-auto flex h-32 w-32 items-center justify-center">
+          {stage === "open" && (
+            <span
+              className="animate-rays absolute inset-[-40%] rounded-full opacity-60"
+              style={{
+                background:
+                  "conic-gradient(var(--gold) 0 10deg, transparent 10deg 30deg, var(--gold) 30deg 40deg, transparent 40deg 60deg, var(--gold) 60deg 70deg, transparent 70deg 90deg, var(--gold) 90deg 100deg, transparent 100deg 120deg, var(--gold) 120deg 130deg, transparent 130deg 150deg, var(--gold) 150deg 160deg, transparent 160deg 180deg, var(--gold) 180deg 190deg, transparent 190deg 210deg, var(--gold) 210deg 220deg, transparent 220deg 240deg, var(--gold) 240deg 250deg, transparent 250deg 270deg, var(--gold) 270deg 280deg, transparent 280deg 300deg, var(--gold) 300deg 310deg, transparent 310deg 330deg, var(--gold) 330deg 340deg, transparent 340deg 360deg)",
+                maskImage: "radial-gradient(circle, transparent 30%, black 45%, transparent 72%)",
+              }}
+            />
+          )}
+          <span
+            className={
+              "relative text-7xl " +
+              (stage === "shake" ? "animate-chest-shake" : "animate-chest-burst")
+            }
+          >
+            {emoji}
+          </span>
+          {stage === "open" && <Sparkles trigger={1} />}
+        </div>
+
+        <p className="mt-3 text-xl font-bold text-ink">
+          {stage === "shake" ? "פותחים..." : title}
+        </p>
+
+        {stage === "open" && (
+          <>
+            <div className="mt-3 flex flex-wrap justify-center gap-2 text-sm font-bold">
+              {items.map((it, i) => (
+                <span
+                  key={it.key}
+                  className={
+                    "animate-reveal rounded-full px-3 py-1 " +
+                    (it.highlight ? "bg-warning text-warning-foreground" : "bg-muted text-ink")
+                  }
+                  style={{ animationDelay: `${i * 0.09}s` }}
+                >
+                  {it.label}
+                </span>
+              ))}
+            </div>
+            <button
+              onClick={onClose}
+              className="mt-5 h-12 w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground shadow-pop active:scale-95"
+            >
+              מגניב! 🎉
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

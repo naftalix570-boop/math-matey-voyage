@@ -10,6 +10,8 @@ import {
   type TicketId,
 } from "@/lib/game-state";
 import { stickerForSlot } from "@/lib/stickers";
+import { ChestOpenOverlay } from "@/components/effects";
+import { rewardItems } from "@/lib/chest-rewards";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/shop")({
@@ -87,7 +89,7 @@ function ShopPage() {
   };
 
   const buyChest = (kind: ChestKind) => {
-    const r = openChest(kind, false);
+    const r = openChest(kind, "coins");
     if (!r) {
       sound("wrong");
       setMsg("אין מספיק מטבעות 😅 שחקו עוד כדי לצבור!");
@@ -95,7 +97,7 @@ function ShopPage() {
     }
     sound("levelup");
     setChestReward(r);
-    setMsg(`נפתחה ${CHESTS[kind].title}! 🎉`);
+    setMsg(null);
   };
 
   const buyTicket = (t: TicketId, price: number) =>
@@ -156,27 +158,12 @@ function ShopPage() {
       )}
 
       {chestReward && (
-        <div className="mt-3 animate-page rounded-2xl bg-card p-4 text-center shadow-card">
-          <p className="text-lg font-bold text-ink">מה יצא? 🎉</p>
-          <div className="mt-2 flex flex-wrap justify-center gap-2 text-sm font-bold">
-            <span className="rounded-full bg-muted px-3 py-1">🪙 {chestReward.coins}</span>
-            <span className="rounded-full bg-muted px-3 py-1">💡 {chestReward.hints}</span>
-            {chestReward.stickers.map((s) => (
-              <span key={s} className="rounded-full bg-muted px-3 py-1">
-                {stickerForSlot(s).emoji} {stickerForSlot(s).name}
-              </span>
-            ))}
-            {chestReward.rarePremium && (
-              <span className="rounded-full bg-warning px-3 py-1 text-white">👑 פרימיום נדיר!</span>
-            )}
-          </div>
-          <button
-            onClick={() => setChestReward(null)}
-            className="mt-3 rounded-xl bg-muted px-4 py-2 font-bold text-ink active:scale-95"
-          >
-            סגור
-          </button>
-        </div>
+        <ChestOpenOverlay
+          emoji={CHESTS[chestReward.kind].emoji}
+          title={`נפתחה ${CHESTS[chestReward.kind].title}!`}
+          items={rewardItems(chestReward)}
+          onClose={() => setChestReward(null)}
+        />
       )}
 
       {tab === "coins" ? (

@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
-import { Confetti } from "@/components/effects";
-import { CHESTS, TICKETS, useGame, type ChestKind, type ChestReward } from "@/lib/game-state";
-import { stickerForSlot } from "@/lib/stickers";
+import { ChestOpenOverlay } from "@/components/effects";
+import { CHESTS, useGame, type ChestKind, type ChestReward } from "@/lib/game-state";
+import { rewardItems } from "@/lib/chest-rewards";
 
 export const Route = createFileRoute("/chests")({
   head: () => ({
@@ -26,16 +26,12 @@ function ChestsPage() {
   const { profile, openChest, sound, premium } = useGame();
   const [reward, setReward] = useState<ChestReward | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
-  const [shaking, setShaking] = useState<string | null>(null);
 
-  const open = (kind: ChestKind, free: boolean) => {
-    setShaking(kind + free);
-    const r = openChest(kind, free);
-    setTimeout(() => setShaking(null), 500);
+  const open = (kind: ChestKind, src: "free" | "inv") => {
+    const r = openChest(kind, src);
     if (!r) {
       sound("wrong");
-      setReward(null);
-      setMsg(free ? "אין לך תיבות חינם כרגע — חוזרים מחר! 🕒" : "אין מספיק מטבעות 😅");
+      setMsg(src === "free" ? "התיבה היומית כבר נפתחה — חוזרים מחר! 🕒" : "אין לך תיבה כזו במלאי");
       return;
     }
     sound("levelup");
@@ -45,7 +41,14 @@ function ChestsPage() {
 
   return (
     <Screen title="תיבות אוצר">
-      <Confetti show={!!reward} />
+      {reward && (
+        <ChestOpenOverlay
+          emoji={CHESTS[reward.kind].emoji}
+          title={`נפתחה ${CHESTS[reward.kind].title}!`}
+          items={rewardItems(reward)}
+          onClose={() => setReward(null)}
+        />
+      )}
 
       <div className="mt-2 flex items-center justify-center gap-3 text-lg font-bold text-ink">
         <span className="rounded-full bg-card px-4 py-1 shadow-card">🪙 {profile.coins}</span>
@@ -55,11 +58,11 @@ function ChestsPage() {
       <div className="mt-4 rounded-2xl bg-sky p-4 text-center shadow-card">
         <p className="text-lg font-bold text-ink">🎉 תיבה יומית חינם</p>
         <p className="text-sm">
-          יש לך {profile.chests} תיבות חינם. תיבה חדשה מחכה כל יום!
-          {premium && " 👑 פרימיום: תיבה נוספת כל יום!"}
+          תיבה אחת חינם בכל יום — לא נצברת.
+          {premium && " 👑 פרימיום: בונוסים גדולים יותר!"}
         </p>
         <button
-          onClick={() => open("regular", true)}
+          onClick={() => open("regular", "free")}
           disabled={profile.chests <= 0}
           className={
             "mt-3 h-12 w-full rounded-xl text-lg font-bold active:scale-95 " +
@@ -78,65 +81,47 @@ function ChestsPage() {
         </p>
       )}
 
-      {reward && (
-        <div className="mt-3 animate-page rounded-2xl bg-card p-4 text-center shadow-card">
-          <p className="text-4xl">{CHESTS[reward.kind].emoji}</p>
-          <p className="mt-1 text-lg font-bold text-ink">מה יצא מהתיבה?</p>
-          <div className="mt-2 flex flex-wrap justify-center gap-2 text-sm font-bold">
-            <span className="rounded-full bg-muted px-3 py-1">🪙 {reward.coins} מטבעות</span>
-            {reward.hints > 0 && (
-              <span className="rounded-full bg-muted px-3 py-1">💡 {reward.hints} רמזים</span>
-            )}
-            {reward.stickers.map((slot) => (
-              <span key={slot} className="rounded-full bg-muted px-3 py-1">
-                {stickerForSlot(slot).emoji} {stickerForSlot(slot).name}
-              </span>
-            ))}
-            {reward.ticket && (
-              <span className="rounded-full bg-muted px-3 py-1">
-                {TICKETS[reward.ticket].emoji} כרטיס {TICKETS[reward.ticket].title}
-              </span>
-            )}
-            {reward.boost === "double" && (
-              <span className="rounded-full bg-success px-3 py-1 text-white">⏩ כפל מטבעות לשעה</span>
-            )}
-            {reward.boost === "premium" && !reward.rarePremium && (
-              <span className="rounded-full bg-warning px-3 py-1 text-white">👑 פרימיום ליום</span>
-            )}
-            {reward.rarePremium && (
-              <span className="rounded-full bg-warning px-3 py-1 text-white">
-                👑 פרימיום נדיר! (1:10,000) ליום שלם
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="mt-4 grid gap-3 pb-28">
+      <h2 className="mt-6 text-lg font-bold text-ink">🎒 התיבות שלי</h2>
+      <p className="text-sm text-muted-foreground">תיבות שקיבלת ממשימות, מהרצף היומי ומהחנות</p>
+      <div className="mt-2 grid gap-3">
         {KINDS.map((kind) => {
           const c = CHESTS[kind];
+          const count = profile.chestInv[kind];
           return (
             <div key={kind} className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
-              <span className={"text-4xl " + (shaking === kind + "false" ? "animate-bounce" : "")}>
-                {c.emoji}
-              </span>
+              <span className="text-4xl">{c.emoji}</span>
               <div className="flex-1">
-                <p className="text-lg font-bold text-ink">{c.title}</p>
+                <p className="text-lg font-bold text-ink">
+                  {c.title} {count > 0 && <span className="text-sm">×{count}</span>}
+                </p>
                 <p className="text-sm text-muted-foreground">{c.desc}</p>
               </div>
               <button
-                onClick={() => open(kind, false)}
-                className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
+                onClick={() => open(kind, "inv")}
+                disabled={count <= 0}
+                className={
+                  "rounded-xl px-4 py-2 font-bold active:scale-95 " +
+                  (count > 0
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground")
+                }
               >
-                🪙 {c.price.toLocaleString("he-IL")}
+                {count > 0 ? "פתחו" : "אין"}
               </button>
             </div>
           );
         })}
-        <p className="text-center text-xs text-muted-foreground">
-          פתחתם עד היום {profile.chestsOpened} תיבות
-        </p>
       </div>
+
+      <Link
+        to="/shop"
+        className="mt-4 flex h-14 items-center justify-center rounded-2xl bg-shop text-lg font-bold text-white shadow-pop active:scale-95"
+      >
+        🛒 לקנות תיבות בחנות
+      </Link>
+      <p className="mt-3 pb-28 text-center text-xs text-muted-foreground">
+        פתחתם עד היום {profile.chestsOpened} תיבות
+      </p>
     </Screen>
   );
 }

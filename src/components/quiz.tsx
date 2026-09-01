@@ -140,6 +140,7 @@ export function QuizGame({
   hearts: heartsMax = 3,
   variant = "plain",
   topicId,
+  gameId,
   onDone,
 }: {
   makeItem: (index: number, prevAnswer: number | null) => QuizItem;
@@ -148,9 +149,10 @@ export function QuizGame({
   hearts?: number;
   variant?: QuizVariant;
   topicId?: string;
+  gameId?: string;
   onDone?: (r: QuizResult) => void;
 }) {
-  const { profile, recordAnswer, useHint, sound, premium } = useGame();
+  const { profile, recordAnswer, useHint, sound, premium, recordGameWin } = useGame();
   const [index, setIndex] = useState(0);
   const [item, setItem] = useState<QuizItem>(() => makeItem(0, null));
   const [correct, setCorrect] = useState(0);
@@ -177,11 +179,13 @@ export function QuizGame({
   const finish = useCallback(
     (finalCorrect: number) => {
       const res = { correct: finalCorrect, total: count, levelUp: levelUpRef.current };
+      const won = finalCorrect >= count * 0.8;
       sound(finalCorrect >= count * 0.6 ? "win" : "click");
+      if (won && gameId) recordGameWin(gameId);
       setFinished(res);
       onDone?.(res);
     },
-    [count, onDone, sound],
+    [count, onDone, sound, gameId, recordGameWin],
   );
 
   const nextQuestion = useCallback(

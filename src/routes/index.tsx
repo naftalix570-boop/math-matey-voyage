@@ -128,10 +128,11 @@ function Home() {
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+      <div className="mt-4 grid grid-cols-4 gap-2 text-center">
+        <Stat emoji="🏆" label="גביעים" value={profile.trophies} />
         <Stat emoji="🪙" label="מטבעות" value={profile.coins} />
         <Stat emoji="💡" label="רמזים" value={premium ? "∞" : profile.hints} />
-        <Stat emoji="🔥" label="רצף ימים" value={profile.streakDays} />
+        <Stat emoji="🔥" label="רצף" value={profile.streakDays} />
       </div>
 
       <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
