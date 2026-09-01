@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Screen } from "@/components/app-shell";
-import { ACHIEVEMENTS, useGame } from "@/lib/game-state";
+import { ACHIEVEMENTS, WORLD_SIZE, useGame, worldInfo, worldOf } from "@/lib/game-state";
 import { MAX_LEVEL } from "@/lib/math";
 import { ALBUM_SIZE } from "@/lib/stickers";
 import { cn } from "@/lib/utils";
