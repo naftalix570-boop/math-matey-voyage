@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import {
@@ -100,6 +100,19 @@ function ShopPage() {
     setMsg(null);
   };
 
+  const openOwned = (kind: ChestKind, src: "free" | "inv") => {
+    const r = openChest(kind, src);
+    if (!r) {
+      sound("wrong");
+      setMsg(src === "free" ? "התיבה היומית כבר נפתחה — חוזרים מחר! 🕒" : "אין לך תיבה כזו במלאי");
+      return;
+    }
+    sound("levelup");
+    setChestReward(r);
+    setMsg(null);
+  };
+
+
   const buyTicket = (t: TicketId, price: number) =>
     buy(`t-${t}`, price, () => {
       update((p) => ({ tickets: { ...p.tickets, [t]: p.tickets[t] + 1 } }));
@@ -168,7 +181,46 @@ function ShopPage() {
 
       {tab === "coins" ? (
         <div className="mt-4 grid gap-3 pb-28">
-          <p className="font-bold text-ink">תיבות</p>
+          <p className="font-bold text-ink">🎁 התיבות שלי</p>
+          <div className="rounded-2xl bg-sky p-4 text-center shadow-card">
+            <p className="text-lg font-bold text-ink">תיבה יומית חינם</p>
+            <p className="text-sm">תיבה אחת חינם בכל יום — לא נצברת.</p>
+            <button
+              onClick={() => openOwned("regular", "free")}
+              disabled={profile.chests <= 0}
+              className={cn(
+                "mt-3 h-12 w-full rounded-xl text-lg font-bold active:scale-95",
+                profile.chests > 0
+                  ? "bg-warning text-warning-foreground shadow-pop"
+                  : "bg-muted text-muted-foreground",
+              )}
+            >
+              {profile.chests > 0 ? "פתחו תיבה חינם 📦" : "חזרו מחר 🕒"}
+            </button>
+          </div>
+          {(["regular", "amazing", "legendary"] as ChestKind[]).map((k) => {
+            const count = profile.chestInv[k];
+            if (count <= 0) return null;
+            return (
+              <div key={`inv-${k}`} className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
+                <span className="text-4xl">{CHESTS[k].emoji}</span>
+                <div className="flex-1">
+                  <p className="text-lg font-bold text-ink">
+                    {CHESTS[k].title} <span className="text-sm">×{count}</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">תיבה שקיבלת — מוכנה לפתיחה</p>
+                </div>
+                <button
+                  onClick={() => openOwned(k, "inv")}
+                  className="rounded-xl bg-success px-4 py-2 font-bold text-white active:scale-95"
+                >
+                  פתחו
+                </button>
+              </div>
+            );
+          })}
+
+          <p className="mt-2 font-bold text-ink">קניית תיבות</p>
           {(["regular", "amazing", "legendary"] as ChestKind[]).map((k) => (
             <div key={k} className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
               <span className="text-4xl">{CHESTS[k].emoji}</span>
@@ -184,6 +236,7 @@ function ShopPage() {
               </button>
             </div>
           ))}
+
 
           <p className="mt-2 font-bold text-ink">רמזים</p>
           {HINT_PACKS.map((h) => (
@@ -226,6 +279,13 @@ function ShopPage() {
               🪙 600
             </button>
           </div>
+          <Link
+            to="/wheel"
+            className="flex h-12 items-center justify-center rounded-2xl bg-sky font-bold text-ink shadow-card active:scale-95"
+          >
+            🎡 לסובב את גלגל המזל ({profile.spins})
+          </Link>
+
 
           <p className="mt-2 font-bold text-ink">כרטיסים</p>
           {(Object.keys(TICKETS) as TicketId[]).map((t) => {

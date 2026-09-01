@@ -21,7 +21,25 @@ export type QuizResult = {
   correct: number;
   total: number;
   levelUp: boolean;
+  coinsStart?: number;
 };
+
+/** ספירה מונפשת של מספר מ-0 עד value */
+function useCountUp(value: number, ms = 900) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (value <= 0) return setN(0);
+    const start = Date.now();
+    const id = setInterval(() => {
+      const p = Math.min(1, (Date.now() - start) / ms);
+      setN(Math.round(value * (1 - Math.pow(1 - p, 3))));
+      if (p >= 1) clearInterval(id);
+    }, 40);
+    return () => clearInterval(id);
+  }, [value, ms]);
+  return n;
+}
+
 
 export function TopicHelpSheet({
   topicId,
@@ -73,10 +91,14 @@ export function ResultScreen({
   correct,
   total,
   levelUp,
+  coinsStart,
   onAgain,
 }: QuizResult & { onAgain: () => void }) {
   const { profile } = useGame();
   const success = correct >= Math.ceil(total * 0.6);
+  const coinsEarned = Math.max(0, profile.coins - (coinsStart ?? profile.coins));
+  const coinsAnim = useCountUp(coinsEarned);
+  const trophyAnim = useCountUp(correct);
   const share = async () => {
     const text = `🎉 ${profile.name} עלה לרמה ${profile.level} במסע המתמטיקס! פתר ${correct}/${total} נכון! 🔥`;
     if (typeof navigator !== "undefined" && navigator.share) {
@@ -99,6 +121,20 @@ export function ResultScreen({
       <p className="text-lg">
         ענית נכון על <span className="font-bold text-success">{correct}</span> מתוך {total}
       </p>
+
+      <div className="grid w-full grid-cols-2 gap-3">
+        <div className="animate-bounce-up rounded-2xl bg-card p-4 shadow-card">
+          <div className="text-3xl">🪙</div>
+          <div className="text-2xl font-bold text-ink">+{coinsAnim}</div>
+          <div className="text-xs text-muted-foreground">מטבעות</div>
+        </div>
+        <div className="animate-bounce-up rounded-2xl bg-card p-4 shadow-card">
+          <div className="text-3xl">🏆</div>
+          <div className="text-2xl font-bold text-ink">+{trophyAnim}</div>
+          <div className="text-xs text-muted-foreground">גביעים</div>
+        </div>
+      </div>
+
       {levelUp && (
         <div className="rounded-xl bg-sky px-4 py-3 font-bold text-ink">
           ⬆️ התקדמת! בונוס 3 מטבעות 🪙
@@ -116,6 +152,7 @@ export function ResultScreen({
             📤 שתף
           </button>
         )}
+
         <button
           onClick={onAgain}
           className="h-12 w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground active:scale-95"
@@ -170,6 +207,8 @@ export function QuizGame({
   const [towers, setTowers] = useState(variant === "fort" ? 3 : 0);
   const [finished, setFinished] = useState<QuizResult | null>(null);
   const levelUpRef = useRef(false);
+  const coinsStartRef = useRef(profile.coins);
+
 
   const showToast = useCallback((text: string, ms = 2000) => {
     setToast(text);
@@ -178,7 +217,13 @@ export function QuizGame({
 
   const finish = useCallback(
     (finalCorrect: number) => {
-      const res = { correct: finalCorrect, total: count, levelUp: levelUpRef.current };
+      const res = {
+        correct: finalCorrect,
+        total: count,
+        levelUp: levelUpRef.current,
+        coinsStart: coinsStartRef.current,
+      };
+
       const won = finalCorrect >= count * 0.8;
       sound(finalCorrect >= count * 0.6 ? "win" : "click");
       if (won && gameId) recordGameWin(gameId);
@@ -307,6 +352,8 @@ export function QuizGame({
 
   const restart = () => {
     levelUpRef.current = false;
+    coinsStartRef.current = profile.coins;
+
     setFinished(null);
     setCorrect(0);
     setHearts(heartsMax);

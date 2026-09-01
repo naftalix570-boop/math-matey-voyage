@@ -62,7 +62,16 @@ function LeaderboardPage() {
   return (
     <Screen title="🏆 דירוג האלופים">
       <div className="mt-2 grid gap-3 pb-28">
+        <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
+          <span className="text-3xl">{profile.icon}</span>
+          <div className="flex-1">
+            <p className="font-bold text-ink">{profile.name}</p>
+            <p className="text-sm text-muted-foreground">הניקוד שלך מתעדכן בכל תרגיל נכון</p>
+          </div>
+          <span className="text-xl font-bold text-ink">🏆 {profile.trophies}</span>
+        </div>
         {!linked ? (
+
           <section className="rounded-2xl bg-card p-5 text-center shadow-card">
             <p className="text-4xl">☁️</p>
             <p className="mt-2 text-lg font-bold text-ink">הדירוג פתוח לשחקנים מחוברים</p>

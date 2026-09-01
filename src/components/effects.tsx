@@ -87,15 +87,24 @@ export function ChestOpenOverlay({
   onClose: () => void;
 }) {
   const [stage, setStage] = useState<"shake" | "open">("shake");
+  const [shown, setShown] = useState(0);
   useEffect(() => {
     const t = setTimeout(() => setStage("open"), 1100);
     return () => clearTimeout(t);
   }, []);
 
+  const left = items.length - shown;
+  const current = shown > 0 ? items[shown - 1] : null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/70 p-5 backdrop-blur-sm">
       <Confetti show={stage === "open"} />
       <div className="relative w-full max-w-sm rounded-3xl bg-card p-6 text-center shadow-card">
+        {stage === "open" && (
+          <span className="absolute top-4 left-4 rounded-full bg-muted px-3 py-1 text-xs font-bold text-ink">
+            {left > 0 ? `נשארו עוד ${left}` : "נשארו עוד 0"}
+          </span>
+        )}
         <div className="relative mx-auto flex h-32 w-32 items-center justify-center">
           {stage === "open" && (
             <span
@@ -115,7 +124,7 @@ export function ChestOpenOverlay({
           >
             {emoji}
           </span>
-          {stage === "open" && <Sparkles trigger={1} />}
+          {stage === "open" && <Sparkles trigger={shown + 1} />}
         </div>
 
         <p className="mt-3 text-xl font-bold text-ink">
@@ -124,25 +133,42 @@ export function ChestOpenOverlay({
 
         {stage === "open" && (
           <>
-            <div className="mt-3 flex flex-wrap justify-center gap-2 text-sm font-bold">
-              {items.map((it, i) => (
-                <span
-                  key={it.key}
+            <div className="mt-4 flex min-h-24 items-center justify-center">
+              {current ? (
+                <div
+                  key={current.key}
                   className={
-                    "animate-reveal rounded-full px-3 py-1 " +
-                    (it.highlight ? "bg-warning text-warning-foreground" : "bg-muted text-ink")
+                    "animate-reveal w-full rounded-2xl px-4 py-5 text-2xl font-bold " +
+                    (current.highlight
+                      ? "bg-warning text-warning-foreground"
+                      : "bg-muted text-ink")
                   }
-                  style={{ animationDelay: `${i * 0.09}s` }}
                 >
-                  {it.label}
-                </span>
-              ))}
+                  {current.label}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">לחצו כדי לגלות מה קיבלתם 👆</p>
+              )}
             </div>
+
+            {shown > 0 && (
+              <div className="mt-2 flex justify-center gap-1">
+                {items.map((it, i) => (
+                  <span
+                    key={it.key}
+                    className={
+                      "size-2 rounded-full " + (i < shown ? "bg-primary" : "bg-muted")
+                    }
+                  />
+                ))}
+              </div>
+            )}
+
             <button
-              onClick={onClose}
+              onClick={() => (left > 0 ? setShown((s) => s + 1) : onClose())}
               className="mt-5 h-12 w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground shadow-pop active:scale-95"
             >
-              מגניב! 🎉
+              {left > 0 ? (shown === 0 ? "גלה את הפרס 🎁" : `הבא (${left}) 👉`) : "מגניב! 🎉"}
             </button>
           </>
         )}
@@ -150,3 +176,4 @@ export function ChestOpenOverlay({
     </div>
   );
 }
+
