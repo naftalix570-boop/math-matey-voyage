@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { ChestOpenOverlay } from "@/components/effects";
 import { CHESTS, useGame, type ChestKind, type ChestReward } from "@/lib/game-state";
 import { rewardItems } from "@/lib/chest-rewards";
+import { useMidnightCountdown } from "@/lib/daily";
 
 export const Route = createFileRoute("/chests")({
   head: () => ({
@@ -28,6 +29,7 @@ function ChestsPage() {
   const { profile, openChest, sound, premium } = useGame();
   const [reward, setReward] = useState<ChestReward | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const countdown = useMidnightCountdown();
 
   const open = (kind: ChestKind, src: "free" | "inv") => {
     const r = openChest(kind, src);

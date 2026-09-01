@@ -14,6 +14,7 @@ import { stickerForSlot } from "@/lib/stickers";
 import { ChestOpenOverlay } from "@/components/effects";
 import { rewardItems } from "@/lib/chest-rewards";
 import { cn } from "@/lib/utils";
+import { useMidnightCountdown } from "@/lib/daily";
 
 export const Route = createFileRoute("/shop")({
   head: () => ({
@@ -78,6 +79,7 @@ function ShopPage() {
     useGame();
   const [tab, setTab] = useState<"coins" | "money">("coins");
   const [msg, setMsg] = useState<string | null>(null);
+  const countdown = useMidnightCountdown();
   const [chestReward, setChestReward] = useState<ChestReward | null>(null);
 
   const buy = (id: string, price: number, apply: () => string) => {
