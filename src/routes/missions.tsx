@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import {
@@ -87,6 +87,15 @@ function MissionCard({
       </div>
       <div className="mt-2 flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">{rewardLabel(mission)}</p>
+        {mission.gameId && !claimed && !locked && (
+          <Link
+            to="/play/$gameId"
+            params={{ gameId: mission.gameId }}
+            className="rounded-lg bg-primary px-3 py-1 text-xs font-bold text-primary-foreground active:scale-95"
+          >
+            🎮 למשחק
+          </Link>
+        )}
         {locked ? (
           <span className="rounded-lg bg-muted px-3 py-1 text-xs font-bold text-muted-foreground">
             פרימיום בלבד

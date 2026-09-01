@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { Logo, Confetti } from "@/components/effects";
 import { PlacementTest } from "@/components/mini-games";
-import { useGame } from "@/lib/game-state";
+import { useGame, EVENTS, nextEventChange } from "@/lib/game-state";
 import { weeklyChallenge } from "@/lib/games";
 import { ALBUM_SIZE } from "@/lib/stickers";
 import { useOnline } from "@/lib/use-online";
@@ -204,6 +204,60 @@ function Home() {
 
       <div className="pb-28" />
     </Screen>
+  );
+}
+
+function EventCard() {
+  const { event, sound } = useGame();
+  const [open, setOpen] = useState(false);
+  const next = nextEventChange();
+  const dateStr = next.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" });
+
+  return (
+    <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
+      <button
+        type="button"
+        onClick={() => {
+          sound("click");
+          setOpen((o) => !o);
+        }}
+        className="w-full text-right"
+      >
+        <p className="font-bold text-ink">
+          {event.emoji} איוונט השבוע — {event.title}
+          <span className="mr-1 text-xs text-muted-foreground">{open ? "▲" : "▼"}</span>
+        </p>
+        <p className="text-sm text-muted-foreground">{event.desc}</p>
+      </button>
+      {open && (
+        <div className="mt-3 border-t border-muted pt-3">
+          <p className="text-sm font-bold text-ink">🔁 האיוונט מתחלף ב{dateStr}</p>
+          <p className="mt-1 mb-2 text-xs text-muted-foreground">כל האיוונטים במחזור:</p>
+          <div className="grid gap-2">
+            {EVENTS.map((ev) => (
+              <div
+                key={ev.week}
+                className={
+                  ev.week === event.week
+                    ? "rounded-xl bg-sky p-2"
+                    : "rounded-xl bg-muted/60 p-2"
+                }
+              >
+                <p className="text-sm font-bold text-ink">
+                  {ev.emoji} {ev.title}
+                  {ev.week === event.week && (
+                    <span className="mr-1 rounded-md bg-primary px-1.5 py-0.5 text-[10px] text-primary-foreground">
+                      פעיל עכשיו
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground">{ev.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
