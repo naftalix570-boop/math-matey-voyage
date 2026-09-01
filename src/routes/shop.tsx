@@ -100,6 +100,19 @@ function ShopPage() {
     setMsg(null);
   };
 
+  const openOwned = (kind: ChestKind, src: "free" | "inv") => {
+    const r = openChest(kind, src);
+    if (!r) {
+      sound("wrong");
+      setMsg(src === "free" ? "התיבה היומית כבר נפתחה — חוזרים מחר! 🕒" : "אין לך תיבה כזו במלאי");
+      return;
+    }
+    sound("levelup");
+    setChestReward(r);
+    setMsg(null);
+  };
+
+
   const buyTicket = (t: TicketId, price: number) =>
     buy(`t-${t}`, price, () => {
       update((p) => ({ tickets: { ...p.tickets, [t]: p.tickets[t] + 1 } }));
