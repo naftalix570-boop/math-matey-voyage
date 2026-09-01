@@ -830,8 +830,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
         (now || Date.now()) < profile.boosts.doubleUntil ||
         (now || Date.now()) < profile.boosts.premiumUntil,
       event: currentEvent(now || Date.now()),
+      linked: !!authUid,
+      authEmail,
+      authUid,
     }),
     [
+      authUid,
+      authEmail,
       profile,
       ready,
       now,
