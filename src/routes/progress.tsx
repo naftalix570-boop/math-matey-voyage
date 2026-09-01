@@ -57,6 +57,41 @@ function ProgressPage() {
         </p>
       </section>
 
+      <h2 className="mt-6 text-xl font-bold text-ink">🗺️ העולמות שלך</h2>
+      <p className="text-xs text-muted-foreground">
+        כל עולם = {WORLD_SIZE} שלבים. אפשר תמיד לחזור לעולמות קודמים כדי להתאמן.
+      </p>
+      <div className="mt-2 grid gap-2">
+        {Array.from({ length: 5 }, (_, i) => worldOf(profile.level) - 2 + i)
+          .filter((w) => w >= 1)
+          .map((w) => {
+            const info = worldInfo(w);
+            const cur = w === worldOf(profile.level);
+            const done = w < worldOf(profile.level);
+            return (
+              <div
+                key={w}
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl p-3 shadow-card",
+                  cur ? "bg-primary/15 ring-2 ring-primary" : done ? "bg-card" : "bg-muted/60",
+                )}
+              >
+                <span className="text-2xl">{done ? "✅" : info.emoji}</span>
+                <div className="flex-1">
+                  <p className="font-bold text-ink">
+                    עולם {w} · {info.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    שלבים {info.from.toLocaleString("he-IL")}–{info.to.toLocaleString("he-IL")}
+                  </p>
+                </div>
+                {cur && <span className="text-xs font-bold text-primary">כאן אתם עכשיו</span>}
+              </div>
+            );
+          })}
+      </div>
+
+
       <div className="mt-3 grid grid-cols-2 gap-3">
         <Stat emoji="✅" label="תשובות נכונות" value={profile.totalCorrect} />
         <Stat emoji="🎯" label="אחוז דיוק" value={`${acc}%`} />
