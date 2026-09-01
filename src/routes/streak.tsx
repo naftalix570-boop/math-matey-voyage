@@ -91,6 +91,32 @@ function StreakPage() {
         )}
       </div>
 
+      <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
+        <div className="flex items-center gap-3">
+          <span className="text-4xl">🛡️</span>
+          <div className="flex-1">
+            <p className="text-lg font-bold text-ink">מגן הרצף</p>
+            <p className="text-sm text-muted-foreground">
+              {shieldActive
+                ? "מגן פעיל — הרצף שלך שמור גם אם תפספסו יום"
+                : `שומר על הרצף לשבוע שלם · יש לך ${profile.tickets.shield}`}
+            </p>
+          </div>
+          <button
+            onClick={activateShield}
+            className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
+          >
+            הפעלה
+          </button>
+        </div>
+        {shieldMsg && (
+          <p className="animate-pop mt-3 rounded-xl bg-sky px-3 py-2 text-center font-bold text-ink">
+            {shieldMsg}
+          </p>
+        )}
+      </div>
+
+
       <h2 className="mt-5 text-lg font-bold text-ink">30 הימים הקרובים</h2>
       <div className="mt-2 grid grid-cols-5 gap-2">
         {Array.from({ length: 30 }, (_, i) => {
