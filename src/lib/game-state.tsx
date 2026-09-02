@@ -763,14 +763,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!authUid || !ready) return;
     const t = setTimeout(() => {
-      void supabase.from("profiles").upsert({
-        user_id: authUid,
-        display_name: profile.name,
-        icon: profile.icon,
-        country: profile.country,
-        score: scoreOf(profile),
-        data: JSON.parse(JSON.stringify(profile)),
-      });
+      void (async () => {
+        const { error } = await supabase.rpc("sync_my_profile", {
+          _display_name: profile.name,
+          _icon: profile.icon,
+          _country: profile.country,
+          _score: scoreOf(profile),
+          _data: JSON.parse(JSON.stringify(profile)),
+        });
+        if (error) console.error("profile sync failed", error);
+      })();
     }, 1500);
     return () => clearTimeout(t);
   }, [authUid, ready, profile]);
