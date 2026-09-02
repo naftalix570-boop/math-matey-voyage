@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { Logo } from "@/components/effects";
-import { useGame } from "@/lib/game-state";
+import { useGame, scoreOf } from "@/lib/game-state";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 
