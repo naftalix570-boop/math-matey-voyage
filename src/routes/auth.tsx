@@ -97,19 +97,26 @@ function AuthPage() {
               {authEmail}
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
-              ההתקדמות נשמרת אוטומטית בענן בכל שינוי.
+              ההתקדמות נשמרת אוטומטית בענן בכל שינוי — אפשר להחליף חשבון בלי לאבד כלום.
             </p>
             <button
-              onClick={async () => {
-                sound("click");
-                await supabase.auth.signOut();
-                update({ guest: false });
-              }}
-              className="mt-3 w-full rounded-xl bg-muted px-4 py-3 font-bold text-ink active:scale-95"
+              disabled={busy}
+              onClick={() => void switchAccount()}
+              className="mt-3 h-12 w-full rounded-xl bg-primary font-bold text-primary-foreground shadow-pop active:scale-95 disabled:opacity-50"
+            >
+              {busy ? "שומרים בענן…" : "🔄 החלפת חשבון"}
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => void endSession()}
+              className="mt-2 w-full rounded-xl bg-muted px-4 py-3 font-bold text-ink active:scale-95 disabled:opacity-50"
             >
               התנתקות
             </button>
+            {message && <p className="mt-2 text-sm font-bold text-success">{message}</p>}
+            {error && <p className="mt-2 text-sm font-bold text-destructive">{error}</p>}
           </section>
+
         ) : (
           <>
             <button
