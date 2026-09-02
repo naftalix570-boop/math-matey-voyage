@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { Logo } from "@/components/effects";
-import { useGame } from "@/lib/game-state";
+import { useGame, scoreOf } from "@/lib/game-state";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { sound, linked, authEmail, update } = useGame();
+  const { profile, sound, linked, authEmail, update } = useGame();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -27,6 +27,39 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // שמירה מיידית של ההתקדמות לענן לפני יציאה/החלפת חשבון
+  const saveToCloud = async () => {
+    const { error: err } = await supabase.rpc("sync_my_profile", {
+      _display_name: profile.name,
+      _icon: profile.icon,
+      _country: profile.country,
+      _score: scoreOf(profile),
+      _data: JSON.parse(JSON.stringify(profile)),
+    });
+    return !err;
+  };
+
+  const endSession = async () => {
+    sound("click");
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    const ok = await saveToCloud();
+    if (!ok) setError("לא הצלחנו לשמור את ההתקדמות — בדקו חיבור ונסו שוב");
+    await supabase.auth.signOut();
+    update({ guest: false });
+    setBusy(false);
+    return ok;
+  };
+
+  const switchAccount = async () => {
+    const ok = await endSession();
+    setMode("signin");
+    setEmail("");
+    setPassword("");
+    if (ok) setMessage("ההתקדמות נשמרה ✅ אפשר להתחבר עם חשבון אחר — הנתונים יחכו לכם בחשבון הקודם");
+  };
 
   const signInGoogle = async () => {
     sound("click");
@@ -37,6 +70,7 @@ function AuthPage() {
     if (result.error) setError("ההתחברות עם גוגל נכשלה — נסו שוב");
     // אם redirected — הדפדפן כבר בדרך לגוגל
   };
+
 
   const submitEmail = async () => {
     if (!email.trim() || password.length < 6) {
@@ -97,19 +131,26 @@ function AuthPage() {
               {authEmail}
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
-              ההתקדמות נשמרת אוטומטית בענן בכל שינוי.
+              ההתקדמות נשמרת אוטומטית בענן בכל שינוי — אפשר להחליף חשבון בלי לאבד כלום.
             </p>
             <button
-              onClick={async () => {
-                sound("click");
-                await supabase.auth.signOut();
-                update({ guest: false });
-              }}
-              className="mt-3 w-full rounded-xl bg-muted px-4 py-3 font-bold text-ink active:scale-95"
+              disabled={busy}
+              onClick={() => void switchAccount()}
+              className="mt-3 h-12 w-full rounded-xl bg-primary font-bold text-primary-foreground shadow-pop active:scale-95 disabled:opacity-50"
+            >
+              {busy ? "שומרים בענן…" : "🔄 החלפת חשבון"}
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => void endSession()}
+              className="mt-2 w-full rounded-xl bg-muted px-4 py-3 font-bold text-ink active:scale-95 disabled:opacity-50"
             >
               התנתקות
             </button>
+            {message && <p className="mt-2 text-sm font-bold text-success">{message}</p>}
+            {error && <p className="mt-2 text-sm font-bold text-destructive">{error}</p>}
           </section>
+
         ) : (
           <>
             <button
