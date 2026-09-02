@@ -714,6 +714,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [authUid, setAuthUid] = useState<string | null>(null);
   const [authEmail, setAuthEmail] = useState<string | null>(null);
   const pulledRef = useRef<string | null>(null);
+  const LAST_UID_KEY = "math-journey:last-uid";
 
   useEffect(() => {
     let active = true;
@@ -724,6 +725,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        if (event === "SIGNED_OUT") {
+          pulledRef.current = null;
+          try {
+            localStorage.removeItem(LAST_UID_KEY);
+          } catch {
+            /* ignore */
+          }
+          // אחרי התנתקות מתחילים מפרופיל אורח נקי — לא נשארים עם הנתונים של החשבון הקודם
+          setProfile((p) => ({ ...defaultProfile, soundOn: p.soundOn, guest: true }));
+        }
         setAuthUid(session?.user.id ?? null);
         setAuthEmail(session?.user.email ?? null);
       }
@@ -734,10 +745,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // משיכת פרופיל מהענן בכניסה — אם קיים, הוא גובר (מעבר מכשיר); אם לא, המקומי יידחף למעלה
+  // משיכת פרופיל מהענן בכניסה — הענן תמיד גובר; חשבון חדש מתחיל נקי
   useEffect(() => {
     if (!authUid || !ready || pulledRef.current === authUid) return;
-    pulledRef.current = authUid;
+    let prevUid: string | null = null;
+    try {
+      prevUid = localStorage.getItem(LAST_UID_KEY);
+    } catch {
+      /* ignore */
+    }
     void (async () => {
       const { data: rows } = await supabase.rpc("get_my_profile");
       const data = Array.isArray(rows) ? rows[0] : null;
@@ -753,15 +769,32 @@ export function GameProvider({ children }: { children: ReactNode }) {
           country: data.country || "IL",
           guest: false,
         }));
+      } else if (prevUid && prevUid !== authUid) {
+        // חשבון חדש שאין לו נתונים בענן — לא מעבירים אליו את ההתקדמות של החשבון הקודם
+        setProfile((p) => ({
+          ...defaultProfile,
+          soundOn: p.soundOn,
+          name: data?.display_name || defaultProfile.name,
+          icon: data?.icon || defaultProfile.icon,
+          country: data?.country || "IL",
+          guest: false,
+        }));
       } else {
+        // קישור ראשון של התקדמות אורח לחשבון
         setProfile((p) => ({ ...p, guest: false }));
       }
+      try {
+        localStorage.setItem(LAST_UID_KEY, authUid);
+      } catch {
+        /* ignore */
+      }
+      pulledRef.current = authUid;
     })();
   }, [authUid, ready]);
 
-  // דחיפת שינויים לענן (debounce) — שומר מטבעות, מדבקות, שלבים וניקוד דירוג
+  // דחיפת שינויים לענן (debounce) — רק אחרי שהפרופיל של החשבון הנוכחי נטען
   useEffect(() => {
-    if (!authUid || !ready) return;
+    if (!authUid || !ready || pulledRef.current !== authUid) return;
     const t = setTimeout(() => {
       void (async () => {
         const { error } = await supabase.rpc("sync_my_profile", {
