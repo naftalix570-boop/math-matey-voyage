@@ -29,6 +29,13 @@
       "when": 1788298960370,
       "tag": "0003_restrict_profile_column_exposure",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788339599861,
+      "tag": "0004_sync_my_profile_rpc",
+      "breakpoints": true
     }
   ]
 }

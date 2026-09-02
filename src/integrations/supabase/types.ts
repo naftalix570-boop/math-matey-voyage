@@ -58,6 +58,16 @@ export type Database = {
           icon: string
         }[]
       }
+      sync_my_profile: {
+        Args: {
+          _country: string
+          _data: Json
+          _display_name: string
+          _icon: string
+          _score: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
