@@ -21,7 +21,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { profile, sound, linked, authEmail, update } = useGame();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -59,6 +59,14 @@ function AuthPage() {
     setEmail("");
     setPassword("");
     if (ok) setMessage("ההתקדמות נשמרה ✅ אפשר להתחבר עם חשבון אחר — הנתונים יחכו לכם בחשבון הקודם");
+  };
+
+  const createNewAccount = async () => {
+    const ok = await endSession();
+    setMode("signup");
+    setEmail("");
+    setPassword("");
+    if (ok) setMessage("ההתקדמות נשמרה ✅ עכשיו אפשר לפתוח חשבון חדש");
   };
 
   const signInGoogle = async () => {
@@ -142,8 +150,15 @@ function AuthPage() {
             </button>
             <button
               disabled={busy}
-              onClick={() => void endSession()}
+              onClick={() => void createNewAccount()}
               className="mt-2 w-full rounded-xl bg-muted px-4 py-3 font-bold text-ink active:scale-95 disabled:opacity-50"
+            >
+              ➕ פתיחת חשבון חדש
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => void endSession()}
+              className="mt-2 w-full rounded-xl border-2 border-muted px-4 py-3 font-bold text-muted-foreground active:scale-95 disabled:opacity-50"
             >
               התנתקות
             </button>
@@ -169,20 +184,20 @@ function AuthPage() {
             <section className="rounded-2xl bg-card p-4 shadow-card">
               <div className="mb-3 grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => setMode("signin")}
-                  className={`rounded-xl px-3 py-2 font-bold ${
-                    mode === "signin" ? "bg-primary text-primary-foreground" : "bg-muted text-ink"
-                  }`}
-                >
-                  התחברות
-                </button>
-                <button
                   onClick={() => setMode("signup")}
                   className={`rounded-xl px-3 py-2 font-bold ${
                     mode === "signup" ? "bg-primary text-primary-foreground" : "bg-muted text-ink"
                   }`}
                 >
-                  הרשמה
+                  חשבון חדש
+                </button>
+                <button
+                  onClick={() => setMode("signin")}
+                  className={`rounded-xl px-3 py-2 font-bold ${
+                    mode === "signin" ? "bg-primary text-primary-foreground" : "bg-muted text-ink"
+                  }`}
+                >
+                  יש לי חשבון
                 </button>
               </div>
               <input
@@ -208,7 +223,7 @@ function AuthPage() {
                 onClick={() => void submitEmail()}
                 className="mt-3 h-12 w-full rounded-xl bg-primary font-bold text-primary-foreground shadow-pop active:scale-95 disabled:opacity-50"
               >
-                {busy ? "רגע…" : mode === "signup" ? "יצירת חשבון" : "התחברות"}
+                {busy ? "רגע…" : mode === "signup" ? "יצירת חשבון חדש" : "התחברות"}
               </button>
             </section>
 
