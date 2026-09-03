@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { isNativeApp, NATIVE_APP_SCHEME, SITE_URL } from "@/lib/native";
 import { Screen } from "@/components/app-shell";
 import { Logo } from "@/components/effects";
 import { useGame, scoreOf } from "@/lib/game-state";
@@ -69,7 +70,20 @@ function AuthPage() {
     if (ok) setMessage("ההתקדמות נשמרה ✅ עכשיו אפשר לפתוח חשבון חדש");
   };
 
+  // באפליקציה: התחברות גוגל נפתחת בדפדפן המערכת (גוגל חוסם WebView),
+  // ובסיום חוזרת לאפליקציה עם deep link שמעביר את הסשן.
+  const signInGoogleNative = async () => {
+    sound("click");
+    setError(null);
+    const { Browser } = await import("@capacitor/browser");
+    await Browser.open({ url: `${SITE_URL}/auth?native=1` });
+  };
+
   const signInGoogle = async () => {
+    if (isNativeApp()) {
+      void signInGoogleNative();
+      return;
+    }
     sound("click");
     setError(null);
     const result = await lovable.auth.signInWithOAuth("google", {
@@ -78,6 +92,26 @@ function AuthPage() {
     if (result.error) setError("ההתחברות עם גוגל נכשלה — נסו שוב");
     // אם redirected — הדפדפן כבר בדרך לגוגל
   };
+
+  // דף זה נפתח בדפדפן החיצוני עם ?native=1 — ברגע שיש סשן מחזירים אותו לאפליקציה.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (isNativeApp()) return;
+    if (new URLSearchParams(window.location.search).get("native") !== "1") return;
+    let done = false;
+    const handoff = async () => {
+      const { data } = await supabase.auth.getSession();
+      const session = data.session;
+      if (!session || done) return;
+      done = true;
+      window.location.href =
+        `${NATIVE_APP_SCHEME}://auth#access_token=${encodeURIComponent(session.access_token)}` +
+        `&refresh_token=${encodeURIComponent(session.refresh_token)}`;
+    };
+    void handoff();
+    const { data: sub } = supabase.auth.onAuthStateChange(() => void handoff());
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
 
   const submitEmail = async () => {

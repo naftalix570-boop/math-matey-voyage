@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { GameProvider } from "../lib/game-state";
 import { I18nProvider } from "../lib/i18n";
 import { registerOfflineWorker } from "../lib/use-online";
+import { NativeBridge } from "../components/native-bridge";
 
 function NotFoundComponent() {
   return (
@@ -136,6 +137,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
+        <NativeBridge />
         <GameProvider>
           {/* Required: nested routes render here. */}
           <Outlet />
