@@ -137,6 +137,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
+        <NativeBridge />
         <GameProvider>
           {/* Required: nested routes render here. */}
           <Outlet />
