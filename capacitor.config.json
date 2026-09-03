@@ -1,0 +1,31 @@
+{
+  "appId": "app.lovable.mathjourney",
+  "appName": "מסע המתמטיקס",
+  "webDir": "dist/client",
+  "server": {
+    "url": "https://math-matey-voyage.lovable.app",
+    "cleartext": false,
+    "androidScheme": "https",
+    "iosScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#ffffff"
+  },
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#ffffff"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#ffffff",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "LIGHT",
+      "backgroundColor": "#ff8a1a"
+    }
+  }
+}
