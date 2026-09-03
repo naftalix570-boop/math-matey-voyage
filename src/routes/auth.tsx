@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { isNativeApp, NATIVE_APP_SCHEME, SITE_URL } from "@/lib/native";
 import { Screen } from "@/components/app-shell";
 import { Logo } from "@/components/effects";
 import { useGame, scoreOf } from "@/lib/game-state";
