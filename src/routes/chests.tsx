@@ -63,8 +63,8 @@ function ChestsPage() {
         <div className="mt-4 rounded-2xl bg-sky p-4 text-center shadow-card">
           <p className="text-lg font-bold text-ink">🎉 תיבה יומית חינם</p>
           <p className="text-sm">
-            תיבה אחת חינם בכל יום — לא נצברת.
-            {premium && " 👑 פרימיום: בונוסים גדולים יותר!"}
+            תיבה קטנה אחת ביום — קצת מטבעות ומדבקה אחת (פשוטה יותר מהתיבה הרגילה).
+            {premium && " 👑 פרימיום: זמינה כל יום!"}
           </p>
           <button
             onClick={() => open("regular", "free")}
