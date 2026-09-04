@@ -257,17 +257,24 @@ export const EVENTS: EventInfo[] = [
   { week: 3, title: "בונוס רצף", desc: "35 מטבעות בונוס בלחיצת הרצף", emoji: "🔥" },
 ];
 
-/** מתחלף במוצאי שבת — מחזור של 4 שבועות */
-export function currentEvent(now = Date.now()): EventInfo {
-  const week = Math.floor((now + 86400000) / (7 * 86400000)) % 4;
-  return EVENTS[week] as EventInfo;
+/** תחילת שבוע האיוונט — מוצאי שבת, כלומר יום ראשון ב-00:00 שעון מקומי */
+function eventWeekStart(now: Date): Date {
+  const s = new Date(now);
+  s.setHours(0, 0, 0, 0);
+  s.setDate(s.getDate() - s.getDay()); // יום ראשון
+  return s;
 }
 
-/** תאריך החלפת האיוונט הבא (לפי שעון מקומי) */
+/** מתחלף במוצאי שבת ב-00:00 — מחזור של 4 שבועות */
+export function currentEvent(now = Date.now()): EventInfo {
+  const start = eventWeekStart(new Date(now));
+  const idx = ((Math.floor(start.getTime() / 604800000) % 4) + 4) % 4;
+  return EVENTS[idx] as EventInfo;
+}
+
+/** תאריך החלפת האיוונט הבא (מוצאי שבת ב-00:00 מקומי) */
 export function nextEventChange(now = new Date()): Date {
-  const start = new Date(now);
-  start.setDate(start.getDate() - ((start.getDay() + 1) % 7)); // תחילת שבוע האיוונט
-  const next = new Date(start);
+  const next = eventWeekStart(now);
   next.setDate(next.getDate() + 7);
   return next;
 }
