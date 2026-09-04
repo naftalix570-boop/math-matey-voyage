@@ -35,6 +35,8 @@ function SettingsPage() {
   const { profile, update, sound, reset, linked, authEmail } = useGame();
   const { t, lang, setLang } = useI18n();
   const [confirming, setConfirming] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  const current = LANGS.find((l) => l.code === lang);
 
   return (
     <Screen title={t("title.settings")}>
