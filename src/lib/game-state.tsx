@@ -682,8 +682,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }
       if (parsed.lastChestDay !== today) {
         parsed.lastChestDay = today;
-        // תיבה חינם אחת בלבד ליום — לא נצברת ולא כפולה בימי אירוע
-        parsed.chests = 1;
+        // תיבה יומית חינם רק באיוונט התיבה היומית (או לפרימיום) — פרס אחד לאיוונט
+        parsed.chests =
+          currentEvent().week === 0 || Date.now() < parsed.boosts.premiumUntil ? 1 : 0;
       } else {
         parsed.chests = Math.min(1, parsed.chests);
       }
