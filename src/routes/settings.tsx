@@ -35,51 +35,110 @@ function SettingsPage() {
   const { profile, update, sound, reset, linked, authEmail } = useGame();
   const { t, lang, setLang } = useI18n();
   const [confirming, setConfirming] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  const current = LANGS.find((l) => l.code === lang);
 
   return (
     <Screen title={t("title.settings")}>
       <div className="mt-2 grid gap-3 pb-28">
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <p className="text-lg font-bold text-ink">{t("settings.language")}</p>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {LANGS.map((l) => (
-              <button
-                key={l.code}
-                onClick={() => {
-                  sound("click");
-                  setLang(l.code);
-                }}
-                className={cn(
-                  "rounded-xl px-2 py-3 text-sm font-bold transition-all",
-                  lang === l.code ? "bg-primary/15 text-ink ring-2 ring-primary" : "bg-muted text-ink",
-                )}
-              >
-                <span className="block text-xl">{l.flag}</span>
-                {l.label}
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={() => {
+              sound("click");
+              setLangOpen(true);
+            }}
+            className="mt-3 flex h-12 w-full items-center justify-between rounded-xl bg-muted px-4 font-bold text-ink active:scale-95"
+          >
+            <span>
+              {current?.flag} {current?.label}
+            </span>
+            <span className="text-muted-foreground">▾</span>
+          </button>
         </section>
+
+        {langOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4"
+            onClick={() => setLangOpen(false)}
+          >
+            <div
+              className="animate-pop mb-20 w-full max-w-sm rounded-3xl bg-card p-4 shadow-pop"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p className="text-center text-lg font-bold text-ink">{t("settings.language")}</p>
+              <div className="mt-3 grid gap-2">
+                {LANGS.map((l) => (
+                  <button
+                    key={l.code}
+                    onClick={() => {
+                      sound("click");
+                      setLang(l.code);
+                      setLangOpen(false);
+                    }}
+                    className={cn(
+                      "flex h-12 items-center gap-3 rounded-xl px-4 text-base font-bold transition-all",
+                      lang === l.code ? "bg-primary/15 text-ink ring-2 ring-primary" : "bg-muted text-ink",
+                    )}
+                  >
+                    <span className="text-xl">{l.flag}</span>
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setLangOpen(false)}
+                className="mt-3 h-11 w-full rounded-xl bg-muted font-bold text-ink active:scale-95"
+              >
+                {t("settings.cancel")}
+              </button>
+            </div>
+          </div>
+        )}
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <p className="text-lg font-bold text-ink">{t("settings.account")}</p>
           {linked ? (
-            <p className="mt-1 text-sm text-muted-foreground">
-              מחובר כ-<span dir="ltr" className="font-bold text-ink">{authEmail}</span> — ההתקדמות
-              נשמרת בענן ומסתנכרנת בין מכשירים.
-            </p>
+            <>
+              <p className="mt-1 text-sm text-muted-foreground">
+                מחובר כ-<span dir="ltr" className="font-bold text-ink">{authEmail}</span> — ההתקדמות
+                נשמרת בענן ומסתנכרנת בין מכשירים.
+              </p>
+              <div className="mt-3 grid gap-2">
+                <Link
+                  to="/auth"
+                  className="flex h-11 items-center justify-center rounded-xl bg-muted font-bold text-ink active:scale-95"
+                >
+                  🔄 החלפת חשבון
+                </Link>
+                <Link
+                  to="/auth"
+                  className="flex h-11 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground shadow-pop active:scale-95"
+                >
+                  ➕ פתיחת חשבון חדש
+                </Link>
+              </div>
+            </>
           ) : (
             <>
               <p className="mt-1 text-sm text-muted-foreground">
                 {profile.guest ? "חשבון אורח — ההתקדמות נשמרת רק במכשיר הזה." : "לא מחובר."} קשרו
                 חשבון כדי לא לאבד התקדמות בהחלפת מכשיר.
               </p>
-              <Link
-                to="/auth"
-                className="mt-3 flex h-11 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground shadow-pop active:scale-95"
-              >
-                {t("settings.link")}
-              </Link>
+              <div className="mt-3 grid gap-2">
+                <Link
+                  to="/auth"
+                  className="flex h-11 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground shadow-pop active:scale-95"
+                >
+                  {t("settings.link")}
+                </Link>
+                <Link
+                  to="/auth"
+                  className="flex h-11 items-center justify-center rounded-xl bg-muted font-bold text-ink active:scale-95"
+                >
+                  ➕ פתיחת חשבון חדש
+                </Link>
+              </div>
             </>
           )}
         </section>

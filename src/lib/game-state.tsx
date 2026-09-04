@@ -257,17 +257,24 @@ export const EVENTS: EventInfo[] = [
   { week: 3, title: "בונוס רצף", desc: "35 מטבעות בונוס בלחיצת הרצף", emoji: "🔥" },
 ];
 
-/** מתחלף במוצאי שבת — מחזור של 4 שבועות */
-export function currentEvent(now = Date.now()): EventInfo {
-  const week = Math.floor((now + 86400000) / (7 * 86400000)) % 4;
-  return EVENTS[week] as EventInfo;
+/** תחילת שבוע האיוונט — מוצאי שבת, כלומר יום ראשון ב-00:00 שעון מקומי */
+function eventWeekStart(now: Date): Date {
+  const s = new Date(now);
+  s.setHours(0, 0, 0, 0);
+  s.setDate(s.getDate() - s.getDay()); // יום ראשון
+  return s;
 }
 
-/** תאריך החלפת האיוונט הבא (לפי שעון מקומי) */
+/** מתחלף במוצאי שבת ב-00:00 — מחזור של 4 שבועות */
+export function currentEvent(now = Date.now()): EventInfo {
+  const start = eventWeekStart(new Date(now));
+  const idx = ((Math.floor(start.getTime() / 604800000) % 4) + 4) % 4;
+  return EVENTS[idx] as EventInfo;
+}
+
+/** תאריך החלפת האיוונט הבא (מוצאי שבת ב-00:00 מקומי) */
 export function nextEventChange(now = new Date()): Date {
-  const start = new Date(now);
-  start.setDate(start.getDate() - ((start.getDay() + 1) % 7)); // תחילת שבוע האיוונט
-  const next = new Date(start);
+  const next = eventWeekStart(now);
   next.setDate(next.getDate() + 7);
   return next;
 }
@@ -675,8 +682,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }
       if (parsed.lastChestDay !== today) {
         parsed.lastChestDay = today;
-        // תיבה חינם אחת בלבד ליום — לא נצברת ולא כפולה בימי אירוע
-        parsed.chests = 1;
+        // תיבה יומית חינם רק באיוונט התיבה היומית (או לפרימיום) — פרס אחד לאיוונט
+        parsed.chests =
+          currentEvent().week === 0 || Date.now() < parsed.boosts.premiumUntil ? 1 : 0;
       } else {
         parsed.chests = Math.min(1, parsed.chests);
       }
@@ -839,10 +847,29 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (src === "inv" && p.chestInv[kind] <= 0) return p;
       if (src === "coins" && p.coins < cfg.price) return p;
       const lucky = p.tickets.luck > 0;
-      const coins =
-        kind === "regular" ? rnd(20, 100) : kind === "amazing" ? rnd(100, 300) : rnd(300, 700);
-      const hints = kind === "regular" ? rnd(1, 3) : kind === "amazing" ? rnd(4, 8) : rnd(8, 15);
-      const count = kind === "regular" ? rnd(2, 3) : kind === "amazing" ? rnd(3, 5) : rnd(4, 8);
+      // התיבה היומית החינמית פשוטה יותר — פחות מהתיבה הרגילה
+      const daily = src === "free";
+      const coins = daily
+        ? rnd(10, 40)
+        : kind === "regular"
+          ? rnd(20, 100)
+          : kind === "amazing"
+            ? rnd(100, 300)
+            : rnd(300, 700);
+      const hints = daily
+        ? rnd(0, 1)
+        : kind === "regular"
+          ? rnd(1, 3)
+          : kind === "amazing"
+            ? rnd(4, 8)
+            : rnd(8, 15);
+      const count = daily
+        ? 1
+        : kind === "regular"
+          ? rnd(2, 3)
+          : kind === "amazing"
+            ? rnd(3, 5)
+            : rnd(4, 8);
       const guaranteed: Rarity | undefined =
         kind === "amazing" ? "amazing" : kind === "legendary" ? "legendary" : undefined;
       const picked = drawStickers(p.stickers, count, guaranteed, lucky);

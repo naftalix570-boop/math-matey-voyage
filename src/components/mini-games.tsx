@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Confetti, Logo } from "@/components/effects";
 import { makeOptions, makeQuestion, makeTrueFalse, OP_SIGN, pick, type Op } from "@/lib/math";
 import { ResultScreen, type QuizResult } from "@/components/quiz";
+import { useExitLock } from "@/lib/exit-lock";
 
 /* ---------------- Memory: match exercise to answer ---------------- */
 
@@ -506,31 +507,70 @@ export function BuilderGame() {
 
 /* ---------------- Flash: 60 second sprint ---------------- */
 
+const FLASH_SECONDS = 60;
+const FLASH_HEARTS = 10;
+
 export function FlashGame() {
   const { profile, update, recordAnswer, sound, unlockAchievement } = useGame();
-  const [time, setTime] = useState(60);
+  const [deadline, setDeadline] = useState(() => Date.now() + FLASH_SECONDS * 1000);
+  const [time, setTime] = useState(FLASH_SECONDS);
+  const [hearts, setHearts] = useState(FLASH_HEARTS);
   const [score, setScore] = useState(0);
   const [q, setQ] = useState(() => makeQuestion(profile.level, undefined, 3));
   const [over, setOver] = useState(false);
 
+  useExitLock(!over, "אי אפשר לצאת באמצע אתגר המהירות ⚡");
+
+  const finish = useRef(false);
   useEffect(() => {
     if (over) return;
-    if (time <= 0) {
-      setOver(true);
-      sound("win");
-      unlockAchievement("flash");
-      update((p) => ({ bestFlash: Math.max(p.bestFlash, score) }));
-      return;
-    }
-    const t = setTimeout(() => setTime((s) => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [time, over, score, sound, update, unlockAchievement]);
+    // טיימר מדויק לפי חותמת זמן — לא מתאפס בכל תשובה
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setTime(left);
+      if (left <= 0 && !finish.current) {
+        finish.current = true;
+        setOver(true);
+      }
+    };
+    tick();
+    const id = setInterval(tick, 200);
+    return () => clearInterval(id);
+  }, [deadline, over]);
+
+  useEffect(() => {
+    if (!over) return;
+    sound("win");
+    unlockAchievement("flash");
+    update((p) => ({ bestFlash: Math.max(p.bestFlash, score) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [over]);
 
   const answer = (value: number) => {
+    if (over) return;
     const hit = value === q.answer;
     recordAnswer(hit, q.op);
     sound(hit ? "correct" : "wrong");
     if (hit) setScore((s) => s + 1);
+    else {
+      const left = hearts - 1;
+      setHearts(left);
+      if (left <= 0) {
+        finish.current = true;
+        setOver(true);
+        return;
+      }
+    }
+    setQ(makeQuestion(profile.level, undefined, 3));
+  };
+
+  const restart = () => {
+    finish.current = false;
+    setOver(false);
+    setScore(0);
+    setHearts(FLASH_HEARTS);
+    setDeadline(Date.now() + FLASH_SECONDS * 1000);
+    setTime(FLASH_SECONDS);
     setQ(makeQuestion(profile.level, undefined, 3));
   };
 
@@ -541,16 +581,12 @@ export function FlashGame() {
         <Logo size={110} bounce={1} />
         <h2 className="text-2xl font-bold text-ink">⚡ סיימת!</h2>
         <p className="text-lg">
-          פתרת <span className="font-bold text-success">{score}</span> תרגילים ב-60 שניות
+          פתרת <span className="font-bold text-success">{score}</span> תרגילים
+          {hearts <= 0 ? " — נגמרו הלבבות 💔" : " ב-60 שניות"}
         </p>
         <p className="text-muted-foreground">שיא אישי: {Math.max(profile.bestFlash, score)}</p>
         <button
-          onClick={() => {
-            setOver(false);
-            setScore(0);
-            setTime(60);
-            setQ(makeQuestion(profile.level, undefined, 3));
-          }}
+          onClick={restart}
           className="h-12 w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground active:scale-95"
         >
           שחק שוב
@@ -560,11 +596,21 @@ export function FlashGame() {
 
   return (
     <div className="pt-2">
-      <div className="mb-3 flex justify-between font-bold text-ink">
-        <span>⚡ ניקוד: {score}</span>
+      <div className="mb-3 flex items-center justify-between font-bold text-ink">
+        <span>⚡ {score}</span>
+        <span aria-label={`${hearts} לבבות`}>
+          {"❤️".repeat(Math.min(hearts, 5))}
+          {hearts > 5 && <span className="text-sm"> ×{hearts}</span>}
+        </span>
         <span className={cn(time <= 10 && "text-destructive")}>⏱️ {time}</span>
       </div>
-      <div className="flex min-h-32 items-center justify-center rounded-2xl bg-sky p-6 text-4xl font-bold text-ink shadow-card">
+      <div className="h-2 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full bg-primary transition-[width] duration-200"
+          style={{ width: `${(time / FLASH_SECONDS) * 100}%` }}
+        />
+      </div>
+      <div className="mt-3 flex min-h-32 items-center justify-center rounded-2xl bg-sky p-6 text-4xl font-bold text-ink shadow-card">
         {q.text}
       </div>
       <div className="mt-4 grid gap-3">
@@ -578,6 +624,9 @@ export function FlashGame() {
           </button>
         ))}
       </div>
+      <p className="mt-3 pb-28 text-center text-xs text-muted-foreground">
+        אי אפשר לצאת עד שהזמן נגמר או שנגמרים הלבבות
+      </p>
     </div>
   );
 }
