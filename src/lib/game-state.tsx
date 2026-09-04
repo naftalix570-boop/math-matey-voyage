@@ -847,10 +847,29 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (src === "inv" && p.chestInv[kind] <= 0) return p;
       if (src === "coins" && p.coins < cfg.price) return p;
       const lucky = p.tickets.luck > 0;
-      const coins =
-        kind === "regular" ? rnd(20, 100) : kind === "amazing" ? rnd(100, 300) : rnd(300, 700);
-      const hints = kind === "regular" ? rnd(1, 3) : kind === "amazing" ? rnd(4, 8) : rnd(8, 15);
-      const count = kind === "regular" ? rnd(2, 3) : kind === "amazing" ? rnd(3, 5) : rnd(4, 8);
+      // התיבה היומית החינמית פשוטה יותר — פחות מהתיבה הרגילה
+      const daily = src === "free";
+      const coins = daily
+        ? rnd(10, 40)
+        : kind === "regular"
+          ? rnd(20, 100)
+          : kind === "amazing"
+            ? rnd(100, 300)
+            : rnd(300, 700);
+      const hints = daily
+        ? rnd(0, 1)
+        : kind === "regular"
+          ? rnd(1, 3)
+          : kind === "amazing"
+            ? rnd(4, 8)
+            : rnd(8, 15);
+      const count = daily
+        ? 1
+        : kind === "regular"
+          ? rnd(2, 3)
+          : kind === "amazing"
+            ? rnd(3, 5)
+            : rnd(4, 8);
       const guaranteed: Rarity | undefined =
         kind === "amazing" ? "amazing" : kind === "legendary" ? "legendary" : undefined;
       const picked = drawStickers(p.stickers, count, guaranteed, lucky);
