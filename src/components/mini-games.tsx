@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Confetti, Logo } from "@/components/effects";
 import { makeOptions, makeQuestion, makeTrueFalse, OP_SIGN, pick, type Op } from "@/lib/math";
 import { ResultScreen, type QuizResult } from "@/components/quiz";
+import { useExitLock } from "@/lib/exit-lock";
 
 /* ---------------- Memory: match exercise to answer ---------------- */
 
