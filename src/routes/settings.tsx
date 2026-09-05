@@ -1,10 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Screen } from "@/components/app-shell";
 import { ICONS, useGame } from "@/lib/game-state";
 import { MAX_LEVEL } from "@/lib/math";
 import { cn } from "@/lib/utils";
 import { useI18n, LANGS } from "@/lib/i18n";
+import { redeemPromoCode, verifyAdminCode } from "@/lib/admin.functions";
+
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
