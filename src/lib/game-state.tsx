@@ -727,7 +727,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const pulledRef = useRef<string | null>(null);
   const authUidRef = useRef<string | null>(null);
   const profileRef = useRef(profile);
-  const syncInFlightRef = useRef<Promise<boolean> | null>(null);
+  const syncQueueRef = useRef<Promise<boolean>>(Promise.resolve(true));
   const LAST_UID_KEY = "math-journey:last-uid";
 
   useEffect(() => {
@@ -830,10 +830,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const syncNow = useCallback(async (): Promise<boolean> => {
     const uid = authUidRef.current;
     if (!uid || pulledRef.current !== uid) return false;
-    if (syncInFlightRef.current) return syncInFlightRef.current;
-    const snapshot = profileRef.current;
     setCloudSyncing(true);
-    const request = (async () => {
+    const request = syncQueueRef.current.catch(() => false).then(async () => {
+      if (authUidRef.current !== uid || pulledRef.current !== uid) return false;
+      const snapshot = profileRef.current;
       const { error } = await supabase.rpc("sync_my_profile", {
         _display_name: snapshot.name,
         _icon: snapshot.icon,
@@ -843,13 +843,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
       });
       if (error) console.error("profile sync failed", error);
       return !error;
-    })();
-    syncInFlightRef.current = request;
+    });
+    syncQueueRef.current = request;
     try {
       return await request;
     } finally {
-      if (syncInFlightRef.current === request) syncInFlightRef.current = null;
-      setCloudSyncing(false);
+      if (syncQueueRef.current === request) setCloudSyncing(false);
     }
   }, []);
 
