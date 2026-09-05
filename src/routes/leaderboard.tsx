@@ -147,6 +147,7 @@ function LeaderboardPage() {
         {!linked && (
           <Link
             to="/auth"
+            search={{ mode: "signin" }}
             className="flex h-12 items-center justify-center rounded-xl bg-secondary font-bold text-secondary-foreground active:scale-95"
           >
             התחברות — כדי לשמור את המקום שלך בענן

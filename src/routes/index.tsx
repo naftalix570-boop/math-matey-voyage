@@ -160,6 +160,7 @@ function Home() {
       {profile.guest && (
         <Link
           to="/auth"
+          search={{ mode: "signup" }}
           className="mt-3 flex items-center justify-center gap-2 rounded-2xl bg-sky px-4 py-3 font-bold text-ink shadow-card active:scale-95"
         >
           {t("home.saveCloud")}
