@@ -107,12 +107,14 @@ function SettingsPage() {
               <div className="mt-3 grid gap-2">
                 <Link
                   to="/auth"
+                  search={{ mode: "signin" }}
                   className="flex h-11 items-center justify-center rounded-xl bg-muted font-bold text-ink active:scale-95"
                 >
                   🔄 החלפת חשבון
                 </Link>
                 <Link
                   to="/auth"
+                  search={{ mode: "signup" }}
                   className="flex h-11 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground shadow-pop active:scale-95"
                 >
                   ➕ פתיחת חשבון חדש
@@ -128,12 +130,14 @@ function SettingsPage() {
               <div className="mt-3 grid gap-2">
                 <Link
                   to="/auth"
+                  search={{ mode: "signin" }}
                   className="flex h-11 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground shadow-pop active:scale-95"
                 >
                   {t("settings.link")}
                 </Link>
                 <Link
                   to="/auth"
+                  search={{ mode: "signup" }}
                   className="flex h-11 items-center justify-center rounded-xl bg-muted font-bold text-ink active:scale-95"
                 >
                   ➕ פתיחת חשבון חדש

@@ -606,6 +606,8 @@ type Ctx = {
   linked: boolean;
   authEmail: string | null;
   authUid: string | null;
+  syncNow: () => Promise<boolean>;
+  cloudSyncing: boolean;
 };
 
 export type WheelPrize = {
@@ -721,15 +723,28 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const [authUid, setAuthUid] = useState<string | null>(null);
   const [authEmail, setAuthEmail] = useState<string | null>(null);
+  const [cloudSyncing, setCloudSyncing] = useState(false);
   const pulledRef = useRef<string | null>(null);
+  const authUidRef = useRef<string | null>(null);
+  const profileRef = useRef(profile);
+  const syncInFlightRef = useRef<Promise<boolean> | null>(null);
   const LAST_UID_KEY = "math-journey:last-uid";
+
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
+
+  const setCurrentUser = useCallback((uid: string | null, email: string | null) => {
+    authUidRef.current = uid;
+    setAuthUid(uid);
+    setAuthEmail(email);
+  }, []);
 
   useEffect(() => {
     let active = true;
     void supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
-      setAuthUid(data.session?.user.id ?? null);
-      setAuthEmail(data.session?.user.email ?? null);
+      setCurrentUser(data.session?.user.id ?? null, data.session?.user.email ?? null);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
@@ -743,15 +758,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
           // אחרי התנתקות מתחילים מפרופיל אורח נקי — לא נשארים עם הנתונים של החשבון הקודם
           setProfile((p) => ({ ...defaultProfile, soundOn: p.soundOn, guest: true }));
         }
-        setAuthUid(session?.user.id ?? null);
-        setAuthEmail(session?.user.email ?? null);
+        setCurrentUser(session?.user.id ?? null, session?.user.email ?? null);
       }
     });
     return () => {
       active = false;
       sub.subscription.unsubscribe();
     };
-  }, []);
+  }, [setCurrentUser]);
 
   // משיכת פרופיל מהענן בכניסה — הענן תמיד גובר; חשבון חדש מתחיל נקי
   useEffect(() => {
@@ -762,8 +776,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
-    void (async () => {
-      const { data: rows } = await supabase.rpc("get_my_profile");
+    let cancelled = false;
+    const loadCloudProfile = async () => {
+      const { data: rows, error } = await supabase.rpc("get_my_profile");
+      if (cancelled || authUidRef.current !== authUid) return;
+      if (error) {
+        console.error("profile load failed", error);
+        window.setTimeout(() => {
+          if (!cancelled && authUidRef.current === authUid) void loadCloudProfile();
+        }, 2000);
+        return;
+      }
       const data = Array.isArray(rows) ? rows[0] : null;
       if (data?.data && typeof data.data === "object" && Object.keys(data.data).length) {
         const cloud = data.data as Partial<Profile>;
@@ -797,26 +820,62 @@ export function GameProvider({ children }: { children: ReactNode }) {
         /* ignore */
       }
       pulledRef.current = authUid;
-    })();
+    };
+    void loadCloudProfile();
+    return () => {
+      cancelled = true;
+    };
   }, [authUid, ready]);
+
+  const syncNow = useCallback(async (): Promise<boolean> => {
+    const uid = authUidRef.current;
+    if (!uid || pulledRef.current !== uid) return false;
+    if (syncInFlightRef.current) return syncInFlightRef.current;
+    const snapshot = profileRef.current;
+    setCloudSyncing(true);
+    const request = (async () => {
+      const { error } = await supabase.rpc("sync_my_profile", {
+        _display_name: snapshot.name,
+        _icon: snapshot.icon,
+        _country: snapshot.country,
+        _score: scoreOf(snapshot),
+        _data: JSON.parse(JSON.stringify(snapshot)),
+      });
+      if (error) console.error("profile sync failed", error);
+      return !error;
+    })();
+    syncInFlightRef.current = request;
+    try {
+      return await request;
+    } finally {
+      if (syncInFlightRef.current === request) syncInFlightRef.current = null;
+      setCloudSyncing(false);
+    }
+  }, []);
 
   // דחיפת שינויים לענן (debounce) — רק אחרי שהפרופיל של החשבון הנוכחי נטען
   useEffect(() => {
     if (!authUid || !ready || pulledRef.current !== authUid) return;
     const t = setTimeout(() => {
-      void (async () => {
-        const { error } = await supabase.rpc("sync_my_profile", {
-          _display_name: profile.name,
-          _icon: profile.icon,
-          _country: profile.country,
-          _score: scoreOf(profile),
-          _data: JSON.parse(JSON.stringify(profile)),
-        });
-        if (error) console.error("profile sync failed", error);
-      })();
-    }, 1500);
+      void syncNow();
+    }, 350);
     return () => clearTimeout(t);
-  }, [authUid, ready, profile]);
+  }, [authUid, ready, profile, syncNow]);
+
+  // ניסיון שמירה נוסף כשהאפליקציה עוברת לרקע או נסגרת.
+  useEffect(() => {
+    if (!authUid || pulledRef.current !== authUid) return;
+    const saveWhenHidden = () => {
+      if (document.visibilityState === "hidden") void syncNow();
+    };
+    const saveBeforeClose = () => void syncNow();
+    document.addEventListener("visibilitychange", saveWhenHidden);
+    window.addEventListener("pagehide", saveBeforeClose);
+    return () => {
+      document.removeEventListener("visibilitychange", saveWhenHidden);
+      window.removeEventListener("pagehide", saveBeforeClose);
+    };
+  }, [authUid, syncNow]);
 
   const update: Ctx["update"] = useCallback((patch) => {
     setProfile((p) => ({ ...p, ...(typeof patch === "function" ? patch(p) : patch) }));
@@ -1218,13 +1277,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
       linked: !!authUid,
       authEmail,
       authUid,
+      syncNow,
+      cloudSyncing,
     }),
     [
       authUid,
       authEmail,
+      cloudSyncing,
       profile,
       ready,
       now,
+      syncNow,
       update,
       recordAnswer,
       addCoins,
