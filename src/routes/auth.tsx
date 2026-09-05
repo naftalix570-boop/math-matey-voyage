@@ -3,13 +3,16 @@ import { useEffect, useState } from "react";
 import { isNativeApp, NATIVE_APP_SCHEME, SITE_URL } from "@/lib/native";
 import { Screen } from "@/components/app-shell";
 import { Logo } from "@/components/effects";
-import { useGame, scoreOf } from "@/lib/game-state";
+import { useGame } from "@/lib/game-state";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>) => ({
-    mode: search.mode === "signin" ? ("signin" as const) : ("signup" as const),
+    mode:
+      search["mode"] === "signin" || search["mode"] === "signup"
+        ? (search["mode"] as "signin" | "signup")
+        : undefined,
   }),
   head: () => ({
     meta: [
@@ -26,7 +29,7 @@ function AuthPage() {
   const { sound, linked, authEmail, syncNow, cloudSyncing } = useGame();
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">(search.mode);
+  const [mode, setMode] = useState<"signin" | "signup">(search.mode ?? "signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
