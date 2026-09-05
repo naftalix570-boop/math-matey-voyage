@@ -36,6 +36,13 @@
       "when": 1788339599861,
       "tag": "0004_sync_my_profile_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788644220473,
+      "tag": "0005_promo_codes",
+      "breakpoints": true
     }
   ]
 }

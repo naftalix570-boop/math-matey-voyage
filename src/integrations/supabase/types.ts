@@ -44,6 +44,59 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_codes: {
+        Row: {
+          amount: number
+          code: string
+          created_at: string
+          max_uses: number
+          reward_type: string
+          uses: number
+        }
+        Insert: {
+          amount: number
+          code: string
+          created_at?: string
+          max_uses: number
+          reward_type: string
+          uses?: number
+        }
+        Update: {
+          amount?: number
+          code?: string
+          created_at?: string
+          max_uses?: number
+          reward_type?: string
+          uses?: number
+        }
+        Relationships: []
+      }
+      promo_redemptions: {
+        Row: {
+          code: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_redemptions_code_fkey"
+            columns: ["code"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
