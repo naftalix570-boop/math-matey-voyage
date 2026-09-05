@@ -750,11 +750,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
         if (event === "SIGNED_OUT") {
           pulledRef.current = null;
-          try {
-            localStorage.removeItem(LAST_UID_KEY);
-          } catch {
-            /* ignore */
-          }
           // אחרי התנתקות מתחילים מפרופיל אורח נקי — לא נשארים עם הנתונים של החשבון הקודם
           setProfile((p) => ({ ...defaultProfile, soundOn: p.soundOn, guest: true }));
         }
@@ -870,9 +865,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const saveBeforeClose = () => void syncNow();
     document.addEventListener("visibilitychange", saveWhenHidden);
     window.addEventListener("pagehide", saveBeforeClose);
+    window.addEventListener("online", saveBeforeClose);
     return () => {
       document.removeEventListener("visibilitychange", saveWhenHidden);
       window.removeEventListener("pagehide", saveBeforeClose);
+      window.removeEventListener("online", saveBeforeClose);
     };
   }, [authUid, syncNow]);
 

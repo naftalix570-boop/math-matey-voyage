@@ -32,7 +32,7 @@ const COUNTRIES = [
 ];
 
 function SettingsPage() {
-  const { profile, update, sound, reset, linked, authEmail } = useGame();
+  const { profile, update, sound, reset, linked, authEmail, cloudSyncing } = useGame();
   const { t, lang, setLang } = useI18n();
   const [confirming, setConfirming] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
@@ -103,6 +103,9 @@ function SettingsPage() {
               <p className="mt-1 text-sm text-muted-foreground">
                 מחובר כ-<span dir="ltr" className="font-bold text-ink">{authEmail}</span> — ההתקדמות
                 נשמרת בענן ומסתנכרנת בין מכשירים.
+              </p>
+              <p className="mt-2 text-sm font-bold text-success" aria-live="polite">
+                {cloudSyncing ? "☁️ שומר עכשיו…" : "✅ ההתקדמות שמורה בחשבון"}
               </p>
               <div className="mt-3 grid gap-2">
                 <Link
