@@ -3,11 +3,17 @@ import { useEffect, useState } from "react";
 import { isNativeApp, NATIVE_APP_SCHEME, SITE_URL } from "@/lib/native";
 import { Screen } from "@/components/app-shell";
 import { Logo } from "@/components/effects";
-import { useGame, scoreOf } from "@/lib/game-state";
+import { useGame } from "@/lib/game-state";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    mode:
+      search["mode"] === "signin" || search["mode"] === "signup"
+        ? (search["mode"] as "signin" | "signup")
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "התחברות — מסע המתמטיקס" },
@@ -20,9 +26,10 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { profile, sound, linked, authEmail, update } = useGame();
+  const { sound, linked, authEmail, syncNow, cloudSyncing } = useGame();
+  const search = Route.useSearch();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signup");
+  const [mode, setMode] = useState<"signin" | "signup">(search.mode ?? "signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -30,16 +37,7 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null);
 
   // שמירה מיידית של ההתקדמות לענן לפני יציאה/החלפת חשבון
-  const saveToCloud = async () => {
-    const { error: err } = await supabase.rpc("sync_my_profile", {
-      _display_name: profile.name,
-      _icon: profile.icon,
-      _country: profile.country,
-      _score: scoreOf(profile),
-      _data: JSON.parse(JSON.stringify(profile)),
-    });
-    return !err;
-  };
+  const saveToCloud = syncNow;
 
   const endSession = async () => {
     sound("click");
@@ -47,15 +45,19 @@ function AuthPage() {
     setError(null);
     setMessage(null);
     const ok = await saveToCloud();
-    if (!ok) setError("לא הצלחנו לשמור את ההתקדמות — בדקו חיבור ונסו שוב");
+    if (!ok) {
+      setError("לא הצלחנו לשמור את ההתקדמות — לא התנתקנו כדי שלא תאבדו דבר");
+      setBusy(false);
+      return false;
+    }
     await supabase.auth.signOut();
-    update({ guest: false });
     setBusy(false);
-    return ok;
+    return true;
   };
 
   const switchAccount = async () => {
     const ok = await endSession();
+    if (!ok) return;
     setMode("signin");
     setEmail("");
     setPassword("");
@@ -64,6 +66,7 @@ function AuthPage() {
 
   const createNewAccount = async () => {
     const ok = await endSession();
+    if (!ok) return;
     setMode("signup");
     setEmail("");
     setPassword("");
@@ -180,7 +183,7 @@ function AuthPage() {
               onClick={() => void switchAccount()}
               className="mt-3 h-12 w-full rounded-xl bg-primary font-bold text-primary-foreground shadow-pop active:scale-95 disabled:opacity-50"
             >
-              {busy ? "שומרים בענן…" : "🔄 החלפת חשבון"}
+              {busy || cloudSyncing ? "שומרים בענן…" : "🔄 החלפת חשבון"}
             </button>
             <button
               disabled={busy}

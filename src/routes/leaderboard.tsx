@@ -27,6 +27,18 @@ type Row = {
 };
 
 const MEDAL_BG = ["bg-warning/25", "bg-muted", "bg-warning/10"];
+const COUNTRY_NAMES: Record<string, string> = {
+  IL: "ישראל 🇮🇱",
+  US: "ארצות הברית 🇺🇸",
+  GB: "בריטניה 🇬🇧",
+  DE: "גרמניה 🇩🇪",
+  FR: "צרפת 🇫🇷",
+  ES: "ספרד 🇪🇸",
+  BR: "ברזיל 🇧🇷",
+  AE: "איחוד האמירויות 🇦🇪",
+  CA: "קנדה 🇨🇦",
+  AU: "אוסטרליה 🇦🇺",
+};
 
 function LeaderboardPage() {
   const { t } = useI18n();
@@ -105,6 +117,12 @@ function LeaderboardPage() {
           </button>
         </div>
 
+        {tab === "country" && (
+          <p className="text-center text-sm font-bold text-muted-foreground">
+            מציג שחקנים מ־{COUNTRY_NAMES[profile.country] ?? profile.country}
+          </p>
+        )}
+
         {list === null ? (
           <p className="py-10 text-center text-muted-foreground">טוען דירוג…</p>
         ) : (
@@ -147,6 +165,7 @@ function LeaderboardPage() {
         {!linked && (
           <Link
             to="/auth"
+            search={{ mode: "signin" }}
             className="flex h-12 items-center justify-center rounded-xl bg-secondary font-bold text-secondary-foreground active:scale-95"
           >
             התחברות — כדי לשמור את המקום שלך בענן
