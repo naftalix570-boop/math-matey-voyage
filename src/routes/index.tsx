@@ -3,11 +3,12 @@ import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { Logo, Confetti } from "@/components/effects";
 import { PlacementTest } from "@/components/mini-games";
-import { useGame, EVENTS, nextEventChange } from "@/lib/game-state";
+import { useGame, EVENTS, nextEventChange, ICONS } from "@/lib/game-state";
 import { weeklyChallenge } from "@/lib/games";
 import { ALBUM_SIZE } from "@/lib/stickers";
 import { useOnline } from "@/lib/use-online";
 import { useI18n } from "@/lib/i18n";
+import { cn, fmtNum } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -33,6 +34,7 @@ function Home() {
   const { t } = useI18n();
   const [mode, setMode] = useState<"welcome" | "test">("welcome");
   const [name, setName] = useState("");
+  const [iconPicker, setIconPicker] = useState(false);
   const online = useOnline();
 
   if (!ready) return <div className="min-h-screen bg-background" />;
@@ -414,7 +416,7 @@ function Stat({ emoji, label, value }: { emoji: string; label: string; value: nu
   return (
     <div className="rounded-2xl bg-card p-3 shadow-card">
       <div className="text-2xl">{emoji}</div>
-      <div className="text-xl font-bold text-ink">{value}</div>
+      <div className="text-xl font-bold text-ink">{typeof value === "number" ? fmtNum(value) : value}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
     </div>
   );
