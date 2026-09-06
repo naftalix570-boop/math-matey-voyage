@@ -1225,25 +1225,42 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setProfile((p) => ({ ...p, coins: p.coins + n }));
   }, []);
 
-  const spendCoins = useCallback(
-    (n: number) => {
-      if (profile.coins < n) return false;
-      setProfile((p) => ({ ...p, coins: Math.max(0, p.coins - n) }));
-      return true;
-    },
-    [profile.coins],
-  );
+  const spendCoins = useCallback((n: number) => {
+    const current = profileRef.current;
+    if (current.coins < n) return false;
+    const next = { ...current, coins: Math.max(0, current.coins - n) };
+    profileRef.current = next;
+    setProfile(next);
+    return true;
+  }, []);
 
   const useHint = useCallback(() => {
-    if (Date.now() < profile.boosts.premiumUntil) return true;
-    if (profile.hints <= 0) return false;
-    setProfile((p) => ({ ...p, hints: Math.max(0, p.hints - 1) }));
+    const current = profileRef.current;
+    if (Date.now() < current.boosts.premiumUntil) return true;
+    if (current.hints <= 0) return false;
+    const next = { ...current, hints: Math.max(0, current.hints - 1) };
+    profileRef.current = next;
+    setProfile(next);
     return true;
-  }, [profile.hints, profile.boosts.premiumUntil]);
+  }, []);
 
   const reset = useCallback(() => {
-    setProfile({ ...defaultProfile, lastDay: todayKey(), userId: rnd(3, 999) });
-  }, []);
+    const current = profileRef.current;
+    const fresh: Profile = {
+      ...defaultProfile,
+      lastDay: todayKey(),
+      userId: rnd(3, 999),
+      // שומרים על הזהות בלוח המובילים, מאפסים את ההתקדמות
+      name: current.name,
+      icon: current.icon,
+      country: current.country,
+      soundOn: current.soundOn,
+      guest: current.guest,
+    };
+    profileRef.current = fresh;
+    setProfile(fresh);
+    void syncNow();
+  }, [syncNow]);
 
   const value = useMemo<Ctx>(
     () => ({
