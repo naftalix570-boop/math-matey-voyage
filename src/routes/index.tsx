@@ -111,16 +111,80 @@ function Home() {
       {showRating && <RatingCard />}
 
       <div className="flex items-center justify-between pt-3">
-        <div>
-          <p className="text-sm text-muted-foreground">{t("common.hello")}</p>
-          <h1 className="flex items-center gap-1 text-2xl font-bold text-ink">
-            <span>{profile.icon}</span>
-            {profile.name}
-            {premium && <span title="פרימיום">👑</span>}
-          </h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              sound("click");
+              setIconPicker(true);
+            }}
+            aria-label="בחירת אימוג'י פרופיל"
+            className="relative flex size-14 items-center justify-center rounded-full bg-card text-3xl shadow-card active:scale-95"
+          >
+            {profile.icon}
+            <span className="absolute -bottom-1 -left-1 rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+              ✏️
+            </span>
+          </button>
+          <div>
+            <p className="text-sm text-muted-foreground">{t("common.hello")}</p>
+            <h1 className="flex items-center gap-1 text-2xl font-bold text-ink">
+              {profile.name}
+              {premium && <span title="פרימיום">👑</span>}
+            </h1>
+          </div>
         </div>
         <Logo size={72} />
       </div>
+
+      {iconPicker && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-nav/50 p-4"
+          onClick={() => setIconPicker(false)}
+        >
+          <div
+            className="animate-pop w-full max-w-sm rounded-3xl bg-card p-5 shadow-pop"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-lg font-bold text-ink">בחרו אימוג'י פרופיל</p>
+            <p className="text-sm text-muted-foreground">
+              אימוג'ים נעולים נפתחים מתיבות ומפרסים — אספו עוד! ({profile.icons.length}/
+              {ICONS.length})
+            </p>
+            <div className="mt-3 grid grid-cols-5 gap-2">
+              {ICONS.map((ic) => {
+                const owned = profile.icons.includes(ic.emoji);
+                const active = profile.icon === ic.emoji;
+                return (
+                  <button
+                    key={ic.id}
+                    disabled={!owned}
+                    aria-label={`אימוג'י ${ic.emoji}`}
+                    onClick={() => {
+                      sound("click");
+                      update({ icon: ic.emoji });
+                      setIconPicker(false);
+                    }}
+                    className={cn(
+                      "flex aspect-square items-center justify-center rounded-xl text-2xl transition-all",
+                      active ? "bg-primary/15 ring-2 ring-primary" : "bg-muted",
+                      !owned && "opacity-40",
+                    )}
+                  >
+                    {owned ? ic.emoji : "🔒"}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => setIconPicker(false)}
+              className="mt-4 h-11 w-full rounded-xl bg-primary font-bold text-primary-foreground active:scale-95"
+            >
+              סגירה
+            </button>
+          </div>
+        </div>
+      )}
+
 
       {!online && (
         <div className="mt-3 rounded-xl bg-sky px-3 py-2 text-center text-sm font-bold text-ink">
