@@ -4,7 +4,7 @@ import { Screen } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
 import { useGame } from "@/lib/game-state";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
+import { cn, fmtNum } from "@/lib/utils";
 
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
@@ -154,7 +154,7 @@ function LeaderboardPage() {
                     {tab === "world" && <p className="text-xs text-muted-foreground">{r.country}</p>}
                   </div>
                   <span className="font-bold text-primary">
-                    🏆 {r.score.toLocaleString("he-IL")}
+                    🏆 {fmtNum(r.score)}
                   </span>
                 </div>
               );
@@ -186,7 +186,7 @@ function LeaderboardPage() {
                 לא בטופ 100 {tab === "world" ? "העולמי" : "הארצי"} — עוד קצת ואתה שם! 💪
               </p>
             </div>
-            <span className="font-bold">🏆 {profile.trophies.toLocaleString("he-IL")}</span>
+            <span className="font-bold">🏆 {fmtNum(profile.trophies)}</span>
           </div>
         </div>
       )}

@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Screen } from "@/components/app-shell";
 import { ICONS, useGame } from "@/lib/game-state";
 import { MAX_LEVEL } from "@/lib/math";
-import { cn } from "@/lib/utils";
+import { cn, fmtNum } from "@/lib/utils";
 import { useI18n, LANGS } from "@/lib/i18n";
 import { redeemPromoCode, verifyAdminCode } from "@/lib/admin.functions";
 
@@ -358,7 +358,7 @@ function SettingsPage() {
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <p className="text-lg font-bold text-ink">{t("settings.myRank")}</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            🏆 {profile.trophies.toLocaleString("he-IL")} גביעים
+            🏆 {fmtNum(profile.trophies)} גביעים
             {profile.guest && " · חשבון אורח"}
           </p>
           <Link
