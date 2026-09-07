@@ -107,57 +107,6 @@ function SettingsPage() {
   return (
     <Screen title={t("title.settings")}>
       <div className="mt-2 grid gap-3 pb-28">
-        <section className="rounded-2xl bg-card p-4 shadow-card">
-          <label htmlFor="promo" className="text-lg font-bold text-ink">
-            🎟️ הכנס קוד קידום
-          </label>
-          <p className="text-sm text-muted-foreground">קיבלתם קוד מחבר? הכניסו אותו כאן.</p>
-          <div className="mt-2 flex gap-2">
-            <input
-              id="promo"
-              dir="ltr"
-              value={promoInput}
-              onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-              maxLength={16}
-              placeholder="FREECOINS"
-              className="h-12 flex-1 rounded-xl border-2 border-muted bg-background px-3 text-lg text-ink outline-none focus:border-primary"
-            />
-            <button
-              disabled={promoBusy}
-              onClick={() => void submitPromo()}
-              className="h-12 rounded-xl bg-primary px-4 font-bold text-primary-foreground active:scale-95 disabled:opacity-60"
-            >
-              מימוש
-            </button>
-          </div>
-          {promoMsg && <p className="mt-2 font-bold text-success">{promoMsg}</p>}
-          {promoErr && <p className="mt-2 font-bold text-destructive">{promoErr}</p>}
-        </section>
-
-        <section className="rounded-2xl bg-card p-4 shadow-card">
-          <label htmlFor="admincode" className="text-lg font-bold text-ink">
-            🔐 קוד מנהל
-          </label>
-          <div className="mt-2 flex gap-2">
-            <input
-              id="admincode"
-              dir="ltr"
-              type="password"
-              value={adminInput}
-              onChange={(e) => setAdminInput(e.target.value)}
-              maxLength={40}
-              className="h-12 flex-1 rounded-xl border-2 border-muted bg-background px-3 text-lg text-ink outline-none focus:border-primary"
-            />
-            <button
-              onClick={() => void submitAdmin()}
-              className="h-12 rounded-xl bg-muted px-4 font-bold text-ink active:scale-95"
-            >
-              אימות
-            </button>
-          </div>
-          {adminMsg && <p className="mt-2 font-bold text-destructive">{adminMsg}</p>}
-        </section>
-
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <p className="text-lg font-bold text-ink">{t("settings.language")}</p>
@@ -423,6 +372,30 @@ function SettingsPage() {
               {t("settings.resetBtn")}
             </button>
           )}
+        </section>
+
+        <section className="rounded-2xl bg-card p-4 shadow-card">
+          <label htmlFor="admincode" className="text-lg font-bold text-ink">
+            🔐 קוד מנהל
+          </label>
+          <div className="mt-2 flex gap-2">
+            <input
+              id="admincode"
+              dir="ltr"
+              type="password"
+              value={adminInput}
+              onChange={(e) => setAdminInput(e.target.value)}
+              maxLength={40}
+              className="h-12 flex-1 rounded-xl border-2 border-muted bg-background px-3 text-lg text-ink outline-none focus:border-primary"
+            />
+            <button
+              onClick={() => void submitAdmin()}
+              className="h-12 rounded-xl bg-muted px-4 font-bold text-ink active:scale-95"
+            >
+              אימות
+            </button>
+          </div>
+          {adminMsg && <p className="mt-2 font-bold text-destructive">{adminMsg}</p>}
         </section>
       </div>
     </Screen>
