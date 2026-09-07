@@ -1246,6 +1246,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return true;
   }, []);
 
+  const useTicket = useCallback((id: TicketId) => {
+    const current = profileRef.current;
+    if ((current.tickets[id] ?? 0) <= 0) return false;
+    const next = {
+      ...current,
+      tickets: { ...current.tickets, [id]: current.tickets[id] - 1 },
+    };
+    profileRef.current = next;
+    setProfile(next);
+    return true;
+  }, []);
+
+
+
   const reset = useCallback(() => {
     const current = profileRef.current;
     const fresh: Profile = {
