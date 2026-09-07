@@ -587,6 +587,8 @@ type Ctx = {
   addCoins: (n: number) => void;
   spendCoins: (n: number) => boolean;
   useHint: () => boolean;
+  /** שימוש בכרטיס (מזל / דילוג / מגן / שחזור) — מחזיר false אם אין */
+  useTicket: (id: TicketId) => boolean;
   grantSticker: () => number | null;
   /** src: "free" = תיבה יומית · "inv" = מהמלאי · "coins" = קנייה במטבעות */
   openChest: (kind: ChestKind, src?: "free" | "inv" | "coins") => ChestReward | null;
