@@ -967,7 +967,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
         chestsOpened: p.chestsOpened + 1,
         monthlyChests: p.monthlyChests + 1,
         stickers: [...p.stickers, ...picked],
-        tickets: ticket ? { ...p.tickets, [ticket]: p.tickets[ticket] + 1 } : p.tickets,
+        tickets: (() => {
+          const base = lucky ? { ...p.tickets, luck: p.tickets.luck - 1 } : { ...p.tickets };
+          if (ticket) base[ticket] = base[ticket] + 1;
+          return base;
+        })(),
         achievements,
         boosts: {
           doubleUntil:
@@ -1287,6 +1291,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       addCoins,
       spendCoins,
       useHint,
+      useTicket,
       grantSticker,
       openChest,
       recordGameWin,
@@ -1322,6 +1327,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       addCoins,
       spendCoins,
       useHint,
+      useTicket,
       grantSticker,
       openChest,
       recordGameWin,
