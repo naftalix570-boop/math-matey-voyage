@@ -414,10 +414,12 @@ function RatingCard() {
 
 function Stat({ emoji, label, value }: { emoji: string; label: string; value: number | string }) {
   return (
-    <div className="rounded-2xl bg-card p-3 shadow-card">
+    <div className="min-w-0 overflow-hidden rounded-2xl bg-card p-3 shadow-card">
       <div className="text-2xl">{emoji}</div>
-      <div className="text-xl font-bold text-ink">{typeof value === "number" ? fmtNum(value) : value}</div>
-      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="truncate text-lg font-bold text-ink tabular-nums">
+        {typeof value === "number" ? fmtNum(value) : value}
+      </div>
+      <div className="truncate text-xs text-muted-foreground">{label}</div>
     </div>
   );
 }
