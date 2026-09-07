@@ -195,7 +195,7 @@ export function QuizGame({
   gameId?: string;
   onDone?: (r: QuizResult) => void;
 }) {
-  const { profile, recordAnswer, useHint, sound, premium, recordGameWin } = useGame();
+  const { profile, recordAnswer, useHint, useTicket, sound, premium, recordGameWin } = useGame();
   const { t } = useI18n();
   const [index, setIndex] = useState(0);
   const [item, setItem] = useState<QuizItem>(() => makeItem(0, null));
@@ -357,6 +357,18 @@ export function QuizGame({
     setHintText(item.hint);
   };
 
+  const onSkip = () => {
+    if (locked || finished) return;
+    if (!useTicket("skip")) {
+      showToast("⏭️ אין לך כרטיס דילוג. אפשר לזכות בו בתיבות ובמשימות!", 3000);
+      return;
+    }
+    sound("click");
+    setLocked(true);
+    showToast("⏭️ דילגת על התרגיל");
+    setTimeout(() => nextQuestion(index + 1, Number(item.answer), correct), 600);
+  };
+
   const restart = () => {
     levelUpRef.current = false;
     coinsStartRef.current = profile.coins;
@@ -471,6 +483,12 @@ export function QuizGame({
           className="flex h-11 items-center gap-2 rounded-xl bg-warning px-4 font-bold text-warning-foreground active:scale-95"
         >
           <Lightbulb className="size-5" /> {t("quiz.hint")} ({premium ? "∞" : profile.hints})
+        </button>
+        <button
+          onClick={onSkip}
+          className="flex h-11 items-center gap-2 rounded-xl bg-secondary px-4 font-bold text-secondary-foreground active:scale-95"
+        >
+          ⏭️ דילוג ({profile.tickets.skip})
         </button>
         <button
           onClick={() => setShowHelp(true)}

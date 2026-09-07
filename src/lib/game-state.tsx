@@ -587,6 +587,8 @@ type Ctx = {
   addCoins: (n: number) => void;
   spendCoins: (n: number) => boolean;
   useHint: () => boolean;
+  /** שימוש בכרטיס (מזל / דילוג / מגן / שחזור) — מחזיר false אם אין */
+  useTicket: (id: TicketId) => boolean;
   grantSticker: () => number | null;
   /** src: "free" = תיבה יומית · "inv" = מהמלאי · "coins" = קנייה במטבעות */
   openChest: (kind: ChestKind, src?: "free" | "inv" | "coins") => ChestReward | null;
@@ -965,7 +967,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
         chestsOpened: p.chestsOpened + 1,
         monthlyChests: p.monthlyChests + 1,
         stickers: [...p.stickers, ...picked],
-        tickets: ticket ? { ...p.tickets, [ticket]: p.tickets[ticket] + 1 } : p.tickets,
+        tickets: (() => {
+          const base = lucky ? { ...p.tickets, luck: p.tickets.luck - 1 } : { ...p.tickets };
+          if (ticket) base[ticket] = base[ticket] + 1;
+          return base;
+        })(),
         achievements,
         boosts: {
           doubleUntil:
@@ -1244,6 +1250,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return true;
   }, []);
 
+  const useTicket = useCallback((id: TicketId) => {
+    const current = profileRef.current;
+    if ((current.tickets[id] ?? 0) <= 0) return false;
+    const next = {
+      ...current,
+      tickets: { ...current.tickets, [id]: current.tickets[id] - 1 },
+    };
+    profileRef.current = next;
+    setProfile(next);
+    return true;
+  }, []);
+
+
+
   const reset = useCallback(() => {
     const current = profileRef.current;
     const fresh: Profile = {
@@ -1271,6 +1291,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       addCoins,
       spendCoins,
       useHint,
+      useTicket,
       grantSticker,
       openChest,
       recordGameWin,
@@ -1306,6 +1327,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       addCoins,
       spendCoins,
       useHint,
+      useTicket,
       grantSticker,
       openChest,
       recordGameWin,

@@ -5,6 +5,8 @@ import { Screen } from "@/components/app-shell";
 import {
   createPromoCode,
   deletePromoCode,
+  getAdminUser,
+  grantToUser,
   listAdminUsers,
   listPromoCodes,
   type RewardType,
@@ -45,11 +47,45 @@ function AdminPage() {
   const [amount, setAmount] = useState(10);
   const [maxUses, setMaxUses] = useState(10);
   const [custom, setCustom] = useState("");
+  const [selected, setSelected] = useState<UserRow | null>(null);
+  const [detail, setDetail] = useState<Awaited<ReturnType<typeof getAdminUser>> | null>(null);
+  const [grantType, setGrantType] = useState<RewardType>("coins");
+  const [grantAmount, setGrantAmount] = useState(10);
+  const [grantMsg, setGrantMsg] = useState<string | null>(null);
 
   const fetchUsers = useServerFn(listAdminUsers);
   const fetchCodes = useServerFn(listPromoCodes);
   const addCode = useServerFn(createPromoCode);
   const removeCode = useServerFn(deletePromoCode);
+  const fetchUser = useServerFn(getAdminUser);
+  const grant = useServerFn(grantToUser);
+
+  const openUser = async (u: UserRow) => {
+    if (!code) return;
+    setSelected(u);
+    setDetail(null);
+    setGrantMsg(null);
+    try {
+      setDetail(await fetchUser({ data: { code, userId: u.userId } }));
+    } catch (e) {
+      setGrantMsg(e instanceof Error ? e.message : "שגיאה");
+    }
+  };
+
+  const submitGrant = async () => {
+    if (!code || !selected) return;
+    setGrantMsg(null);
+    try {
+      await grant({
+        data: { code, userId: selected.userId, rewardType: grantType, amount: grantAmount },
+      });
+      setDetail(await fetchUser({ data: { code, userId: selected.userId } }));
+      setUsers(await fetchUsers({ data: { code } }));
+      setGrantMsg("✅ עודכן");
+    } catch (e) {
+      setGrantMsg(e instanceof Error ? e.message : "שגיאה");
+    }
+  };
 
   useEffect(() => {
     const saved = sessionStorage.getItem("math-journey:admin");
@@ -201,18 +237,124 @@ function AdminPage() {
           <p className="text-lg font-bold text-ink">שחקנים ({users.length})</p>
           <div className="mt-3 grid gap-2">
             {users.map((u) => (
-              <div key={u.userId} className="rounded-xl bg-muted p-3">
+              <button
+                key={u.userId}
+                onClick={() => void openUser(u)}
+                className="rounded-xl bg-muted p-3 text-right active:scale-95">
                 <p className="font-bold text-ink">
                   {u.icon} {u.name}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   🏆 {u.trophies} · 🪙 {u.coins} · 💡 {u.hints} · 🎁 {u.chests}
                 </p>
-              </div>
+              </button>
             ))}
           </div>
         </section>
       </div>
+
+        {selected && (
+          <div
+            className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-3"
+            dir="rtl"
+          >
+            <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-card p-4 shadow-card">
+              <div className="flex items-center justify-between">
+                <p className="text-xl font-bold text-ink">
+                  {selected.icon} {selected.name}
+                </p>
+                <button
+                  onClick={() => setSelected(null)}
+                  className="rounded-lg bg-muted px-3 py-2 font-bold text-ink"
+                >
+                  סגור
+                </button>
+              </div>
+
+              {!detail ? (
+                <p className="mt-3 text-muted-foreground">טוען…</p>
+              ) : (
+                <>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                    <Info label="גביעים" value={String(selected.trophies)} />
+                    <Info label="מטבעות" value={String(selected.coins)} />
+                    <Info label="רמזים" value={String(selected.hints)} />
+                    <Info label="תיבות" value={String(selected.chests)} />
+                    <Info label="מדינה" value={detail.country} />
+                    <Info
+                      label="שלב"
+                      value={String((detail.data as Record<string, unknown>)?.["level"] ?? 1)}
+                    />
+                    <Info
+                      label="מדבקות"
+                      value={String(
+                        (((detail.data as Record<string, unknown>)?.["stickers"] as number[]) ?? [])
+                          .length,
+                      )}
+                    />
+                    <Info
+                      label="תרגילים נכונים"
+                      value={String(
+                        (detail.data as Record<string, unknown>)?.["totalCorrect"] ?? 0,
+                      )}
+                    />
+                    <Info
+                      label="התחיל לשחק"
+                      value={String(
+                        (detail.data as Record<string, unknown>)?.["firstDay"] ??
+                          (detail.data as Record<string, unknown>)?.["lastDay"] ??
+                          "—",
+                      )}
+                    />
+                    <Info
+                      label="פעילות אחרונה"
+                      value={new Date(detail.updated_at).toLocaleDateString("he-IL")}
+                    />
+                  </div>
+
+                  <p className="mt-4 font-bold text-ink">הוספה / הפחתה</p>
+                  <div className="mt-2 grid gap-2">
+                    <select
+                      value={grantType}
+                      onChange={(e) => setGrantType(e.target.value as RewardType)}
+                      className="h-12 rounded-xl border-2 border-muted bg-background px-3 text-ink"
+                      aria-label="סוג"
+                    >
+                      {(Object.keys(REWARD_LABELS) as RewardType[]).map((r) => (
+                        <option key={r} value={r}>
+                          {REWARD_LABELS[r]}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      value={grantAmount}
+                      onChange={(e) => setGrantAmount(Number(e.target.value))}
+                      className="h-12 rounded-xl border-2 border-muted bg-background px-3 text-ink"
+                      aria-label="כמות"
+                    />
+                    <button
+                      onClick={() => void submitGrant()}
+                      className="h-12 rounded-xl bg-primary font-bold text-primary-foreground active:scale-95"
+                    >
+                      עדכן שחקן
+                    </button>
+                    {grantMsg && <p className="font-bold text-ink">{grantMsg}</p>}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
     </Screen>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-muted p-2">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="font-bold text-ink">{value}</p>
+    </div>
   );
 }

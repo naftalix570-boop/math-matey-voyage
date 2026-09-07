@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { redeemPromoCode } from "@/lib/admin.functions";
 import { Screen } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -75,12 +77,52 @@ const MONEY_ITEMS = [
 
 function ShopPage() {
   const { t } = useI18n();
-  const { profile, spendCoins, update, grantSticker, sound, premium, doubling, openChest } =
+  const { profile, spendCoins, update, grantSticker, sound, premium, doubling, openChest, linked } =
     useGame();
   const [tab, setTab] = useState<"coins" | "money">("coins");
   const [msg, setMsg] = useState<string | null>(null);
   const countdown = useMidnightCountdown();
   const [chestReward, setChestReward] = useState<ChestReward | null>(null);
+  const [promoInput, setPromoInput] = useState("");
+  const [promoMsg, setPromoMsg] = useState<string | null>(null);
+  const [promoErr, setPromoErr] = useState<string | null>(null);
+  const [promoBusy, setPromoBusy] = useState(false);
+  const redeem = useServerFn(redeemPromoCode);
+
+  const submitPromo = async () => {
+    sound("click");
+    setPromoErr(null);
+    setPromoMsg(null);
+    if (!linked) {
+      setPromoErr("צריך להתחבר לחשבון כדי לממש קוד מתנה");
+      return;
+    }
+    setPromoBusy(true);
+    try {
+      const res = await redeem({ data: { promo: promoInput } });
+      const n = res.amount;
+      if (res.rewardType === "coins") update((p) => ({ coins: p.coins + n }));
+      else if (res.rewardType === "hints") update((p) => ({ hints: p.hints + n }));
+      else if (res.rewardType === "trophies") update((p) => ({ trophies: p.trophies + n }));
+      else if (res.rewardType === "chest")
+        update((p) => ({ chestInv: { ...p.chestInv, regular: p.chestInv.regular + n } }));
+      else if (res.rewardType === "stickers") for (let i = 0; i < n; i++) grantSticker();
+      const labels: Record<string, string> = {
+        coins: "🪙 מטבעות",
+        hints: "💡 רמזים",
+        chest: "🎁 תיבות",
+        trophies: "🏆 גביעים",
+        stickers: "🌟 מדבקות",
+      };
+      setPromoMsg(`יש! קיבלתם ${n} ${labels[res.rewardType]}`);
+      setPromoInput("");
+      sound("win");
+    } catch (e) {
+      setPromoErr(e instanceof Error ? e.message : "קוד שגוי");
+      sound("wrong");
+    }
+    setPromoBusy(false);
+  };
 
   const buy = (id: string, price: number, apply: () => string) => {
     if (!spendCoins(price)) {
@@ -384,6 +426,33 @@ function ShopPage() {
             </button>
 
           </div>
+
+        <section className="rounded-2xl bg-card p-4 shadow-card">
+          <label htmlFor="promo" className="text-lg font-bold text-ink">
+            🎟️ קוד מתנה
+          </label>
+          <p className="text-sm text-muted-foreground">קיבלתם קוד? הכניסו אותו כאן וקבלו את הפרס.</p>
+          <div className="mt-2 flex gap-2">
+            <input
+              id="promo"
+              dir="ltr"
+              value={promoInput}
+              onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+              maxLength={16}
+              placeholder="FREECOINS"
+              className="h-12 flex-1 rounded-xl border-2 border-muted bg-background px-3 text-lg text-ink outline-none focus:border-primary"
+            />
+            <button
+              disabled={promoBusy}
+              onClick={() => void submitPromo()}
+              className="h-12 rounded-xl bg-primary px-4 font-bold text-primary-foreground active:scale-95 disabled:opacity-60"
+            >
+              מימוש
+            </button>
+          </div>
+          {promoMsg && <p className="mt-2 font-bold text-success">{promoMsg}</p>}
+          {promoErr && <p className="mt-2 font-bold text-destructive">{promoErr}</p>}
+        </section>
         </div>
       ) : (
         <div className="mt-4 grid gap-3 pb-28">

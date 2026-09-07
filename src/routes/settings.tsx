@@ -6,7 +6,7 @@ import { ICONS, useGame } from "@/lib/game-state";
 import { MAX_LEVEL } from "@/lib/math";
 import { cn, fmtNum } from "@/lib/utils";
 import { useI18n, LANGS } from "@/lib/i18n";
-import { redeemPromoCode, verifyAdminCode } from "@/lib/admin.functions";
+import { verifyAdminCode } from "@/lib/admin.functions";
 
 
 export const Route = createFileRoute("/settings")({
@@ -35,8 +35,7 @@ const COUNTRIES = [
 ];
 
 function SettingsPage() {
-  const { profile, update, sound, reset, linked, authEmail, cloudSyncing, grantSticker } =
-    useGame();
+  const { profile, update, sound, reset, linked, authEmail, cloudSyncing } = useGame();
   const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
@@ -45,12 +44,7 @@ function SettingsPage() {
 
   const [adminInput, setAdminInput] = useState("");
   const [adminMsg, setAdminMsg] = useState<string | null>(null);
-  const [promoInput, setPromoInput] = useState("");
-  const [promoMsg, setPromoMsg] = useState<string | null>(null);
-  const [promoErr, setPromoErr] = useState<string | null>(null);
-  const [promoBusy, setPromoBusy] = useState(false);
   const checkAdmin = useServerFn(verifyAdminCode);
-  const redeem = useServerFn(redeemPromoCode);
 
   const submitAdmin = async () => {
     sound("click");
@@ -69,95 +63,9 @@ function SettingsPage() {
     }
   };
 
-  const submitPromo = async () => {
-    sound("click");
-    setPromoErr(null);
-    setPromoMsg(null);
-    if (!linked) {
-      setPromoErr("צריך להתחבר לחשבון כדי לממש קוד קידום");
-      return;
-    }
-    setPromoBusy(true);
-    try {
-      const res = await redeem({ data: { promo: promoInput } });
-      const n = res.amount;
-      if (res.rewardType === "coins") update((p) => ({ coins: p.coins + n }));
-      else if (res.rewardType === "hints") update((p) => ({ hints: p.hints + n }));
-      else if (res.rewardType === "trophies") update((p) => ({ trophies: p.trophies + n }));
-      else if (res.rewardType === "chest")
-        update((p) => ({ chestInv: { ...p.chestInv, regular: p.chestInv.regular + n } }));
-      else if (res.rewardType === "stickers") for (let i = 0; i < n; i++) grantSticker();
-      const labels: Record<string, string> = {
-        coins: "🪙 מטבעות",
-        hints: "💡 רמזים",
-        chest: "🎁 תיבות",
-        trophies: "🏆 גביעים",
-        stickers: "🌟 מדבקות",
-      };
-      setPromoMsg(`יש! קיבלתם ${n} ${labels[res.rewardType]}`);
-      setPromoInput("");
-      sound("win");
-    } catch (e) {
-      setPromoErr(e instanceof Error ? e.message : "קוד שגוי");
-      sound("wrong");
-    }
-    setPromoBusy(false);
-  };
-
   return (
     <Screen title={t("title.settings")}>
       <div className="mt-2 grid gap-3 pb-28">
-        <section className="rounded-2xl bg-card p-4 shadow-card">
-          <label htmlFor="promo" className="text-lg font-bold text-ink">
-            🎟️ הכנס קוד קידום
-          </label>
-          <p className="text-sm text-muted-foreground">קיבלתם קוד מחבר? הכניסו אותו כאן.</p>
-          <div className="mt-2 flex gap-2">
-            <input
-              id="promo"
-              dir="ltr"
-              value={promoInput}
-              onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-              maxLength={16}
-              placeholder="FREECOINS"
-              className="h-12 flex-1 rounded-xl border-2 border-muted bg-background px-3 text-lg text-ink outline-none focus:border-primary"
-            />
-            <button
-              disabled={promoBusy}
-              onClick={() => void submitPromo()}
-              className="h-12 rounded-xl bg-primary px-4 font-bold text-primary-foreground active:scale-95 disabled:opacity-60"
-            >
-              מימוש
-            </button>
-          </div>
-          {promoMsg && <p className="mt-2 font-bold text-success">{promoMsg}</p>}
-          {promoErr && <p className="mt-2 font-bold text-destructive">{promoErr}</p>}
-        </section>
-
-        <section className="rounded-2xl bg-card p-4 shadow-card">
-          <label htmlFor="admincode" className="text-lg font-bold text-ink">
-            🔐 קוד מנהל
-          </label>
-          <div className="mt-2 flex gap-2">
-            <input
-              id="admincode"
-              dir="ltr"
-              type="password"
-              value={adminInput}
-              onChange={(e) => setAdminInput(e.target.value)}
-              maxLength={40}
-              className="h-12 flex-1 rounded-xl border-2 border-muted bg-background px-3 text-lg text-ink outline-none focus:border-primary"
-            />
-            <button
-              onClick={() => void submitAdmin()}
-              className="h-12 rounded-xl bg-muted px-4 font-bold text-ink active:scale-95"
-            >
-              אימות
-            </button>
-          </div>
-          {adminMsg && <p className="mt-2 font-bold text-destructive">{adminMsg}</p>}
-        </section>
-
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <p className="text-lg font-bold text-ink">{t("settings.language")}</p>
@@ -423,6 +331,30 @@ function SettingsPage() {
               {t("settings.resetBtn")}
             </button>
           )}
+        </section>
+
+        <section className="rounded-2xl bg-card p-4 shadow-card">
+          <label htmlFor="admincode" className="text-lg font-bold text-ink">
+            🔐 קוד מנהל
+          </label>
+          <div className="mt-2 flex gap-2">
+            <input
+              id="admincode"
+              dir="ltr"
+              type="password"
+              value={adminInput}
+              onChange={(e) => setAdminInput(e.target.value)}
+              maxLength={40}
+              className="h-12 flex-1 rounded-xl border-2 border-muted bg-background px-3 text-lg text-ink outline-none focus:border-primary"
+            />
+            <button
+              onClick={() => void submitAdmin()}
+              className="h-12 rounded-xl bg-muted px-4 font-bold text-ink active:scale-95"
+            >
+              אימות
+            </button>
+          </div>
+          {adminMsg && <p className="mt-2 font-bold text-destructive">{adminMsg}</p>}
         </section>
       </div>
     </Screen>
