@@ -202,7 +202,7 @@ export const grantToUser = createServerFn({ method: "POST" })
 
     const { error: upErr } = await supabaseAdmin
       .from("profiles")
-      .update({ data: d, score })
+      .update({ data: d as never, score })
       .eq("user_id", data.userId);
     if (upErr) throw new Error(upErr.message);
     return { ok: true };
