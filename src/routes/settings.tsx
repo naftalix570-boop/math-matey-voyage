@@ -6,7 +6,7 @@ import { ICONS, useGame } from "@/lib/game-state";
 import { MAX_LEVEL } from "@/lib/math";
 import { cn, fmtNum } from "@/lib/utils";
 import { useI18n, LANGS } from "@/lib/i18n";
-import { redeemPromoCode, verifyAdminCode } from "@/lib/admin.functions";
+import { verifyAdminCode } from "@/lib/admin.functions";
 
 
 export const Route = createFileRoute("/settings")({
@@ -35,8 +35,7 @@ const COUNTRIES = [
 ];
 
 function SettingsPage() {
-  const { profile, update, sound, reset, linked, authEmail, cloudSyncing, grantSticker } =
-    useGame();
+  const { profile, update, sound, reset, linked, authEmail, cloudSyncing } = useGame();
   const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
@@ -45,12 +44,7 @@ function SettingsPage() {
 
   const [adminInput, setAdminInput] = useState("");
   const [adminMsg, setAdminMsg] = useState<string | null>(null);
-  const [promoInput, setPromoInput] = useState("");
-  const [promoMsg, setPromoMsg] = useState<string | null>(null);
-  const [promoErr, setPromoErr] = useState<string | null>(null);
-  const [promoBusy, setPromoBusy] = useState(false);
   const checkAdmin = useServerFn(verifyAdminCode);
-  const redeem = useServerFn(redeemPromoCode);
 
   const submitAdmin = async () => {
     sound("click");
@@ -67,41 +61,6 @@ function SettingsPage() {
     } catch {
       setAdminMsg("קוד שגוי");
     }
-  };
-
-  const submitPromo = async () => {
-    sound("click");
-    setPromoErr(null);
-    setPromoMsg(null);
-    if (!linked) {
-      setPromoErr("צריך להתחבר לחשבון כדי לממש קוד קידום");
-      return;
-    }
-    setPromoBusy(true);
-    try {
-      const res = await redeem({ data: { promo: promoInput } });
-      const n = res.amount;
-      if (res.rewardType === "coins") update((p) => ({ coins: p.coins + n }));
-      else if (res.rewardType === "hints") update((p) => ({ hints: p.hints + n }));
-      else if (res.rewardType === "trophies") update((p) => ({ trophies: p.trophies + n }));
-      else if (res.rewardType === "chest")
-        update((p) => ({ chestInv: { ...p.chestInv, regular: p.chestInv.regular + n } }));
-      else if (res.rewardType === "stickers") for (let i = 0; i < n; i++) grantSticker();
-      const labels: Record<string, string> = {
-        coins: "🪙 מטבעות",
-        hints: "💡 רמזים",
-        chest: "🎁 תיבות",
-        trophies: "🏆 גביעים",
-        stickers: "🌟 מדבקות",
-      };
-      setPromoMsg(`יש! קיבלתם ${n} ${labels[res.rewardType]}`);
-      setPromoInput("");
-      sound("win");
-    } catch (e) {
-      setPromoErr(e instanceof Error ? e.message : "קוד שגוי");
-      sound("wrong");
-    }
-    setPromoBusy(false);
   };
 
   return (
