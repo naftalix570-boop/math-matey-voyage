@@ -84,7 +84,7 @@ export function PromoAutoRedeem() {
       <div className="fixed inset-x-0 top-3 z-[60] flex justify-center px-3" dir="rtl">
         <Link
           to="/auth"
-          search={{ redirect: undefined }}
+          search={{ mode: "signup" as const }}
           className="w-full max-w-sm rounded-2xl bg-primary px-4 py-3 text-center font-bold text-primary-foreground shadow-card"
         >
           🎁 יש לכם מתנה ממתינה — התחברו כדי לקבל אותה
