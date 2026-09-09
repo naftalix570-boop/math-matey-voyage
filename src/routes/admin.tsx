@@ -223,6 +223,12 @@ function AdminPage() {
                   העתק
                 </button>
                 <button
+                  onClick={() => void shareCode(c.code)}
+                  className="rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground active:scale-95"
+                >
+                  שלח
+                </button>
+                <button
                   onClick={() => void drop(c.code)}
                   className="rounded-lg bg-destructive px-3 py-2 text-sm font-bold text-destructive-foreground active:scale-95"
                 >
@@ -348,6 +354,30 @@ function AdminPage() {
         )}
     </Screen>
   );
+}
+
+async function shareCode(promo: string) {
+  const link = `${SITE_URL}/?promo=${encodeURIComponent(promo)}`;
+  const text = `🎁 קיבלת מתנה במסע המתמטיקס! לחצו על הקישור וקבלו אותה מיד:\n${link}`;
+  const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
+  if (nav.share) {
+    try {
+      await nav.share({ title: "מתנה במסע המתמטיקס", text, url: link });
+      return;
+    } catch {
+      /* המשתמש ביטל — נמשיך לאפשרויות הידניות */
+    }
+  }
+  const choice = window.prompt(
+    "בחרו שליחה: הקלידו 1 לוואטסאפ, 2 לאימייל, 3 להעתקת הקישור",
+    "1",
+  );
+  if (choice === "1") window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+  else if (choice === "2")
+    window.open(
+      `mailto:?subject=${encodeURIComponent("מתנה במסע המתמטיקס")}&body=${encodeURIComponent(text)}`,
+    );
+  else if (choice === "3") await navigator.clipboard?.writeText(link);
 }
 
 function Info({ label, value }: { label: string; value: string }) {
