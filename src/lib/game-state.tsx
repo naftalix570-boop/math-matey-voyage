@@ -606,6 +606,8 @@ type Ctx = {
   unlockAchievement: (id: string) => void;
   sound: (kind: Parameters<typeof playSound>[0]) => void;
   reset: () => void;
+  /** שחזור מקובץ גיבוי — ממזג ולא מוחק התקדמות קיימת */
+  importProfile: (data: Partial<Profile>) => void;
   premium: boolean;
   doubling: boolean;
   event: EventInfo;
