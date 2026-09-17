@@ -4,6 +4,8 @@ import { ALBUM_SIZE, stickerForSlot, type Rarity } from "./stickers";
 import { MAX_LEVEL } from "./math";
 import { playSound } from "./sfx";
 import { supabase } from "@/integrations/supabase/client";
+import { PROFILE_SCHEMA_VERSION } from "./app-version";
+import { hasProgress, mergeProfiles, saveLocalBackup } from "./profile-storage";
 
 export type Boosts = {
   /** epoch ms until which coins are doubled */
@@ -126,6 +128,8 @@ export type Profile = {
   rated: boolean;
   /** ISO country code for national leaderboard */
   country: string;
+  /** גרסת מבנה הנתונים — מאפשרת עדכוני גרסה בלי לאבד התקדמות */
+  schemaVersion: number;
 };
 
 const KEY = "math-journey-v1";
@@ -184,6 +188,7 @@ const defaultProfile: Profile = {
   correctSinceRating: 0,
   rated: false,
   country: "IL",
+  schemaVersion: PROFILE_SCHEMA_VERSION,
 };
 
 /** ניקוד הדירוג — מספר הגביעים (גביע על כל תרגיל שנפתר נכון) */
