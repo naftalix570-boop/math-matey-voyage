@@ -808,15 +808,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
           guest: false,
         }));
       } else if (prevUid && prevUid !== authUid) {
-        // חשבון חדש שאין לו נתונים בענן — לא מעבירים אליו את ההתקדמות של החשבון הקודם
-        setProfile((p) => ({
-          ...defaultProfile,
-          soundOn: p.soundOn,
-          name: data?.display_name || defaultProfile.name,
-          icon: data?.icon || defaultProfile.icon,
-          country: data?.country || "IL",
-          guest: false,
-        }));
+        // חשבון חדש שאין לו נתונים בענן
+        setProfile((p) => {
+          const fresh: Profile = {
+            ...defaultProfile,
+            soundOn: p.soundOn,
+            name: data?.display_name || defaultProfile.name,
+            icon: data?.icon || defaultProfile.icon,
+            country: data?.country || "IL",
+            guest: false,
+          };
+          // התקדמות אורח עוברת לחשבון החדש; התקדמות של חשבון אחר לא עוברת
+          return p.guest && hasProgress(p) ? mergeProfiles(fresh, p) : fresh;
+        });
       } else {
         // קישור ראשון של התקדמות אורח לחשבון
         setProfile((p) => ({ ...p, guest: false }));
