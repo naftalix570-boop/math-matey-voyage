@@ -1298,6 +1298,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
     void syncNow();
   }, [syncNow]);
 
+  const importProfile = useCallback(
+    (data: Partial<Profile>) => {
+      const current = profileRef.current;
+      // שחזור = מיזוג. שום שדה קיים לא נמחק.
+      const restored = mergeProfiles({ ...current, ...data, guest: current.guest }, current);
+      profileRef.current = restored;
+      setProfile(restored);
+      void syncNow();
+    },
+    [syncNow],
+  );
+
   const value = useMemo<Ctx>(
     () => ({
       profile,
