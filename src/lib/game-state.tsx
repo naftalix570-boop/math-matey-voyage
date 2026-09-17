@@ -681,6 +681,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       parsed.gameWins = { ...(parsed.gameWins ?? {}) };
       parsed.seenGames = parsed.seenGames ?? [];
       if (!parsed.trophies) parsed.trophies = parsed.totalCorrect;
+      // עדכון גרסה משלים שדות חדשים בלבד — אף שדה קיים לא נמחק ולא מתאפס
+      parsed.schemaVersion = PROFILE_SCHEMA_VERSION;
       const today = todayKey();
       if (parsed.lastDay !== today) {
         const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
@@ -756,6 +758,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
         if (event === "SIGNED_OUT") {
+          // גיבוי מקומי אחרון של החשבון שיצא — כדי שלא ילך לאיבוד בהחלפת חשבון
+          const leaving = authUidRef.current;
+          if (leaving) saveLocalBackup(leaving, profileRef.current);
           pulledRef.current = null;
           // אחרי התנתקות מתחילים מפרופיל אורח נקי — לא נשארים עם הנתונים של החשבון הקודם
           setProfile((p) => ({ ...defaultProfile, soundOn: p.soundOn, guest: true }));
