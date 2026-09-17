@@ -1331,6 +1331,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       unlockAchievement,
       sound,
       reset,
+      importProfile,
       premium: (now || Date.now()) < profile.boosts.premiumUntil,
       doubling:
         (now || Date.now()) < profile.boosts.doubleUntil ||
@@ -1367,6 +1368,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       unlockAchievement,
       sound,
       reset,
+      importProfile,
     ],
   );
 
