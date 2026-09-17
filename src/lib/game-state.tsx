@@ -4,6 +4,8 @@ import { ALBUM_SIZE, stickerForSlot, type Rarity } from "./stickers";
 import { MAX_LEVEL } from "./math";
 import { playSound } from "./sfx";
 import { supabase } from "@/integrations/supabase/client";
+import { PROFILE_SCHEMA_VERSION } from "./app-version";
+import { hasProgress, mergeProfiles, saveLocalBackup } from "./profile-storage";
 
 export type Boosts = {
   /** epoch ms until which coins are doubled */
@@ -126,6 +128,8 @@ export type Profile = {
   rated: boolean;
   /** ISO country code for national leaderboard */
   country: string;
+  /** גרסת מבנה הנתונים — מאפשרת עדכוני גרסה בלי לאבד התקדמות */
+  schemaVersion: number;
 };
 
 const KEY = "math-journey-v1";
@@ -184,6 +188,7 @@ const defaultProfile: Profile = {
   correctSinceRating: 0,
   rated: false,
   country: "IL",
+  schemaVersion: PROFILE_SCHEMA_VERSION,
 };
 
 /** ניקוד הדירוג — מספר הגביעים (גביע על כל תרגיל שנפתר נכון) */
@@ -601,6 +606,8 @@ type Ctx = {
   unlockAchievement: (id: string) => void;
   sound: (kind: Parameters<typeof playSound>[0]) => void;
   reset: () => void;
+  /** שחזור מקובץ גיבוי — ממזג ולא מוחק התקדמות קיימת */
+  importProfile: (data: Partial<Profile>) => void;
   premium: boolean;
   doubling: boolean;
   event: EventInfo;
@@ -676,6 +683,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       parsed.gameWins = { ...(parsed.gameWins ?? {}) };
       parsed.seenGames = parsed.seenGames ?? [];
       if (!parsed.trophies) parsed.trophies = parsed.totalCorrect;
+      // עדכון גרסה משלים שדות חדשים בלבד — אף שדה קיים לא נמחק ולא מתאפס
+      parsed.schemaVersion = PROFILE_SCHEMA_VERSION;
       const today = todayKey();
       if (parsed.lastDay !== today) {
         const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
@@ -751,6 +760,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
         if (event === "SIGNED_OUT") {
+          // גיבוי מקומי אחרון של החשבון שיצא — כדי שלא ילך לאיבוד בהחלפת חשבון
+          const leaving = authUidRef.current;
+          if (leaving) saveLocalBackup(leaving, profileRef.current);
           pulledRef.current = null;
           // אחרי התנתקות מתחילים מפרופיל אורח נקי — לא נשארים עם הנתונים של החשבון הקודם
           setProfile((p) => ({ ...defaultProfile, soundOn: p.soundOn, guest: true }));
@@ -798,15 +810,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
           guest: false,
         }));
       } else if (prevUid && prevUid !== authUid) {
-        // חשבון חדש שאין לו נתונים בענן — לא מעבירים אליו את ההתקדמות של החשבון הקודם
-        setProfile((p) => ({
-          ...defaultProfile,
-          soundOn: p.soundOn,
-          name: data?.display_name || defaultProfile.name,
-          icon: data?.icon || defaultProfile.icon,
-          country: data?.country || "IL",
-          guest: false,
-        }));
+        // חשבון חדש שאין לו נתונים בענן
+        setProfile((p) => {
+          const fresh: Profile = {
+            ...defaultProfile,
+            soundOn: p.soundOn,
+            name: data?.display_name || defaultProfile.name,
+            icon: data?.icon || defaultProfile.icon,
+            country: data?.country || "IL",
+            guest: false,
+          };
+          // התקדמות אורח עוברת לחשבון החדש; התקדמות של חשבון אחר לא עוברת
+          return p.guest && hasProgress(p) ? mergeProfiles(fresh, p) : fresh;
+        });
       } else {
         // קישור ראשון של התקדמות אורח לחשבון
         setProfile((p) => ({ ...p, guest: false }));
@@ -1282,6 +1298,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
     void syncNow();
   }, [syncNow]);
 
+  const importProfile = useCallback(
+    (data: Partial<Profile>) => {
+      const current = profileRef.current;
+      // שחזור = מיזוג. שום שדה קיים לא נמחק.
+      const restored = mergeProfiles({ ...current, ...data, guest: current.guest }, current);
+      profileRef.current = restored;
+      setProfile(restored);
+      void syncNow();
+    },
+    [syncNow],
+  );
+
   const value = useMemo<Ctx>(
     () => ({
       profile,
@@ -1303,6 +1331,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       unlockAchievement,
       sound,
       reset,
+      importProfile,
       premium: (now || Date.now()) < profile.boosts.premiumUntil,
       doubling:
         (now || Date.now()) < profile.boosts.doubleUntil ||
@@ -1339,6 +1368,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       unlockAchievement,
       sound,
       reset,
+      importProfile,
     ],
   );
 
