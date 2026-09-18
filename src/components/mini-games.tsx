@@ -17,6 +17,7 @@ export function MemoryGame() {
   const [done, setDone] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
   const [result, setResult] = useState<QuizResult | null>(null);
+  const coinsStart = useRef(profile.coins);
 
   const build = useMemo(
     () => () => {
@@ -36,6 +37,7 @@ export function MemoryGame() {
   }, [build]);
 
   const restart = () => {
+    coinsStart.current = profile.coins;
     setCards(build());
     setFlipped([]);
     setDone([]);
@@ -60,7 +62,7 @@ export function MemoryGame() {
         setDone(nextDone);
         if (nextDone.length === 6) {
           sound("win");
-          setResult({ correct: 6, total: 6, levelUp: false });
+          setResult({ correct: 6, total: 6, levelUp: false, coinsStart: coinsStart.current });
         }
       } else {
         sound("wrong");
@@ -113,6 +115,7 @@ export function LineMatchGame() {
   const [solved, setSolved] = useState<number[]>([]);
   const [correct, setCorrect] = useState(0);
   const [result, setResult] = useState<QuizResult | null>(null);
+  const coinsStart = useRef(profile.coins);
   const boardRef = useRef<HTMLDivElement | null>(null);
   const nodes = useRef<Record<string, HTMLElement | null>>({});
 
@@ -125,6 +128,7 @@ export function LineMatchGame() {
   }
 
   const restart = () => {
+    coinsStart.current = profile.coins;
     setPairs(buildPairs(profile.level));
     setDragFrom(null);
     setCursor(null);
@@ -152,7 +156,7 @@ export function LineMatchGame() {
   const finishRound = (nextSolved: number[], nextCorrect: number) => {
     if (nextSolved.length < 4) return;
     if (round >= 2) {
-      setResult({ correct: nextCorrect, total: 12, levelUp: false });
+      setResult({ correct: nextCorrect, total: 12, levelUp: false, coinsStart: coinsStart.current });
     } else {
       setTimeout(() => {
         setRound((r) => r + 1);
@@ -299,6 +303,7 @@ export function TrueFalseGame() {
   const [correct, setCorrect] = useState(0);
   const [feedback, setFeedback] = useState<"ok" | "bad" | null>(null);
   const [result, setResult] = useState<QuizResult | null>(null);
+  const coinsStart = useRef(profile.coins);
 
   useEffect(() => {
     setQ(makeTrueFalse(profile.level));
@@ -314,7 +319,8 @@ export function TrueFalseGame() {
     if (hit) setCorrect((c) => c + 1);
     setTimeout(() => {
       setFeedback(null);
-      if (idx >= 9) setResult({ correct: correct + (hit ? 1 : 0), total: 10, levelUp: false });
+      if (idx >= 9)
+        setResult({ correct: correct + (hit ? 1 : 0), total: 10, levelUp: false, coinsStart: coinsStart.current });
       else setIdx((i) => i + 1);
     }, 700);
   };
@@ -324,6 +330,7 @@ export function TrueFalseGame() {
       <ResultScreen
         {...result}
         onAgain={() => {
+          coinsStart.current = profile.coins;
           setIdx(0);
           setCorrect(0);
           setResult(null);
@@ -378,6 +385,7 @@ export function BuilderGame() {
   const [round, setRound] = useState(0);
   const [correct, setCorrect] = useState(0);
   const [result, setResult] = useState<QuizResult | null>(null);
+  const coinsStart = useRef(profile.coins);
 
   const numbers = useMemo(
     () => Array.from({ length: 6 }, () => 1 + Math.floor(Math.random() * (3 + profile.level * 2))),
@@ -410,7 +418,7 @@ export function BuilderGame() {
     if (hit) setCorrect((c) => c + 1);
     setTimeout(() => {
       if (round >= 7) {
-        setResult({ correct: correct + (hit ? 1 : 0), total: 8, levelUp: false });
+        setResult({ correct: correct + (hit ? 1 : 0), total: 8, levelUp: false, coinsStart: coinsStart.current });
       } else {
         setRound((r) => r + 1);
         reset();
@@ -518,6 +526,7 @@ export function FlashGame() {
   const [score, setScore] = useState(0);
   const [q, setQ] = useState(() => makeQuestion(profile.level, undefined, 3));
   const [over, setOver] = useState(false);
+  const coinsStart = useRef(profile.coins);
 
   useExitLock(!over, "אי אפשר לצאת באמצע אתגר המהירות ⚡");
 
@@ -565,6 +574,7 @@ export function FlashGame() {
   };
 
   const restart = () => {
+    coinsStart.current = profile.coins;
     finish.current = false;
     setOver(false);
     setScore(0);
@@ -585,6 +595,9 @@ export function FlashGame() {
           {hearts <= 0 ? " — נגמרו הלבבות 💔" : " ב-60 שניות"}
         </p>
         <p className="text-muted-foreground">שיא אישי: {Math.max(profile.bestFlash, score)}</p>
+        <p className="font-bold text-ink">
+          🪙 +{Math.max(0, profile.coins - coinsStart.current)} · 🏆 +{score}
+        </p>
         <button
           onClick={restart}
           className="h-12 w-full rounded-xl bg-primary text-lg font-bold text-primary-foreground active:scale-95"

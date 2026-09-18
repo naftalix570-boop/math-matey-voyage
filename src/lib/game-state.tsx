@@ -932,14 +932,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const hints = daily
         ? rnd(0, 1)
         : kind === "regular"
-          ? rnd(1, 3)
+          ? rnd(0, 2)
           : kind === "amazing"
             ? rnd(4, 8)
             : rnd(8, 15);
       const count = daily
         ? 1
         : kind === "regular"
-          ? rnd(2, 3)
+          ? rnd(1, 2)
           : kind === "amazing"
             ? rnd(3, 5)
             : rnd(4, 8);

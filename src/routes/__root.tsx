@@ -16,6 +16,7 @@ import { I18nProvider } from "../lib/i18n";
 import { registerOfflineWorker } from "../lib/use-online";
 import { NativeBridge } from "../components/native-bridge";
 import { PromoAutoRedeem } from "../components/promo-redeem";
+import { Splash } from "../components/splash";
 
 function NotFoundComponent() {
   return (
@@ -140,6 +141,7 @@ function RootComponent() {
       <I18nProvider>
         <NativeBridge />
         <GameProvider>
+          <Splash />
           <PromoAutoRedeem />
           {/* Required: nested routes render here. */}
           <Outlet />
