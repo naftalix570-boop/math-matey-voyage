@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { useGame } from "@/lib/game-state";
 import { supabase } from "@/integrations/supabase/client";
 import { cn, fmtNum } from "@/lib/utils";
+import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
@@ -46,11 +47,14 @@ function LeaderboardPage() {
   const [tab, setTab] = useState<"world" | "country">("world");
   const [rows, setRows] = useState<Row[] | null>(null);
   const [myRank, setMyRank] = useState<number | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     setRows(null);
     setMyRank(null);
+    setFailed(false);
     void (async () => {
       let q = supabase
         .from("profiles")
@@ -58,8 +62,12 @@ function LeaderboardPage() {
         .order("score", { ascending: false })
         .limit(100);
       if (tab === "country") q = q.eq("country", profile.country);
-      const { data } = await q;
+      const { data, error } = await q;
       if (cancelled) return;
+      if (error) {
+        setFailed(true);
+        return;
+      }
       const list = (data ?? []) as Row[];
       setRows(list);
 
@@ -76,7 +84,7 @@ function LeaderboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [tab, linked, authUid, profile.country, profile.trophies]);
+  }, [tab, linked, authUid, profile.country, profile.trophies, reloadKey]);
 
   const me: Row = {
     user_id: authUid ?? "me",
@@ -123,8 +131,19 @@ function LeaderboardPage() {
           </p>
         )}
 
-        {list === null ? (
-          <p className="py-10 text-center text-muted-foreground">טוען דירוג…</p>
+        {failed ? (
+          <ErrorState
+            title="לא הצלחנו לטעון את הדירוג"
+            onRetry={() => setReloadKey((k) => k + 1)}
+          />
+        ) : list === null ? (
+          <LoadingState label="טוען דירוג…" />
+        ) : list.length === 0 ? (
+          <EmptyState
+            emoji="🏅"
+            title="אין עדיין שחקנים כאן"
+            hint="תהיו הראשונים — כל תשובה נכונה מוסיפה גביע."
+          />
         ) : (
           <div className="grid gap-2">
             {list.slice(0, 100).map((r, i) => {
