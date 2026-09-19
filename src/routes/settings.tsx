@@ -37,7 +37,9 @@ const COUNTRIES = [
 ];
 
 function SettingsPage() {
-  const { profile, update, sound, reset, linked, authEmail, cloudSyncing } = useGame();
+  const { profile, update, sound, reset, linked, authEmail, cloudSyncing, importProfile } =
+    useGame();
+  const [backupMsg, setBackupMsg] = useState<string | null>(null);
   const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
