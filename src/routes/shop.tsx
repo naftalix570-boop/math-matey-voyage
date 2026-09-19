@@ -239,7 +239,7 @@ function ShopPage() {
       )}
 
       {tab === "coins" ? (
-        <div className="mt-4 grid gap-3 pb-28">
+        <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3 pb-28">
           <p className="font-bold text-ink">🎁 התיבות שלי</p>
           {profile.chests > 0 ? (
             <div className="rounded-2xl bg-sky p-4 text-center shadow-card">
@@ -263,7 +263,7 @@ function ShopPage() {
             return (
               <div key={`inv-${k}`} className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
                 <span className="text-4xl">{CHESTS[k].emoji}</span>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <p className="text-lg font-bold text-ink">
                     {CHESTS[k].title} <span className="text-sm">×{count}</span>
                   </p>
@@ -271,7 +271,7 @@ function ShopPage() {
                 </div>
                 <button
                   onClick={() => openOwned(k, "inv")}
-                  className="rounded-xl bg-success px-4 py-2 font-bold text-white active:scale-95"
+                  className="shrink-0 rounded-xl bg-success px-4 py-2 font-bold text-white active:scale-95"
                 >
                   פתחו
                 </button>
@@ -283,13 +283,13 @@ function ShopPage() {
           {(["regular", "amazing", "legendary"] as ChestKind[]).map((k) => (
             <div key={k} className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
               <span className="text-4xl">{CHESTS[k].emoji}</span>
-              <div className="flex-1">
+              <div className="min-w-0 flex-1">
                 <p className="text-lg font-bold text-ink">{CHESTS[k].title}</p>
                 <p className="text-sm text-muted-foreground">{CHESTS[k].desc}</p>
               </div>
               <button
                 onClick={() => buyChest(k)}
-                className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
+                className="shrink-0 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
               >
                 🪙 {fmtNum(CHESTS[k].price)}
               </button>
@@ -301,7 +301,7 @@ function ShopPage() {
           {HINT_PACKS.map((h) => (
             <div key={h.id} className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
               <span className="text-4xl">{h.emoji}</span>
-              <div className="flex-1">
+              <div className="min-w-0 flex-1">
                 <p className="text-lg font-bold text-ink">{h.title}</p>
                 <p className="text-sm text-muted-foreground">עוזר בתרגילים קשים</p>
               </div>
@@ -312,7 +312,7 @@ function ShopPage() {
                     return `נוספו ${h.hints} רמזים ✅`;
                   })
                 }
-                className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
+                className="shrink-0 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
               >
                 🪙 {fmtNum(h.price)}
               </button>
@@ -322,7 +322,7 @@ function ShopPage() {
           <p className="mt-2 font-bold text-ink">גלגל מזל</p>
           <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
             <span className="text-4xl">🎡</span>
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <p className="text-lg font-bold text-ink">3 סיבובים</p>
               <p className="text-sm text-muted-foreground">אין הגבלה על סיבובים בתשלום</p>
             </div>
@@ -333,7 +333,7 @@ function ShopPage() {
                   return "נוספו 3 סיבובים לגלגל המזל 🎡";
                 })
               }
-              className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
+              className="shrink-0 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
             >
               🪙 600
             </button>
@@ -359,7 +359,7 @@ function ShopPage() {
                 )}
               >
                 <span className="text-4xl">{ticket.emoji}</span>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <p className="text-lg font-bold text-ink">
                     {ticket.title} {owned > 0 && <span className="text-sm">×{owned}</span>}
                   </p>
@@ -368,7 +368,7 @@ function ShopPage() {
                 {ticket.price != null ? (
                   <button
                     onClick={() => buyTicket(t, ticket.price!)}
-                    className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
+                    className="shrink-0 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
                   >
                     🪙 {ticket.price}
                   </button>
@@ -384,7 +384,7 @@ function ShopPage() {
           <p className="mt-2 font-bold text-ink">עוד</p>
           <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
             <span className="text-4xl">🎟️</span>
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <p className="text-lg font-bold text-ink">מדבקת הפתעה</p>
               <p className="text-sm text-muted-foreground">מדבקה אקראית לאלבום</p>
             </div>
@@ -397,14 +397,14 @@ function ShopPage() {
                     : `קיבלת מדבקה: ${stickerForSlot(slot).emoji} ${stickerForSlot(slot).name}`;
                 })
               }
-              className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
+              className="shrink-0 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
             >
               🪙 60
             </button>
           </div>
           <div className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-card">
             <span className="text-4xl">⏩</span>
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <p className="text-lg font-bold text-ink">כפל מטבעות שעה</p>
               <p className="text-sm text-muted-foreground">פי 2 מטבעות למשך שעה</p>
             </div>
@@ -420,7 +420,7 @@ function ShopPage() {
                   return "כפל מטבעות פעיל לשעה! ⏩";
                 })
               }
-              className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
+              className="shrink-0 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
             >
               🪙 100
             </button>
@@ -440,7 +440,7 @@ function ShopPage() {
               onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
               maxLength={16}
               placeholder="FREECOINS"
-              className="h-12 flex-1 rounded-xl border-2 border-muted bg-background px-3 text-lg text-ink outline-none focus:border-primary"
+              className="h-12 min-w-0 flex-1 rounded-xl border-2 border-muted bg-background px-3 text-lg text-ink outline-none focus:border-primary"
             />
             <button
               disabled={promoBusy}
@@ -455,7 +455,7 @@ function ShopPage() {
         </section>
         </div>
       ) : (
-        <div className="mt-4 grid gap-3 pb-28">
+        <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3 pb-28">
           <p className="rounded-2xl bg-sky p-3 text-center font-bold text-ink shadow-card">
             🚧 בקרוב – חנות נפתחת
           </p>
@@ -465,7 +465,7 @@ function ShopPage() {
               className="flex items-center gap-3 rounded-2xl bg-muted p-4 opacity-70 shadow-card"
             >
               <span className="text-4xl grayscale">{item.emoji}</span>
-              <div className="flex-1">
+              <div className="min-w-0 flex-1">
                 <p className="text-lg font-bold text-ink">{item.title}</p>
                 <p className="text-sm text-muted-foreground">{item.desc}</p>
               </div>

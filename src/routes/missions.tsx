@@ -86,23 +86,23 @@ function MissionCard({
           style={{ width: `${claimed ? 100 : pct}%` }}
         />
       </div>
-      <div className="mt-2 flex items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">{rewardLabel(mission)}</p>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="min-w-0 flex-1 text-xs text-muted-foreground">{rewardLabel(mission)}</p>
         {mission.gameId && !claimed && !locked && (
           <Link
             to="/play/$gameId"
             params={{ gameId: mission.gameId }}
-            className="rounded-lg bg-primary px-3 py-1 text-xs font-bold text-primary-foreground active:scale-95"
+            className="flex h-11 shrink-0 items-center rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground active:scale-95"
           >
             🎮 למשחק
           </Link>
         )}
         {locked ? (
-          <span className="rounded-lg bg-muted px-3 py-1 text-xs font-bold text-muted-foreground">
+          <span className="shrink-0 rounded-lg bg-muted px-3 py-1 text-xs font-bold text-muted-foreground">
             פרימיום בלבד
           </span>
         ) : claimed ? (
-          <span className="rounded-lg bg-success px-3 py-1 text-xs font-bold text-success-foreground">
+          <span className="shrink-0 rounded-lg bg-success px-3 py-1 text-xs font-bold text-success-foreground">
             הושלם ✅
           </span>
         ) : (
@@ -110,7 +110,7 @@ function MissionCard({
             onClick={claim}
             disabled={progress < mission.goal}
             className={cn(
-              "rounded-lg px-3 py-1 text-xs font-bold active:scale-95",
+              "h-11 shrink-0 rounded-lg px-3 text-xs font-bold active:scale-95",
               progress >= mission.goal
                 ? "bg-warning text-warning-foreground"
                 : "bg-muted text-muted-foreground",

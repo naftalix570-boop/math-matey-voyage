@@ -157,8 +157,15 @@ function AlbumPage() {
               key={r}
               aria-label={r}
               onClick={() => go(i - page)}
-              className={cn("size-2.5 rounded-full", i === page ? "bg-primary" : "bg-muted")}
-            />
+              className="flex size-10 items-center justify-center"
+            >
+              <span
+                className={cn(
+                  "block size-2.5 rounded-full",
+                  i === page ? "bg-primary" : "bg-muted",
+                )}
+              />
+            </button>
           ))}
         </div>
       </div>

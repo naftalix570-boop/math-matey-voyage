@@ -81,7 +81,7 @@ function Home() {
                 sound("click");
                 update({ onboarded: true, ...(name.trim() ? { name: name.trim() } : {}) });
               }}
-              className="text-sm text-muted-foreground underline"
+              className="flex h-11 w-full items-center justify-center text-sm text-muted-foreground underline"
             >
               {t("home.skipTest")}
             </button>

@@ -69,7 +69,7 @@ function SettingsPage() {
 
   return (
     <Screen title={t("title.settings")}>
-      <div className="mt-2 grid gap-3 pb-28">
+      <div className="mt-2 grid grid-cols-[minmax(0,1fr)] gap-3 pb-28">
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <p className="text-lg font-bold text-ink">{t("settings.language")}</p>
@@ -225,7 +225,7 @@ function SettingsPage() {
               sound("click");
             }}
             className={cn(
-              "h-9 w-16 rounded-full p-1 transition-colors",
+              "h-10 w-16 rounded-full p-1 transition-colors",
               profile.soundOn ? "bg-success" : "bg-muted",
             )}
           >
@@ -415,7 +415,7 @@ function SettingsPage() {
               value={adminInput}
               onChange={(e) => setAdminInput(e.target.value)}
               maxLength={40}
-              className="h-12 flex-1 rounded-xl border-2 border-muted bg-background px-3 text-lg text-ink outline-none focus:border-primary"
+              className="h-12 min-w-0 flex-1 rounded-xl border-2 border-muted bg-background px-3 text-lg text-ink outline-none focus:border-primary"
             />
             <button
               onClick={() => void submitAdmin()}
