@@ -69,7 +69,7 @@ function SettingsPage() {
 
   return (
     <Screen title={t("title.settings")}>
-      <div className="mt-2 grid gap-3 pb-28">
+      <div className="mt-2 grid grid-cols-[minmax(0,1fr)] gap-3 pb-28">
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <p className="text-lg font-bold text-ink">{t("settings.language")}</p>
