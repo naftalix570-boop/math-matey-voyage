@@ -440,7 +440,7 @@ function ShopPage() {
               onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
               maxLength={16}
               placeholder="FREECOINS"
-              className="h-12 flex-1 rounded-xl border-2 border-muted bg-background px-3 text-lg text-ink outline-none focus:border-primary"
+              className="h-12 min-w-0 flex-1 rounded-xl border-2 border-muted bg-background px-3 text-lg text-ink outline-none focus:border-primary"
             />
             <button
               disabled={promoBusy}
