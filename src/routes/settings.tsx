@@ -7,6 +7,8 @@ import { MAX_LEVEL } from "@/lib/math";
 import { cn, fmtNum } from "@/lib/utils";
 import { useI18n, LANGS } from "@/lib/i18n";
 import { verifyAdminCode } from "@/lib/admin.functions";
+import { APP_VERSION } from "@/lib/app-version";
+import { downloadBackup, parseBackup } from "@/lib/profile-storage";
 
 
 export const Route = createFileRoute("/settings")({
