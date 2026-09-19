@@ -7,6 +7,8 @@ import { MAX_LEVEL } from "@/lib/math";
 import { cn, fmtNum } from "@/lib/utils";
 import { useI18n, LANGS } from "@/lib/i18n";
 import { verifyAdminCode } from "@/lib/admin.functions";
+import { APP_VERSION } from "@/lib/app-version";
+import { downloadBackup, parseBackup } from "@/lib/profile-storage";
 
 
 export const Route = createFileRoute("/settings")({
@@ -35,7 +37,9 @@ const COUNTRIES = [
 ];
 
 function SettingsPage() {
-  const { profile, update, sound, reset, linked, authEmail, cloudSyncing } = useGame();
+  const { profile, update, sound, reset, linked, authEmail, cloudSyncing, importProfile } =
+    useGame();
+  const [backupMsg, setBackupMsg] = useState<string | null>(null);
   const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
@@ -331,6 +335,72 @@ function SettingsPage() {
               {t("settings.resetBtn")}
             </button>
           )}
+        </section>
+
+        <section className="rounded-2xl bg-card p-4 shadow-card">
+          <p className="text-lg font-bold text-ink">💾 גיבוי ושחזור</p>
+          <p className="text-sm text-muted-foreground">
+            אפשר לשמור קובץ גיבוי של ההתקדמות ולשחזר אותו בכל מכשיר. שחזור רק מוסיף — שום דבר לא נמחק.
+          </p>
+          <div className="mt-3 grid gap-2">
+            <button
+              onClick={() => {
+                sound("click");
+                downloadBackup(profile);
+                setBackupMsg("✅ קובץ הגיבוי ירד למכשיר");
+              }}
+              className="h-11 rounded-xl bg-primary font-bold text-primary-foreground active:scale-95"
+            >
+              ⬇️ הורדת קובץ גיבוי
+            </button>
+            <label className="flex h-11 cursor-pointer items-center justify-center rounded-xl bg-muted font-bold text-ink active:scale-95">
+              ⬆️ שחזור מקובץ
+              <input
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!file) return;
+                  const data = parseBackup(await file.text());
+                  if (!data) {
+                    setBackupMsg("❌ הקובץ לא תקין");
+                    sound("wrong");
+                    return;
+                  }
+                  importProfile(data);
+                  setBackupMsg("✅ ההתקדמות שוחזרה");
+                }}
+              />
+            </label>
+          </div>
+          {backupMsg && <p className="mt-2 font-bold text-ink">{backupMsg}</p>}
+        </section>
+
+        <section className="rounded-2xl bg-card p-4 shadow-card">
+          <p className="text-lg font-bold text-ink">ℹ️ עוד</p>
+          <div className="mt-3 grid gap-2">
+            <Link
+              to="/profile"
+              className="flex h-11 items-center justify-center rounded-xl bg-muted font-bold text-ink active:scale-95"
+            >
+              👤 הפרופיל שלי
+            </Link>
+            <Link
+              to="/privacy"
+              className="flex h-11 items-center justify-center rounded-xl bg-muted font-bold text-ink active:scale-95"
+            >
+              🔒 מדיניות פרטיות
+            </Link>
+            <Link
+              to="/terms"
+              className="flex h-11 items-center justify-center rounded-xl bg-muted font-bold text-ink active:scale-95"
+            >
+              📄 תנאי שימוש
+            </Link>
+          </div>
+          <p className="mt-3 text-center text-xs text-muted-foreground">גרסה {APP_VERSION}</p>
         </section>
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
