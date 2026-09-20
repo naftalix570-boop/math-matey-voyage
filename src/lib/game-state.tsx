@@ -1,6 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { ALBUM_SIZE, stickerForSlot, type Rarity } from "./stickers";
+import {
+  ALBUM_SIZE,
+  ALBUM_WORLDS,
+  stickerForSlot,
+  worldProgress,
+  type AlbumWorld,
+  type Rarity,
+} from "./stickers";
 import { MAX_LEVEL } from "./math";
 import { playSound } from "./sfx";
 import { supabase } from "@/integrations/supabase/client";
