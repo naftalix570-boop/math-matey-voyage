@@ -1,6 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { ALBUM_SIZE, stickerForSlot, type Rarity } from "./stickers";
+import {
+  ALBUM_SIZE,
+  ALBUM_WORLDS,
+  stickerForSlot,
+  worldProgress,
+  type AlbumWorld,
+  type Rarity,
+} from "./stickers";
 import { MAX_LEVEL } from "./math";
 import { playSound } from "./sfx";
 import { supabase } from "@/integrations/supabase/client";
@@ -128,6 +135,10 @@ export type Profile = {
   rated: boolean;
   /** ISO country code for national leaderboard */
   country: string;
+  /** עולמות אלבום שכבר נגבה עליהם הפרס */
+  albumWorlds: number[];
+  /** תארים שהושגו מהשלמת עולמות */
+  albumTitles: string[];
   /** גרסת מבנה הנתונים — מאפשרת עדכוני גרסה בלי לאבד התקדמות */
   schemaVersion: number;
 };
@@ -188,6 +199,8 @@ const defaultProfile: Profile = {
   correctSinceRating: 0,
   rated: false,
   country: "IL",
+  albumWorlds: [],
+  albumTitles: [],
   schemaVersion: PROFILE_SCHEMA_VERSION,
 };
 
@@ -600,6 +613,8 @@ type Ctx = {
   recordGameWin: (gameId: string) => void;
   markGameSeen: (gameId: string) => void;
   claimStreak: () => { coins: number } | null;
+  /** גביית פרס השלמת עולם באלבום — פעם אחת לכל עולם */
+  claimAlbumWorld: (worldId: number) => AlbumWorld["reward"] | null;
   spinWheel: (free: boolean) => WheelPrize | null;
   claimMission: (m: Mission, scope: "daily" | "monthly") => boolean;
   missionProgress: (m: Mission) => number;
@@ -1040,6 +1055,32 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return out;
   }, []);
 
+  const claimAlbumWorld = useCallback<Ctx["claimAlbumWorld"]>((worldId) => {
+    let out: AlbumWorld["reward"] | null = null;
+    setProfile((p) => {
+      const world = ALBUM_WORLDS[worldId];
+      if (!world) return p;
+      if ((p.albumWorlds ?? []).includes(worldId)) return p;
+      if (!worldProgress(world, new Set(p.stickers)).done) return p;
+      const r = world.reward;
+      out = r;
+      const chestInv = r.chest
+        ? { ...p.chestInv, [r.chest]: p.chestInv[r.chest] + (r.chestCount ?? 1) }
+        : p.chestInv;
+      return {
+        ...p,
+        albumWorlds: [...(p.albumWorlds ?? []), worldId],
+        albumTitles: Array.from(new Set([...(p.albumTitles ?? []), r.title])),
+        coins: p.coins + r.coins,
+        hints: p.hints + r.hints,
+        trophies: p.trophies + r.trophies,
+        chestInv,
+        icons: r.icon && !p.icons.includes(r.icon) ? [...p.icons, r.icon] : p.icons,
+      };
+    });
+    return out;
+  }, []);
+
   const spinWheel = useCallback<Ctx["spinWheel"]>((free) => {
     let out: WheelPrize | null = null;
     setProfile((p) => {
@@ -1325,6 +1366,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       recordGameWin,
       markGameSeen,
       claimStreak,
+      claimAlbumWorld,
       spinWheel,
       claimMission,
       missionProgress,
@@ -1362,6 +1404,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       recordGameWin,
       markGameSeen,
       claimStreak,
+      claimAlbumWorld,
       spinWheel,
       claimMission,
       missionProgress,
