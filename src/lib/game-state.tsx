@@ -1055,6 +1055,32 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return out;
   }, []);
 
+  const claimAlbumWorld = useCallback<Ctx["claimAlbumWorld"]>((worldId) => {
+    let out: AlbumWorld["reward"] | null = null;
+    setProfile((p) => {
+      const world = ALBUM_WORLDS[worldId];
+      if (!world) return p;
+      if ((p.albumWorlds ?? []).includes(worldId)) return p;
+      if (!worldProgress(world, new Set(p.stickers)).done) return p;
+      const r = world.reward;
+      out = r;
+      const chestInv = r.chest
+        ? { ...p.chestInv, [r.chest]: p.chestInv[r.chest] + (r.chestCount ?? 1) }
+        : p.chestInv;
+      return {
+        ...p,
+        albumWorlds: [...(p.albumWorlds ?? []), worldId],
+        albumTitles: Array.from(new Set([...(p.albumTitles ?? []), r.title])),
+        coins: p.coins + r.coins,
+        hints: p.hints + r.hints,
+        trophies: p.trophies + r.trophies,
+        chestInv,
+        icons: r.icon && !p.icons.includes(r.icon) ? [...p.icons, r.icon] : p.icons,
+      };
+    });
+    return out;
+  }, []);
+
   const spinWheel = useCallback<Ctx["spinWheel"]>((free) => {
     let out: WheelPrize | null = null;
     setProfile((p) => {
