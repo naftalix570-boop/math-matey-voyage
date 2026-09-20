@@ -73,20 +73,28 @@ function AdminPage() {
     }
   };
 
-  const submitGrant = async () => {
-    if (!code || !selected) return;
+  const applyGrant = async (type: RewardType, value: number) => {
+    if (!code || !selected || !Number.isFinite(value) || value === 0) return;
     setGrantMsg(null);
+    setBusy(true);
     try {
       await grant({
-        data: { code, userId: selected.userId, rewardType: grantType, amount: grantAmount },
+        data: { code, userId: selected.userId, rewardType: type, amount: value },
       });
-      setDetail(await fetchUser({ data: { code, userId: selected.userId } }));
-      setUsers(await fetchUsers({ data: { code } }));
-      setGrantMsg("✅ עודכן");
+      const fresh = await fetchUser({ data: { code, userId: selected.userId } });
+      setDetail(fresh);
+      const list = await fetchUsers({ data: { code } });
+      setUsers(list);
+      const updated = list.find((r) => r.userId === selected.userId);
+      if (updated) setSelected(updated);
+      setGrantMsg(`✅ ${value > 0 ? "נוספו" : "הופחתו"} ${Math.abs(value)} · ${REWARD_LABELS[type]}`);
     } catch (e) {
       setGrantMsg(e instanceof Error ? e.message : "שגיאה");
     }
+    setBusy(false);
   };
+
+  const submitGrant = () => applyGrant(grantType, grantAmount);
 
   useEffect(() => {
     const saved = sessionStorage.getItem("math-journey:admin");
@@ -319,7 +327,32 @@ function AdminPage() {
                     />
                   </div>
 
-                  <p className="mt-4 font-bold text-ink">הוספה / הפחתה</p>
+                  <p className="mt-4 font-bold text-ink">כפתורים מהירים</p>
+                  <div className="mt-2 grid gap-2">
+                    {(Object.keys(REWARD_LABELS) as RewardType[]).map((r) => (
+                      <div key={r} className="flex items-center gap-2 rounded-xl bg-muted p-2">
+                        <span className="min-w-0 flex-1 truncate font-bold text-ink">
+                          {REWARD_LABELS[r]}
+                        </span>
+                        {[-10, -1, 1, 10].map((step) => (
+                          <button
+                            key={step}
+                            disabled={busy}
+                            onClick={() => void applyGrant(r, step)}
+                            className={`h-11 min-w-11 rounded-lg px-2 text-sm font-bold active:scale-95 disabled:opacity-50 ${
+                              step > 0
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-destructive text-destructive-foreground"
+                            }`}
+                          >
+                            {step > 0 ? `+${step}` : step}
+                          </button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="mt-4 font-bold text-ink">כמות מותאמת (מינוס = הפחתה)</p>
                   <div className="mt-2 grid gap-2">
                     <select
                       value={grantType}
