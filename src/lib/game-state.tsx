@@ -192,6 +192,8 @@ const defaultProfile: Profile = {
   correctSinceRating: 0,
   rated: false,
   country: "IL",
+  albumWorlds: [],
+  albumTitles: [],
   schemaVersion: PROFILE_SCHEMA_VERSION,
 };
 
