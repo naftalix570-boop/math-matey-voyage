@@ -613,6 +613,8 @@ type Ctx = {
   recordGameWin: (gameId: string) => void;
   markGameSeen: (gameId: string) => void;
   claimStreak: () => { coins: number } | null;
+  /** גביית פרס השלמת עולם באלבום — פעם אחת לכל עולם */
+  claimAlbumWorld: (worldId: number) => AlbumWorld["reward"] | null;
   spinWheel: (free: boolean) => WheelPrize | null;
   claimMission: (m: Mission, scope: "daily" | "monthly") => boolean;
   missionProgress: (m: Mission) => number;
