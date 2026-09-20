@@ -73,20 +73,28 @@ function AdminPage() {
     }
   };
 
-  const submitGrant = async () => {
-    if (!code || !selected) return;
+  const applyGrant = async (type: RewardType, value: number) => {
+    if (!code || !selected || !Number.isFinite(value) || value === 0) return;
     setGrantMsg(null);
+    setBusy(true);
     try {
       await grant({
-        data: { code, userId: selected.userId, rewardType: grantType, amount: grantAmount },
+        data: { code, userId: selected.userId, rewardType: type, amount: value },
       });
-      setDetail(await fetchUser({ data: { code, userId: selected.userId } }));
-      setUsers(await fetchUsers({ data: { code } }));
-      setGrantMsg("✅ עודכן");
+      const fresh = await fetchUser({ data: { code, userId: selected.userId } });
+      setDetail(fresh);
+      const list = await fetchUsers({ data: { code } });
+      setUsers(list);
+      const updated = list.find((r) => r.userId === selected.userId);
+      if (updated) setSelected(updated);
+      setGrantMsg(`✅ ${value > 0 ? "נוספו" : "הופחתו"} ${Math.abs(value)} · ${REWARD_LABELS[type]}`);
     } catch (e) {
       setGrantMsg(e instanceof Error ? e.message : "שגיאה");
     }
+    setBusy(false);
   };
+
+  const submitGrant = () => applyGrant(grantType, grantAmount);
 
   useEffect(() => {
     const saved = sessionStorage.getItem("math-journey:admin");
