@@ -128,6 +128,10 @@ export type Profile = {
   rated: boolean;
   /** ISO country code for national leaderboard */
   country: string;
+  /** עולמות אלבום שכבר נגבה עליהם הפרס */
+  albumWorlds: number[];
+  /** תארים שהושגו מהשלמת עולמות */
+  albumTitles: string[];
   /** גרסת מבנה הנתונים — מאפשרת עדכוני גרסה בלי לאבד התקדמות */
   schemaVersion: number;
 };
