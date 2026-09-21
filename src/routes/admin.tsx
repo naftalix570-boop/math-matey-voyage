@@ -109,19 +109,27 @@ function AdminPage() {
 
   useEffect(() => {
     if (!code) return;
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
     void (async () => {
       try {
         const [u, c] = await Promise.all([
           fetchUsers({ data: { code } }),
           fetchCodes({ data: { code } }),
         ]);
+        if (cancelled) return;
         setUsers(u);
         setCodes(c);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "שגיאה");
+        if (!cancelled) setError(e instanceof Error ? e.message : "שגיאה");
       }
+      if (!cancelled) setLoading(false);
     })();
-  }, [code, fetchUsers, fetchCodes]);
+    return () => {
+      cancelled = true;
+    };
+  }, [code, fetchUsers, fetchCodes, reloadKey]);
 
   const create = async () => {
     if (!code) return;
