@@ -43,6 +43,8 @@ function AdminPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [codes, setCodes] = useState<CodeRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
   const [busy, setBusy] = useState(false);
   const [rewardType, setRewardType] = useState<RewardType>("coins");
   const [amount, setAmount] = useState(10);
