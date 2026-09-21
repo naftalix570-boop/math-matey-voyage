@@ -155,10 +155,14 @@ function AdminPage() {
     <Screen title="מסך ניהול">
       <div className="mt-2 grid gap-3 pb-28">
         {error && (
-          <p className="rounded-xl bg-destructive/10 p-3 text-center font-bold text-destructive">
-            {error}
-          </p>
+          <ErrorState
+            title="לא הצלחנו לטעון את נתוני הניהול"
+            hint={error}
+            onRetry={() => setReloadKey((k) => k + 1)}
+          />
         )}
+        {loading && !error && <LoadingState label="טוען נתוני ניהול…" />}
+
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <p className="text-lg font-bold text-ink">צור קוד קידום חדש</p>
