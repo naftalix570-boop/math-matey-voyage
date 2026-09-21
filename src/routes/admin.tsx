@@ -266,6 +266,9 @@ function AdminPage() {
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <p className="text-lg font-bold text-ink">שחקנים ({users.length})</p>
           <div className="mt-3 grid gap-2">
+            {!loading && users.length === 0 && (
+              <EmptyState emoji="👥" title="עדיין אין שחקנים" hint="ברגע שמישהו יתחבר הוא יופיע כאן." />
+            )}
             {users.map((u) => (
               <button
                 key={u.userId}
