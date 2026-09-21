@@ -43,6 +43,13 @@
       "when": 1788644220473,
       "tag": "0005_promo_codes",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790021499913,
+      "tag": "0006_leaderboard_public_view",
+      "breakpoints": true
     }
   ]
 }

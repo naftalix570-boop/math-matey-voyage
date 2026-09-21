@@ -57,7 +57,7 @@ function LeaderboardPage() {
     setFailed(false);
     void (async () => {
       let q = supabase
-        .from("profiles")
+        .from("leaderboard_public")
         .select("user_id, display_name, icon, country, score")
         .order("score", { ascending: false })
         .limit(100);
@@ -73,7 +73,7 @@ function LeaderboardPage() {
 
       // המיקום המדויק שלי — גם אם אני מחוץ ל-100 הראשונים
       let cq = supabase
-        .from("profiles")
+        .from("leaderboard_public")
         .select("user_id", { count: "exact", head: true })
         .gt("score", profile.trophies);
       if (tab === "country") cq = cq.eq("country", profile.country);

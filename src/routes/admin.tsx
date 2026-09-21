@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Screen } from "@/components/app-shell";
+import { EmptyState, ErrorState, LoadingState } from "@/components/states";
 import { SITE_URL } from "@/lib/native";
 import {
   createPromoCode,
@@ -43,6 +44,8 @@ function AdminPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [codes, setCodes] = useState<CodeRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
   const [busy, setBusy] = useState(false);
   const [rewardType, setRewardType] = useState<RewardType>("coins");
   const [amount, setAmount] = useState(10);
@@ -107,19 +110,27 @@ function AdminPage() {
 
   useEffect(() => {
     if (!code) return;
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
     void (async () => {
       try {
         const [u, c] = await Promise.all([
           fetchUsers({ data: { code } }),
           fetchCodes({ data: { code } }),
         ]);
+        if (cancelled) return;
         setUsers(u);
         setCodes(c);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "שגיאה");
+        if (!cancelled) setError(e instanceof Error ? e.message : "שגיאה");
       }
+      if (!cancelled) setLoading(false);
     })();
-  }, [code, fetchUsers, fetchCodes]);
+    return () => {
+      cancelled = true;
+    };
+  }, [code, fetchUsers, fetchCodes, reloadKey]);
 
   const create = async () => {
     if (!code) return;
@@ -145,10 +156,14 @@ function AdminPage() {
     <Screen title="מסך ניהול">
       <div className="mt-2 grid gap-3 pb-28">
         {error && (
-          <p className="rounded-xl bg-destructive/10 p-3 text-center font-bold text-destructive">
-            {error}
-          </p>
+          <ErrorState
+            title="לא הצלחנו לטעון את נתוני הניהול"
+            hint={error}
+            onRetry={() => setReloadKey((k) => k + 1)}
+          />
         )}
+        {loading && !error && <LoadingState label="טוען נתוני ניהול…" />}
+
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <p className="text-lg font-bold text-ink">צור קוד קידום חדש</p>
@@ -251,6 +266,9 @@ function AdminPage() {
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <p className="text-lg font-bold text-ink">שחקנים ({users.length})</p>
           <div className="mt-3 grid gap-2">
+            {!loading && users.length === 0 && (
+              <EmptyState emoji="👥" title="עדיין אין שחקנים" hint="ברגע שמישהו יתחבר הוא יופיע כאן." />
+            )}
             {users.map((u) => (
               <button
                 key={u.userId}
