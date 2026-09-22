@@ -50,6 +50,13 @@
       "when": 1790021499913,
       "tag": "0006_leaderboard_public_view",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790068409069,
+      "tag": "0007_verified_scores_and_guest_players",
+      "breakpoints": true
     }
   ]
 }

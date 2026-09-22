@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      guest_players: {
+        Row: {
+          answered: number
+          claimed_by: string | null
+          code: string
+          country: string
+          created_at: string
+          data: Json
+          display_name: string
+          icon: string
+          score: number
+          secret: string
+          suspicious: boolean
+          updated_at: string
+          window_answers: number
+          window_start: string
+        }
+        Insert: {
+          answered?: number
+          claimed_by?: string | null
+          code: string
+          country?: string
+          created_at?: string
+          data?: Json
+          display_name?: string
+          icon?: string
+          score?: number
+          secret: string
+          suspicious?: boolean
+          updated_at?: string
+          window_answers?: number
+          window_start?: string
+        }
+        Update: {
+          answered?: number
+          claimed_by?: string | null
+          code?: string
+          country?: string
+          created_at?: string
+          data?: Json
+          display_name?: string
+          icon?: string
+          score?: number
+          secret?: string
+          suspicious?: boolean
+          updated_at?: string
+          window_answers?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
+      player_scores: {
+        Row: {
+          answered: number
+          score: number
+          suspicious: boolean
+          updated_at: string
+          user_id: string
+          window_answers: number
+          window_start: string
+        }
+        Insert: {
+          answered?: number
+          score?: number
+          suspicious?: boolean
+          updated_at?: string
+          user_id: string
+          window_answers?: number
+          window_start?: string
+        }
+        Update: {
+          answered?: number
+          score?: number
+          suspicious?: boolean
+          updated_at?: string
+          user_id?: string
+          window_answers?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           country: string
@@ -99,6 +180,17 @@ export type Database = {
       }
     }
     Views: {
+      leaderboard_all: {
+        Row: {
+          country: string | null
+          display_name: string | null
+          icon: string | null
+          is_guest: boolean | null
+          player_id: string | null
+          score: number | null
+        }
+        Relationships: []
+      }
       leaderboard_public: {
         Row: {
           country: string | null
