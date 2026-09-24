@@ -1,3 +1,4 @@
+import { STICKER_EVERY } from "@/lib/stickers";
 import { createFileRoute } from "@tanstack/react-router";
 import { Screen } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
@@ -35,7 +36,7 @@ function ProgressPage() {
     profile.totalAnswered > 0
       ? Math.round((profile.totalCorrect / profile.totalAnswered) * 100)
       : 0;
-  const toSticker = Math.max(0, 30 - profile.correctSinceSticker);
+  const toSticker = Math.max(0, STICKER_EVERY - profile.correctSinceSticker);
 
   return (
     <Screen title={t("title.progress")}>

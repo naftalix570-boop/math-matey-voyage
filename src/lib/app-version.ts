@@ -4,10 +4,10 @@
  * כדי שאפשר יהיה להוסיף תשלומים/פרסומות/תוכן בלי לשכתב את האפליקציה.
  */
 
-export const APP_VERSION = "1.0.0";
+export const APP_VERSION = "1.1.0";
 
 /** גרסת מבנה נתוני המשתמש. מעלים ב-1 רק כשמוסיפים שדות — לעולם לא מוחקים שדות. */
-export const PROFILE_SCHEMA_VERSION = 1;
+export const PROFILE_SCHEMA_VERSION = 2;
 
 export const FEATURES = {
   /** רכישות בתוך האפליקציה — יידלק בגרסה עתידית */
@@ -17,7 +17,7 @@ export const FEATURES = {
   /** מנויים — יידלק בגרסה עתידית */
   subscriptions: false,
   /** גיבוי וייצוא של ההתקדמות */
-  backup: true,
+  backup: false,
   /** לוח מובילים עולמי וארצי */
   leaderboard: true,
   /** מסך ניהול */

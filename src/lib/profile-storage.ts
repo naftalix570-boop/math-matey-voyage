@@ -49,6 +49,7 @@ export function mergeProfiles(base: Profile, extra: Partial<Profile>): Profile {
   merged.achievements = uniq([...(base.achievements ?? []), ...(extra.achievements ?? [])]);
   merged.seenTopics = uniq([...(base.seenTopics ?? []), ...(extra.seenTopics ?? [])]);
   merged.seenGames = uniq([...(base.seenGames ?? []), ...(extra.seenGames ?? [])]);
+  merged.albumWorlds100 = uniq([...(base.albumWorlds100 ?? []), ...(extra.albumWorlds100 ?? [])]);
   merged.albumWorlds = uniq([...(base.albumWorlds ?? []), ...(extra.albumWorlds ?? [])]);
   merged.albumTitles = uniq([...(base.albumTitles ?? []), ...(extra.albumTitles ?? [])]);
 

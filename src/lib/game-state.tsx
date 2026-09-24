@@ -1,8 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
-  ALBUM_SIZE,
   ALBUM_WORLDS,
+  STICKER_EVERY,
+  collectableSlots,
   stickerForSlot,
   worldProgress,
   type AlbumWorld,
@@ -11,6 +12,14 @@ import {
 import { MAX_LEVEL } from "./math";
 import { playSound } from "./sfx";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  createGuestPlayer,
+  guestClaim,
+  guestSync,
+  guestTransfer,
+  submitAnswers,
+} from "./score.functions";
 import { PROFILE_SCHEMA_VERSION } from "./app-version";
 import { hasProgress, mergeProfiles, saveLocalBackup } from "./profile-storage";
 

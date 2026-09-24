@@ -1,3 +1,4 @@
+import { STICKER_EVERY } from "@/lib/stickers";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
@@ -264,7 +265,7 @@ function Home() {
           {t("home.albumSub", {
             a: profile.stickers.length,
             b: ALBUM_SIZE,
-            c: 30 - profile.correctSinceSticker,
+            c: STICKER_EVERY - profile.correctSinceSticker,
           })}
         </p>
       </Link>
