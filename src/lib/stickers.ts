@@ -75,11 +75,49 @@ export const STICKERS: StickerDef[] = [
   { emoji: "🍭", name: "סוכרייה", rarity: "rare" },
 ];
 
-/** 70 slots mapped to sticker definitions */
-export const ALBUM_SIZE = 70;
+/* ============ 5 עולמות × 100 מדבקות ============
+   כל עולם הוא אלבום שלם של 100 מדבקות עם נושא משלו.
+   העולם הראשון משתמש במדבקות המקוריות, כך שכל מה שכבר נאסף נשמר במקומו. */
+
+export const WORLD_SIZE = 100;
+export const ALBUM_SIZE = WORLD_SIZE * 5;
+/** מדבקה על כל X תשובות נכונות */
+export const STICKER_EVERY = 20;
+
+const W = (list: string, rarity: Rarity): StickerDef[] =>
+  list.split(",").map((pair) => {
+    const [emoji, name] = pair.split(":");
+    return { emoji: emoji as string, name: name as string, rarity };
+  });
+
+const WORLD_STICKERS: StickerDef[][] = [
+  STICKERS,
+  [
+    ...W("🐶:כלב,🐭:עכבר,🐹:אוגר,🐰:ארנב,🐻:דוב,🐼:פנדה,🐨:קואלה,🐯:נמר,🦁:אריה,🐮:פרה,🐷:חזיר,🐸:צפרדע,🐵:קוף,🐔:תרנגולת,🐤:אפרוח,🦆:ברווז,🦉:ינשוף,🐴:סוס,🐗:חזיר בר,🐺:זאב,🦋:פרפר,🐌:חילזון,🐙:תמנון,🦀:סרטן,🐠:דג", "rare"),
+    ...W("🦒:ג'ירפה,🦓:זברה,🐘:פיל,🦛:היפופוטם,🦘:קנגורו,🦥:עצלן,🦦:לוטרה,🦩:פלמינגו,🦚:טווס,🦜:תוכי", "amazing"),
+    ...W("🦈:כריש,🐅:טיגריס,🦅:עיט,🐊:תנין", "legendary"),
+  ],
+  [
+    ...W("🌙:ירח,☀️:שמש,🌟:כוכב זוהר,☄️:שביט,🌍:כדור הארץ,🔭:טלסקופ,📡:צלחת לוויין,🌌:גלקסיה,🌑:ירח חדש,🌕:ירח מלא,🌠:כוכב נופל,🛰️:לוויין,👾:חייזר,🧑‍🚀:אסטרונאוט,🌒:סהר", "rare"),
+    ...W("🪐:שבתאי,🚀:רקטה,🛸:עב\"ם,👽:חוצן,🌎:אמריקה מהחלל,🌏:אסיה מהחלל,🌖:ירח דועך", "amazing"),
+    ...W("🌞:שמש זוהרת,💫:סחרחורת כוכבים,🕳️:חור שחור", "legendary"),
+  ],
+  [
+    ...W("🔥:אש,🌋:הר געש,🧨:זיקוק,🎆:זיקוקים,🎇:נצנוץ,🕯️:נר,🌶️:פלפל חריף,🥵:חם,☀️:חום,🍳:מחבת,🏮:פנס,🧯:מטף,🚒:כבאית,🪵:בול עץ,🍖:על האש", "rare"),
+    ...W("☄️:מטאור,💥:פיצוץ,⚡:ברק,🐲:ראש דרקון,🦂:עקרב,🌅:שקיעה,🔆:בוהק", "amazing"),
+    ...W("🐉:דרקון אש,🐦‍🔥:עוף החול,👹:שד אש", "legendary"),
+  ],
+  [
+    ...W("🧚:פיה,🧞:ג'יני,🧙:קוסם,🪄:שרביט,🏰:טירה,🗡️:חרב,🛡️:מגן,📜:מגילה,🔮:כדור בדולח,🧝:שדון,🧜:בת ים,🍄:פטרייה קסומה,🗝️:מפתח עתיק,🏹:קשת וחץ,⚔️:חרבות", "rare"),
+    ...W("🦄:חד קרן,🧌:טרול,🐲:דרקון קטן,🧛:ערפד,🪽:כנפיים,💍:טבעת,🏺:כד עתיק", "amazing"),
+    ...W("👑:כתר האגדה,💎:יהלום הנצח,🏆:גביע האלופים", "legendary"),
+  ],
+];
 
 export function stickerForSlot(slot: number): StickerDef {
-  return STICKERS[slot % STICKERS.length] as StickerDef;
+  const world = Math.min(4, Math.max(0, Math.floor(slot / WORLD_SIZE)));
+  const list = WORLD_STICKERS[world] as StickerDef[];
+  return list[(slot % WORLD_SIZE) % list.length] as StickerDef;
 }
 
 export const ALL_SLOTS = Array.from({ length: ALBUM_SIZE }, (_, i) => i);
@@ -88,16 +126,15 @@ export function slotsByRarity(rarity: Rarity) {
   return ALL_SLOTS.filter((i) => stickerForSlot(i).rarity === rarity);
 }
 
-/* ============ עולמות האלבום ============
-   האלבום מחולק לעולמות. כל עולם נפתח רק אחרי שהעולם שלפניו הושלם,
-   והשלמתו מעניקה פרס גדול (פעם אחת). ככל שמתקדמים — קשה יותר והפרס גדול יותר. */
+/* ============ עולמות האלבום ============ */
 
 export type AlbumWorld = {
   id: number;
   name: string;
   emoji: string;
-  /** תיאור קצר */
   subtitle: string;
+  /** מחלקות עיצוב לכל עולם */
+  theme: string;
   slots: number[];
   reward: {
     coins: number;
@@ -111,46 +148,28 @@ export type AlbumWorld = {
 };
 
 const WORLD_META = [
-  { name: "עולם ההתחלה", emoji: "🌱", subtitle: "הצעדים הראשונים באוסף" },
-  { name: "עולם החיות", emoji: "🐾", subtitle: "אוסף שדורש התמדה" },
-  { name: "עולם החלל", emoji: "🚀", subtitle: "כאן זה כבר מאתגר" },
-  { name: "עולם האש", emoji: "🔥", subtitle: "רק אספנים רציניים" },
-  { name: "עולם האגדות", emoji: "👑", subtitle: "הפסגה של האלבום" },
+  { name: "עולם ההתחלה", emoji: "🌱", subtitle: "100 מדבקות ראשונות באוסף", theme: "bg-gradient-to-b from-sky to-card border-primary/40" },
+  { name: "עולם החיות", emoji: "🐾", subtitle: "100 חיות מכל העולם", theme: "bg-gradient-to-b from-progress/25 to-card border-progress/50" },
+  { name: "עולם החלל", emoji: "🚀", subtitle: "100 פלאי היקום", theme: "bg-gradient-to-b from-primary/25 to-card border-primary/60" },
+  { name: "עולם האש", emoji: "🔥", subtitle: "100 מדבקות לוהטות", theme: "bg-gradient-to-b from-warning/35 to-card border-warning/60" },
+  { name: "עולם האגדות", emoji: "👑", subtitle: "100 אגדות — הפסגה", theme: "bg-gradient-to-b from-gold/45 to-card border-warning/70" },
 ] as const;
 
 const WORLD_REWARDS: AlbumWorld["reward"][] = [
-  { coins: 300, hints: 3, trophies: 10, title: "אספן מתחיל" },
-  { coins: 800, hints: 5, trophies: 30, chest: "regular", chestCount: 1, title: "אספן מנוסה" },
-  { coins: 2000, hints: 8, trophies: 80, chest: "amazing", chestCount: 1, title: "חוקר החלל" },
-  {
-    coins: 5000,
-    hints: 12,
-    trophies: 200,
-    chest: "legendary",
-    chestCount: 1,
-    icon: "🔥",
-    title: "אלוף האש",
-  },
-  {
-    coins: 15000,
-    hints: 25,
-    trophies: 500,
-    chest: "legendary",
-    chestCount: 2,
-    icon: "👑",
-    title: "אגדת האלבום",
-  },
+  { coins: 2000, hints: 10, trophies: 100, chest: "regular", chestCount: 2, title: "אספן מתחיל" },
+  { coins: 5000, hints: 20, trophies: 300, chest: "amazing", chestCount: 2, icon: "🐾", title: "מלך החיות" },
+  { coins: 12000, hints: 35, trophies: 800, chest: "legendary", chestCount: 2, icon: "🚀", title: "חוקר החלל" },
+  { coins: 30000, hints: 60, trophies: 2000, chest: "legendary", chestCount: 4, icon: "🔥", title: "אלוף האש" },
+  { coins: 100000, hints: 150, trophies: 6000, chest: "legendary", chestCount: 10, icon: "👑", title: "אגדת האלבום" },
 ];
-
-const WORLD_COUNT = WORLD_META.length;
-const WORLD_SLOTS = Math.ceil(ALBUM_SIZE / WORLD_COUNT);
 
 export const ALBUM_WORLDS: AlbumWorld[] = WORLD_META.map((meta, i) => ({
   id: i,
   name: meta.name,
   emoji: meta.emoji,
   subtitle: meta.subtitle,
-  slots: ALL_SLOTS.slice(i * WORLD_SLOTS, (i + 1) * WORLD_SLOTS),
+  theme: meta.theme,
+  slots: ALL_SLOTS.slice(i * WORLD_SIZE, (i + 1) * WORLD_SIZE),
   reward: WORLD_REWARDS[i] as AlbumWorld["reward"],
 }));
 
@@ -164,4 +183,9 @@ export function isWorldUnlocked(index: number, owned: Set<number>): boolean {
   if (index <= 0) return true;
   const prev = ALBUM_WORLDS[index - 1] as AlbumWorld;
   return worldProgress(prev, owned).done;
+}
+
+/** מדבקות שנפתחו לאיסוף: רק עולמות פתוחים */
+export function collectableSlots(owned: Set<number>): number[] {
+  return ALBUM_WORLDS.filter((_, i) => isWorldUnlocked(i, owned)).flatMap((w) => w.slots);
 }
