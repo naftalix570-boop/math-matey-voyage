@@ -7,6 +7,7 @@ import { useGame } from "@/lib/game-state";
 import {
   ALBUM_SIZE,
   ALBUM_WORLDS,
+  STICKER_EVERY,
   RARITY_CARD,
   RARITY_CLASS,
   RARITY_LABEL,
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/album")({
           "אלבום מדבקות בחמישה עולמות — כל עולם שמשלימים פותח את הבא ומעניק פרס ענק.",
       },
       { property: "og:title", content: "אלבום מדבקות — מסע המתמטיקס" },
-      { property: "og:description", content: "5 עולמות · 70 מדבקות · פרסי ענק להשלמת עולם." },
+      { property: "og:description", content: "5 עולמות · 500 מדבקות · פרסי ענק להשלמת עולם." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -40,20 +41,20 @@ function StickerCard({ slot, owned, hidden }: { slot: number; owned: boolean; hi
   return (
     <div
       className={cn(
-        "relative flex min-w-0 flex-col items-center overflow-hidden rounded-2xl border-2 p-2 text-center",
+        "relative flex min-w-0 flex-col items-center overflow-hidden rounded-xl border-2 p-1 text-center",
         owned ? RARITY_CARD[s.rarity] : "border-dashed border-border bg-muted/60",
       )}
     >
       {owned && s.rarity === "legendary" && (
         <span className="holo-shine pointer-events-none absolute inset-0" />
       )}
-      <span className={cn("text-3xl", !owned && "opacity-30 grayscale")}>
+      <span className={cn("text-2xl", !owned && "opacity-30 grayscale")}>
         {owned ? s.emoji : hidden ? "🔒" : "❔"}
       </span>
-      <span className="mt-1 truncate text-[11px] font-bold text-ink">
+      <span className="mt-0.5 w-full truncate text-[9px] font-bold text-ink">
         {owned ? s.name : hidden ? "נעול" : RARITY_LABEL[s.rarity]}
       </span>
-      <span className="mt-0.5 text-[10px] text-muted-foreground">#{slot + 1}</span>
+      <span className="text-[9px] text-muted-foreground">#{(slot % 100) + 1}</span>
     </div>
   );
 }
@@ -75,7 +76,7 @@ function AlbumPage() {
   const { t } = useI18n();
   const { profile, claimAlbumWorld, sound } = useGame();
   const owned = new Set(profile.stickers);
-  const claimed = new Set(profile.albumWorlds ?? []);
+  const claimed = new Set(profile.albumWorlds100 ?? []);
   const [page, setPage] = useState(() => {
     const idx = ALBUM_WORLDS.findIndex((w) => !worldProgress(w, owned).done);
     return idx < 0 ? ALBUM_WORLDS.length - 1 : idx;
@@ -110,7 +111,7 @@ function AlbumPage() {
           {owned.size} / {ALBUM_SIZE}
         </p>
         <p className="text-sm text-muted-foreground">
-          עוד {Math.max(0, 30 - profile.correctSinceSticker)} תשובות נכונות למדבקה הבאה
+          עוד {Math.max(0, STICKER_EVERY - profile.correctSinceSticker)} תשובות נכונות למדבקה הבאה
         </p>
         <div className="mt-3 h-3 overflow-hidden rounded-full bg-muted">
           <div
@@ -149,7 +150,7 @@ function AlbumPage() {
         })}
       </div>
 
-      <div className="relative mt-3 overflow-hidden rounded-3xl border-4 border-nav/20 bg-card p-4 pb-8 shadow-card">
+      <div className={cn("relative mt-3 overflow-hidden rounded-3xl border-4 p-4 pb-8 shadow-card", world.theme)}>
         <div
           key={world.id}
           className={cn("origin-right", dir > 0 ? "animate-page-turn" : "animate-page-turn-back")}
@@ -204,7 +205,7 @@ function AlbumPage() {
             )}
           </div>
 
-          <div className="mt-3 grid grid-cols-4 gap-2">
+          <div className="mt-3 grid grid-cols-5 gap-1.5 px-6">
             {world.slots.map((slot) => (
               <StickerCard
                 key={slot}
