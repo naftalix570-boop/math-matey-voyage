@@ -141,6 +141,19 @@ export type Profile = {
   albumTitles: string[];
   /** גרסת מבנה הנתונים — מאפשרת עדכוני גרסה בלי לאבד התקדמות */
   schemaVersion: number;
+  /** עולמות אלבום (100 מדבקות) שנגבה עליהם הפרס */
+  albumWorlds100: number[];
+  /** נתוני הורים: לפי נושא */
+  topicStats: Record<string, { a: number; c: number }>;
+  /** זמן משחק כולל בשניות */
+  playSeconds: number;
+  /** יומן יומי: תשובות, נכונות, שניות */
+  dayLog: Record<string, { a: number; c: number; s: number }>;
+  /** קוד הורים (4 ספרות) */
+  parentCode: string;
+  /** קוד אישי לשחקן בלי התחברות */
+  guestCode: string;
+  guestSecret: string;
 };
 
 const KEY = "math-journey-v1";
@@ -202,7 +215,19 @@ const defaultProfile: Profile = {
   albumWorlds: [],
   albumTitles: [],
   schemaVersion: PROFILE_SCHEMA_VERSION,
+  albumWorlds100: [],
+  topicStats: {},
+  playSeconds: 0,
+  dayLog: {},
+  parentCode: "",
+  guestCode: "",
+  guestSecret: "",
 };
+
+function trimDayLog(log: Profile["dayLog"]) {
+  const keys = Object.keys(log).sort().slice(-30);
+  return Object.fromEntries(keys.map((k) => [k, log[k] as { a: number; c: number; s: number }]));
+}
 
 /** ניקוד הדירוג — מספר הגביעים (גביע על כל תרגיל שנפתר נכון) */
 export const scoreOf = (p: Profile) => p.trophies || p.totalCorrect;
@@ -631,6 +656,7 @@ type Ctx = {
   authEmail: string | null;
   authUid: string | null;
   syncNow: () => Promise<boolean>;
+  restoreFromCode: (code: string) => Promise<boolean>;
   cloudSyncing: boolean;
 };
 
@@ -649,7 +675,7 @@ const GameCtx = createContext<Ctx | null>(null);
 const rnd = (a: number, b: number) => a + Math.floor(Math.random() * (b - a + 1));
 
 function freeSlots(owned: number[], rarity?: Rarity) {
-  return Array.from({ length: ALBUM_SIZE }, (_, i) => i).filter(
+  return collectableSlots(new Set(owned)).filter(
     (i) => !owned.includes(i) && (!rarity || stickerForSlot(i).rarity === rarity),
   );
 }
@@ -697,6 +723,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       parsed.chestInv = { ...defaultProfile.chestInv, ...(parsed.chestInv ?? {}) };
       parsed.gameWins = { ...(parsed.gameWins ?? {}) };
       parsed.seenGames = parsed.seenGames ?? [];
+      parsed.topicStats = parsed.topicStats ?? {};
+      parsed.dayLog = parsed.dayLog ?? {};
+      parsed.albumWorlds100 = parsed.albumWorlds100 ?? [];
       if (!parsed.trophies) parsed.trophies = parsed.totalCorrect;
       // עדכון גרסה משלים שדות חדשים בלבד — אף שדה קיים לא נמחק ולא מתאפס
       parsed.schemaVersion = PROFILE_SCHEMA_VERSION;
@@ -906,6 +935,189 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
   }, [authUid, syncNow]);
 
+  /* ---------------- ניקוד מאומת בשרת + קוד אישי ---------------- */
+  const PENDING_KEY = "math-journey:pending-answers";
+  const pendingRef = useRef({ answered: 0, correct: 0 });
+  const flushTimer = useRef<number | null>(null);
+  const flushingRef = useRef(false);
+  const submitAnswersFn = useServerFn(submitAnswers);
+  const guestSyncFn = useServerFn(guestSync);
+  const createGuestFn = useServerFn(createGuestPlayer);
+  const guestClaimFn = useServerFn(guestClaim);
+  const guestTransferFn = useServerFn(guestTransfer);
+
+  const savePending = useCallback(() => {
+    try {
+      localStorage.setItem(PENDING_KEY, JSON.stringify(pendingRef.current));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PENDING_KEY);
+      if (raw) {
+        const v = JSON.parse(raw) as { answered?: number; correct?: number };
+        pendingRef.current = { answered: Number(v.answered) || 0, correct: Number(v.correct) || 0 };
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const flushAnswers = useCallback(async () => {
+    if (flushingRef.current || !navigator.onLine) return;
+    const p = profileRef.current;
+    const uid = authUidRef.current;
+    if (!uid && !p.guestCode) return;
+    flushingRef.current = true;
+    try {
+      while (true) {
+        const pend = pendingRef.current;
+        const batch = { answered: Math.min(120, pend.answered), correct: Math.min(120, pend.correct, Math.min(120, pend.answered)) };
+        const cur = profileRef.current;
+        if (uid) {
+          if (!batch.answered) break;
+          await submitAnswersFn({ data: batch });
+        } else {
+          const res = await guestSyncFn({
+            data: {
+              code: cur.guestCode,
+              secret: cur.guestSecret,
+              name: cur.name,
+              icon: cur.icon,
+              country: cur.country,
+              data: JSON.parse(JSON.stringify({ ...cur, guestSecret: "" })),
+              batch,
+            },
+          });
+          if (!res.ok) break;
+        }
+        pendingRef.current = {
+          answered: Math.max(0, pendingRef.current.answered - batch.answered),
+          correct: Math.max(0, pendingRef.current.correct - batch.correct),
+        };
+        savePending();
+        if (pendingRef.current.answered <= 0) break;
+      }
+    } catch (e) {
+      console.error("score submit failed", e);
+    } finally {
+      flushingRef.current = false;
+    }
+  }, [submitAnswersFn, guestSyncFn, savePending]);
+
+  const scheduleFlush = useCallback(() => {
+    if (flushTimer.current) window.clearTimeout(flushTimer.current);
+    flushTimer.current = window.setTimeout(() => void flushAnswers(), 2500);
+  }, [flushAnswers]);
+
+  useEffect(() => {
+    const onOnline = () => void flushAnswers();
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [flushAnswers]);
+
+  // שחקן בלי התחברות מקבל קוד אישי ונרשם לטבלת המובילים
+  useEffect(() => {
+    if (!ready || authUid || !profile.onboarded || profile.guestCode) return;
+    let cancelled = false;
+    const t = window.setTimeout(async () => {
+      if (authUidRef.current) return;
+      try {
+        const r = await createGuestFn({
+          data: { name: profile.name, icon: profile.icon, country: profile.country },
+        });
+        if (cancelled || authUidRef.current) return;
+        setProfile((p) => (p.guestCode ? p : { ...p, guestCode: r.code, guestSecret: r.secret }));
+        // מעבירים את ההתקדמות הקיימת כנקודת פתיחה (עם תקרות השרת)
+        window.setTimeout(() => void flushAnswers(), 500);
+      } catch (e) {
+        console.error("guest code failed", e);
+      }
+    }, 1500);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [ready, authUid, profile.onboarded, profile.guestCode, profile.name, profile.icon, profile.country, createGuestFn, flushAnswers]);
+
+  // אחרי התחברות — ממזגים את הקוד האישי לחשבון
+  useEffect(() => {
+    if (!authUid || pulledRef.current !== authUid) return;
+    const p = profileRef.current;
+    if (!p.guestCode || !p.guestSecret) {
+      void flushAnswers();
+      return;
+    }
+    void (async () => {
+      try {
+        await flushAnswers();
+        await guestClaimFn({ data: { code: p.guestCode, secret: p.guestSecret } });
+      } catch (e) {
+        console.error("guest claim failed", e);
+      }
+      setProfile((cur) => ({ ...cur, guestCode: "", guestSecret: "" }));
+    })();
+  }, [authUid, cloudSyncing, guestClaimFn, flushAnswers]);
+
+  // שם/סמל של שחקן קוד מתעדכנים בטבלה
+  useEffect(() => {
+    if (authUid || !profile.guestCode) return;
+    const t = window.setTimeout(() => void flushAnswers(), 1500);
+    return () => window.clearTimeout(t);
+  }, [authUid, profile.guestCode, profile.name, profile.icon, profile.country, flushAnswers]);
+
+  const restoreFromCode = useCallback(
+    async (code: string): Promise<boolean> => {
+      try {
+        const r = await guestTransferFn({ data: { code: code.trim().toUpperCase() } });
+        if (!r.ok) return false;
+        const cloud = (r.data ?? {}) as Partial<Profile>;
+        setProfile((p) => {
+          const incoming: Profile = {
+            ...defaultProfile,
+            ...cloud,
+            tickets: { ...defaultProfile.tickets, ...(cloud.tickets ?? {}) },
+            boosts: { ...defaultProfile.boosts, ...(cloud.boosts ?? {}) },
+            chestInv: { ...defaultProfile.chestInv, ...(cloud.chestInv ?? {}) },
+            name: r.name,
+            icon: r.icon,
+            country: r.country,
+            guestCode: code.trim().toUpperCase(),
+            guestSecret: r.secret,
+            onboarded: true,
+            guest: p.guest,
+          };
+          return hasProgress(p) ? { ...mergeProfiles(incoming, p), guestCode: incoming.guestCode, guestSecret: r.secret } : incoming;
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [guestTransferFn],
+  );
+
+  // זמן משחק (לנתוני הורים) — סופרים רק כשהמסך גלוי
+  useEffect(() => {
+    if (!ready) return;
+    const t = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      const dk = todayKey();
+      setProfile((p) => {
+        const dl = p.dayLog?.[dk] ?? { a: 0, c: 0, s: 0 };
+        return {
+          ...p,
+          playSeconds: (p.playSeconds ?? 0) + 30,
+          dayLog: trimDayLog({ ...(p.dayLog ?? {}), [dk]: { ...dl, s: dl.s + 30 } }),
+        };
+      });
+    }, 30000);
+    return () => window.clearInterval(t);
+  }, [ready]);
+
   const update: Ctx["update"] = useCallback((patch) => {
     setProfile((p) => ({ ...p, ...(typeof patch === "function" ? patch(p) : patch) }));
   }, []);
@@ -1060,7 +1272,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setProfile((p) => {
       const world = ALBUM_WORLDS[worldId];
       if (!world) return p;
-      if ((p.albumWorlds ?? []).includes(worldId)) return p;
+      if ((p.albumWorlds100 ?? []).includes(worldId)) return p;
       if (!worldProgress(world, new Set(p.stickers)).done) return p;
       const r = world.reward;
       out = r;
@@ -1069,7 +1281,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         : p.chestInv;
       return {
         ...p,
-        albumWorlds: [...(p.albumWorlds ?? []), worldId],
+        albumWorlds100: [...(p.albumWorlds100 ?? []), worldId],
         albumTitles: Array.from(new Set([...(p.albumTitles ?? []), r.title])),
         coins: p.coins + r.coins,
         hints: p.hints + r.hints,
@@ -1229,8 +1441,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const totalCorrect = p.totalCorrect + (correct ? 1 : 0);
       let correctSinceSticker = p.correctSinceSticker + (correct ? 1 : 0);
       let stickers = p.stickers;
-      if (correctSinceSticker >= 30) {
-        correctSinceSticker -= 30;
+      if (correctSinceSticker >= STICKER_EVERY) {
+        correctSinceSticker -= STICKER_EVERY;
         const free = freeSlots(stickers);
         if (free.length) {
           const slot = free[Math.floor(Math.random() * free.length)] as number;
@@ -1261,8 +1473,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
 
 
+      const topic = op || "other";
+      const ts = p.topicStats?.[topic] ?? { a: 0, c: 0 };
+      const dk = todayKey();
+      const dl = p.dayLog?.[dk] ?? { a: 0, c: 0, s: 0 };
       return {
         ...p,
+        topicStats: { ...(p.topicStats ?? {}), [topic]: { a: ts.a + 1, c: ts.c + (correct ? 1 : 0) } },
+        dayLog: trimDayLog({ ...(p.dayLog ?? {}), [dk]: { ...dl, a: dl.a + 1, c: dl.c + (correct ? 1 : 0) } }),
         history,
         level,
         currentStreakCorrect,
@@ -1281,8 +1499,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
         coins: p.coins + gain + coinsFromAch,
       };
     });
+    pendingRef.current = {
+      answered: pendingRef.current.answered + 1,
+      correct: pendingRef.current.correct + (correct ? 1 : 0),
+    };
+    savePending();
+    scheduleFlush();
     return { sticker, levelUp };
-  }, []);
+  }, [savePending, scheduleFlush]);
 
   const addCoins = useCallback((n: number) => {
     setProfile((p) => ({ ...p, coins: p.coins + n }));
@@ -1374,6 +1598,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       sound,
       reset,
       importProfile,
+      restoreFromCode,
       premium: (now || Date.now()) < profile.boosts.premiumUntil,
       doubling:
         (now || Date.now()) < profile.boosts.doubleUntil ||
@@ -1412,6 +1637,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       sound,
       reset,
       importProfile,
+      restoreFromCode,
     ],
   );
 
