@@ -698,8 +698,11 @@ function drawStickers(owned: number[], count: number, guaranteed?: Rarity, lucky
   };
   if (guaranteed) take(guaranteed);
   while (picked.length < count) {
-    const roll = Math.random() * (lucky ? 0.75 : 1);
-    const rarity: Rarity = roll < 0.68 ? "rare" : roll < 0.93 ? "amazing" : "legendary";
+    // מזל 🍀 מכפיל את הסיכוי למדבקות מדהימות ואגדיות
+    const roll = Math.random();
+    const rarity: Rarity = lucky
+      ? roll < 0.36 ? "rare" : roll < 0.86 ? "amazing" : "legendary"
+      : roll < 0.68 ? "rare" : roll < 0.93 ? "amazing" : "legendary";
     const before = picked.length;
     take(rarity);
     if (picked.length === before) {
@@ -1173,12 +1176,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
             ? rnd(4, 8)
             : rnd(8, 15);
       const count = daily
-        ? 1
+        ? rnd(1, 2)
         : kind === "regular"
-          ? rnd(1, 2)
+          ? rnd(2, 3)
           : kind === "amazing"
-            ? rnd(3, 5)
-            : rnd(4, 8);
+            ? rnd(5, 7)
+            : rnd(8, 11);
       const guaranteed: Rarity | undefined =
         kind === "amazing" ? "amazing" : kind === "legendary" ? "legendary" : undefined;
       const picked = drawStickers(p.stickers, count, guaranteed, lucky);
@@ -1193,14 +1196,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
           : kind === "amazing" && Math.random() < 0.4
             ? "double"
             : null;
-      const ticket: TicketId | null =
-        kind === "legendary" && Math.random() < 0.5
-          ? Math.random() < 0.5
-            ? "luck"
-            : "skip"
-          : kind === "amazing" && Math.random() < 0.25
-            ? "shield"
-            : null;
+      const r = Math.random();
+      const ticket: TicketId | null = daily
+        ? null
+        : kind === "legendary"
+          ? r < 0.45 ? "luck" : r < 0.9 ? "skip" : "shield"
+          : kind === "amazing"
+            ? r < 0.2 ? "luck" : r < 0.45 ? "skip" : r < 0.6 ? "shield" : null
+            : r < 0.06 ? "luck" : r < 0.16 ? "skip" : null;
 
       reward = { coins, hints, stickers: picked, boost, rarePremium, ticket, kind };
 
