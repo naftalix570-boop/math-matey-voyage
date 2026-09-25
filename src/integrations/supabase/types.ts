@@ -199,20 +199,6 @@ export type Database = {
           score: number | null
           user_id: string | null
         }
-        Insert: {
-          country?: string | null
-          display_name?: string | null
-          icon?: string | null
-          score?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          country?: string | null
-          display_name?: string | null
-          icon?: string | null
-          score?: number | null
-          user_id?: string | null
-        }
         Relationships: []
       }
     }

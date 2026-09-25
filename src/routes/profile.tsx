@@ -117,7 +117,7 @@ function ProfilePage() {
               to="/settings"
               className="flex h-11 items-center justify-center rounded-xl bg-muted font-bold text-ink active:scale-95"
             >
-              להגדרות ולגיבוי
+              להגדרות
             </Link>
           </div>
         </section>
