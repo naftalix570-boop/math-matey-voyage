@@ -211,6 +211,19 @@ function AuthPage() {
             >
               <span className="text-2xl">🌐</span> המשך עם Google
             </button>
+            <button
+              onClick={async () => {
+                sound("click");
+                setError(null);
+                const r = await lovable.auth.signInWithOAuth("apple", {
+                  redirect_uri: window.location.origin,
+                });
+                if (r.error) setError("ההתחברות עם Apple נכשלה — נסו שוב");
+              }}
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-ink text-lg font-bold text-background shadow-card active:scale-95"
+            >
+              <span className="text-2xl"></span> המשך עם Apple
+            </button>
 
             <div className="flex items-center gap-3 text-muted-foreground">
               <div className="h-px flex-1 bg-muted" />
