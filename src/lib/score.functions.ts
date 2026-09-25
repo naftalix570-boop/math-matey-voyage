@@ -183,7 +183,7 @@ export const guestSync = createServerFn({ method: "POST" })
         display_name: data.name,
         icon: data.icon,
         country: data.country,
-        data: data.data,
+        data: data.data as never,
       })
       .eq("code", data.code);
     if (error) return { ok: false as const, score: row.score };
@@ -202,7 +202,7 @@ export const guestRestore = createServerFn({ method: "POST" })
       name: row.display_name,
       icon: row.icon,
       country: row.country,
-      data: row.data as Record<string, unknown>,
+      data: JSON.stringify(row.data ?? {}),
     };
   });
 
@@ -229,7 +229,7 @@ export const guestTransfer = createServerFn({ method: "POST" })
       name: row.display_name,
       icon: row.icon,
       country: row.country,
-      data: row.data as Record<string, unknown>,
+      data: JSON.stringify(row.data ?? {}),
     };
   });
 
@@ -264,5 +264,5 @@ export const guestClaim = createServerFn({ method: "POST" })
     await supabaseAdmin.from("profiles").update({ score }).eq("user_id", userId);
     await supabaseAdmin.from("guest_players").update({ claimed_by: userId }).eq("code", data.code);
 
-    return { ok: true as const, score, data: row.data as Record<string, unknown> };
+    return { ok: true as const, score, data: JSON.stringify(row.data ?? {}) };
   });

@@ -1086,7 +1086,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       try {
         const r = await guestTransferFn({ data: { code: code.trim().toUpperCase() } });
         if (!r.ok) return false;
-        const cloud = (r.data ?? {}) as Partial<Profile>;
+        const cloud = JSON.parse(r.data || "{}") as Partial<Profile>;
         setProfile((p) => {
           const incoming: Profile = {
             ...defaultProfile,
