@@ -57,6 +57,13 @@
       "when": 1790068409069,
       "tag": "0007_verified_scores_and_guest_players",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790334084613,
+      "tag": "0008_leaderboard_verified_union",
+      "breakpoints": true
     }
   ]
 }
