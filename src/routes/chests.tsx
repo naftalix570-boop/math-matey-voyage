@@ -57,13 +57,20 @@ function ChestsPage() {
       <div className="mt-2 flex items-center justify-center gap-3 text-lg font-bold text-ink">
         <span className="rounded-full bg-card px-4 py-1 shadow-card">🪙 {profile.coins}</span>
         <span className="rounded-full bg-card px-4 py-1 shadow-card">💡 {profile.hints}</span>
+        <span className="rounded-full bg-card px-4 py-1 shadow-card">🍀 {profile.tickets.luck}</span>
+        <span className="rounded-full bg-card px-4 py-1 shadow-card">⏭️ {profile.tickets.skip}</span>
       </div>
+      {profile.tickets.luck > 0 && (
+        <p className="mt-2 text-center text-sm font-bold text-success">
+          🍀 מזל פעיל! בתיבה הבאה הסיכוי למדבקות נדירות מוכפל
+        </p>
+      )}
 
       {profile.chests > 0 ? (
         <div className="mt-4 rounded-2xl bg-sky p-4 text-center shadow-card">
           <p className="text-lg font-bold text-ink">🎉 תיבה יומית חינם</p>
           <p className="text-sm">
-            תיבה קטנה אחת ביום — קצת מטבעות ומדבקה אחת (פשוטה יותר מהתיבה הרגילה).
+            תיבה קטנה אחת ביום — קצת מטבעות ו-1-2 מדבקות (פשוטה יותר מהתיבה הרגילה).
             {premium && " 👑 פרימיום: זמינה כל יום!"}
           </p>
           <button

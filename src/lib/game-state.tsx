@@ -57,14 +57,14 @@ export const TICKETS: Record<
     emoji: "🍀",
     rarity: "legendary",
     price: null,
-    desc: "מכפיל סיכויים למדבקות נדירות (לא נמכר)",
+    desc: "מכפיל סיכויים למדבקות נדירות — פועל אוטומטית בפתיחת התיבה הבאה",
   },
   skip: {
     title: "דילוג על שלב",
     emoji: "⏭️",
     rarity: "amazing",
     price: null,
-    desc: "דילוג על שלב קשה (לא נמכר)",
+    desc: "דילוג על תרגיל קשה — כפתור ליד הרמז",
   },
 };
 
