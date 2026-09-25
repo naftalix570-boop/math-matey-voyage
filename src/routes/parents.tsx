@@ -91,7 +91,7 @@ function ParentsPage() {
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <p className="text-lg font-bold text-ink">📚 התקדמות לפי נושאים</p>
           {topics.length === 0 ? (
-            <EmptyState emoji="📭" title="עוד אין נתונים" desc="הנתונים יופיעו אחרי כמה תרגילים." />
+            <EmptyState emoji="📭" title="עוד אין נתונים" hint="הנתונים יופיעו אחרי כמה תרגילים." />
           ) : (
             <div className="mt-2 grid gap-2">
               {topics.map(([k, v]) => {

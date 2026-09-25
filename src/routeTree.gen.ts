@@ -17,6 +17,7 @@ import { Route as ChestsRouteImport } from './routes/chests'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as MissionsRouteImport } from './routes/missions'
+import { Route as ParentsRouteImport } from './routes/parents'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProgressRouteImport } from './routes/progress'
@@ -65,6 +66,11 @@ const LeaderboardRoute = LeaderboardRouteImport.update({
 const MissionsRoute = MissionsRouteImport.update({
   id: '/missions',
   path: '/missions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentsRoute = ParentsRouteImport.update({
+  id: '/parents',
+  path: '/parents',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/games': typeof GamesRoute
   '/leaderboard': typeof LeaderboardRoute
   '/missions': typeof MissionsRoute
+  '/parents': typeof ParentsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/progress': typeof ProgressRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/games': typeof GamesRoute
   '/leaderboard': typeof LeaderboardRoute
   '/missions': typeof MissionsRoute
+  '/parents': typeof ParentsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/progress': typeof ProgressRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/games': typeof GamesRoute
   '/leaderboard': typeof LeaderboardRoute
   '/missions': typeof MissionsRoute
+  '/parents': typeof ParentsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/progress': typeof ProgressRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/leaderboard'
     | '/missions'
+    | '/parents'
     | '/privacy'
     | '/profile'
     | '/progress'
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/leaderboard'
     | '/missions'
+    | '/parents'
     | '/privacy'
     | '/profile'
     | '/progress'
@@ -220,6 +231,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/leaderboard'
     | '/missions'
+    | '/parents'
     | '/privacy'
     | '/profile'
     | '/progress'
@@ -240,6 +252,7 @@ export interface RootRouteChildren {
   GamesRoute: typeof GamesRoute
   LeaderboardRoute: typeof LeaderboardRoute
   MissionsRoute: typeof MissionsRoute
+  ParentsRoute: typeof ParentsRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   ProgressRoute: typeof ProgressRoute
@@ -307,6 +320,13 @@ declare module '@tanstack/react-router' {
       path: '/missions'
       fullPath: '/missions'
       preLoaderRoute: typeof MissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parents': {
+      id: '/parents'
+      path: '/parents'
+      fullPath: '/parents'
+      preLoaderRoute: typeof ParentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -384,6 +404,7 @@ const rootRouteChildren: RootRouteChildren = {
   GamesRoute: GamesRoute,
   LeaderboardRoute: LeaderboardRoute,
   MissionsRoute: MissionsRoute,
+  ParentsRoute: ParentsRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   ProgressRoute: ProgressRoute,
