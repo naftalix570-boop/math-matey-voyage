@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { isNativeApp, NATIVE_APP_SCHEME, SITE_URL } from "@/lib/native";
 import { Screen } from "@/components/app-shell";

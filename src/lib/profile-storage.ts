@@ -1,12 +1,9 @@
 /**
- * עזרי שמירה בטוחה של נתוני המשתמש:
- * מיזוג התקדמות אורח לחשבון, גיבוי מקומי לפני החלפת חשבון, וייצוא/ייבוא קובץ.
+ * עזרי שמירה בטוחה של נתוני המשתמש ומיזוג התקדמות אורח לחשבון.
  * אף פונקציה כאן לא מוחקת שדות קיימים — רק משלימה ומאחדת.
  */
 import type { Profile } from "./game-state";
-import { APP_VERSION, PROFILE_SCHEMA_VERSION } from "./app-version";
-
-export const BACKUP_PREFIX = "math-journey:backup:";
+import { PROFILE_SCHEMA_VERSION } from "./app-version";
 
 /** האם לפרופיל יש התקדמות אמיתית ששווה לשמור */
 export function hasProgress(p: Partial<Profile> | null | undefined): boolean {
@@ -80,58 +77,3 @@ export function mergeProfiles(base: Profile, extra: Partial<Profile>): Profile {
   return merged;
 }
 
-/** שמירת גיבוי מקומי (למשל לפני החלפת חשבון). לא דורס גיבוי עשיר יותר. */
-export function saveLocalBackup(key: string, profile: Profile) {
-  if (typeof window === "undefined" || !hasProgress(profile)) return;
-  try {
-    localStorage.setItem(
-      `${BACKUP_PREFIX}${key}`,
-      JSON.stringify({ savedAt: Date.now(), version: APP_VERSION, profile }),
-    );
-  } catch {
-    /* אחסון מלא — מתעלמים */
-  }
-}
-
-export function readLocalBackup(key: string): Profile | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(`${BACKUP_PREFIX}${key}`);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { profile?: Profile };
-    return parsed.profile ?? null;
-  } catch {
-    return null;
-  }
-}
-
-/** הורדת קובץ גיבוי של ההתקדמות */
-export function downloadBackup(profile: Profile) {
-  const payload = {
-    app: "math-journey",
-    version: APP_VERSION,
-    schemaVersion: PROFILE_SCHEMA_VERSION,
-    savedAt: new Date().toISOString(),
-    profile,
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `math-journey-backup-${new Date().toISOString().slice(0, 10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-/** קריאת קובץ גיבוי — מחזיר null אם הקובץ לא תקין */
-export function parseBackup(text: string): Partial<Profile> | null {
-  try {
-    const parsed = JSON.parse(text) as { profile?: Partial<Profile> } & Partial<Profile>;
-    const profile = parsed.profile ?? parsed;
-    if (!profile || typeof profile !== "object") return null;
-    if (typeof profile.totalAnswered !== "number" && typeof profile.coins !== "number") return null;
-    return profile;
-  } catch {
-    return null;
-  }
-}
