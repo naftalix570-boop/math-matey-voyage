@@ -71,6 +71,11 @@ export function mergeProfiles(base: Profile, extra: Partial<Profile>): Profile {
   };
 
   merged.onboarded = base.onboarded || Boolean(extra.onboarded);
+  const steps: Profile["onboardingStep"][] = ["name", "auth", "test"];
+  const baseStep = base.onboardingStep ?? "name";
+  const extraStep = extra.onboardingStep ?? "name";
+  merged.onboardingStep =
+    steps.indexOf(extraStep) > steps.indexOf(baseStep) ? extraStep : baseStep;
   merged.schemaVersion = PROFILE_SCHEMA_VERSION;
   return merged;
 }

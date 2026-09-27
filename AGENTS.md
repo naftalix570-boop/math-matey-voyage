@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Persist first-time setup as `name → auth/personal code → placement test`, so OAuth returns resume safely without losing the entered name.

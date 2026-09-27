@@ -1,5 +1,5 @@
 import { STICKER_EVERY } from "@/lib/stickers";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { Logo, Confetti } from "@/components/effects";
@@ -25,25 +25,28 @@ export const Route = createFileRoute("/")({
         property: "og:description",
         content: "15 משחקי חשבון לילדים עם אלבום מדבקות, מטבעות ושלבים.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Home,
 });
 
 function Home() {
-  const { profile, ready, update, sound, premium, event } = useGame();
+  const { profile, ready, update, sound, premium, event, linked } = useGame();
   const { t } = useI18n();
-  const [mode, setMode] = useState<"welcome" | "test">("welcome");
-  const [name, setName] = useState("");
+  const navigate = useNavigate();
+  const [name, setName] = useState(profile.name === "אלוף/ה" ? "" : profile.name);
   const [iconPicker, setIconPicker] = useState(false);
   const online = useOnline();
 
   if (!ready) return <div className="min-h-screen bg-background" />;
 
   if (!profile.onboarded) {
+    const showTest = profile.onboardingStep === "test" || (profile.onboardingStep === "auth" && linked);
     return (
       <Screen back={false} nav={false}>
-        {mode === "welcome" ? (
+        {!showTest ? (
           <div className="flex flex-col items-center gap-4 pt-10 text-center">
             <Logo size={130} bounce={1} />
             <h1 className="text-3xl font-bold text-ink">{t("app.name")}</h1>
@@ -57,35 +60,17 @@ function Home() {
             <button
               onClick={() => {
                 sound("click");
-                if (name.trim()) update({ name: name.trim() });
-                setMode("test");
+                const cleanName = name.trim();
+                if (!cleanName) return;
+                update({ name: cleanName, onboardingStep: "auth", guest: true });
+                void navigate({ to: "/auth", search: { mode: "signup", onboarding: true } });
               }}
-              className="h-14 w-full rounded-xl bg-primary text-xl font-bold text-primary-foreground shadow-pop active:scale-95"
+              disabled={!name.trim()}
+              className="h-14 w-full rounded-xl bg-primary text-xl font-bold text-primary-foreground shadow-pop active:scale-95 disabled:opacity-50"
             >
-              {t("home.start")}
+              המשך להתחברות
             </button>
-            <button
-              onClick={() => {
-                sound("click");
-                update({
-                  onboarded: true,
-                  guest: true,
-                  name: name.trim() || `אורח/ת ${profile.userId}`,
-                });
-              }}
-              className="h-12 w-full rounded-xl bg-card text-lg font-bold text-ink shadow-card active:scale-95"
-            >
-              {t("home.guest")}
-            </button>
-            <button
-              onClick={() => {
-                sound("click");
-                update({ onboarded: true, ...(name.trim() ? { name: name.trim() } : {}) });
-              }}
-              className="flex h-11 w-full items-center justify-center text-sm text-muted-foreground underline"
-            >
-              {t("home.skipTest")}
-            </button>
+            <p className="text-sm text-muted-foreground">אחרי ההתחברות נעבור למבחן מיקום קצר.</p>
           </div>
         ) : (
           <div className="pt-6">
@@ -95,7 +80,7 @@ function Home() {
             <PlacementTest
               onDone={(level) => {
                 sound("levelup");
-                update({ level, onboarded: true });
+                update({ level, onboarded: true, onboardingStep: "test" });
               }}
             />
           </div>

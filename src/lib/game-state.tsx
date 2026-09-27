@@ -84,6 +84,8 @@ export const ICONS = [
 
 export type Profile = {
   onboarded: boolean;
+  /** שלב ההצטרפות נשמר כדי שחזרה מהתחברות תמשיך למבחן המיקום */
+  onboardingStep: "name" | "auth" | "test";
   guest: boolean;
   userId: number;
   name: string;
@@ -172,6 +174,7 @@ const monthKey = () => new Date().toISOString().slice(0, 7);
 
 const defaultProfile: Profile = {
   onboarded: false,
+  onboardingStep: "name",
   guest: false,
   userId: 3,
   name: "אלוף/ה",
@@ -877,7 +880,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
             guest: false,
           };
           // התקדמות אורח עוברת לחשבון החדש; התקדמות של חשבון אחר לא עוברת
-          return p.guest && hasProgress(p) ? mergeProfiles(fresh, p) : fresh;
+          return p.guest && (hasProgress(p) || p.onboardingStep !== "name")
+            ? mergeProfiles(fresh, p)
+            : fresh;
         });
       } else {
         // קישור ראשון של התקדמות אורח לחשבון

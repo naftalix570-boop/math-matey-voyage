@@ -12,3 +12,6 @@
 - [x] Lock down profile data: public leaderboard view, no anon access to profiles.
 - [x] Store assets (icon 1024, feature graphic, splash, screenshots) + STORE.md checklist.
 - [ ] Verify Google sign-in inside the built Android app (needs a device/emulator).
+- [x] Make first-time setup follow name → sign in or personal code → placement test.
+- [ ] Verify every Version 1.1 flow on a narrow phone viewport.
+- [ ] Complete the Version 1.1 release report and store-readiness checklist.
