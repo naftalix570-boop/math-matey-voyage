@@ -21,7 +21,7 @@ import {
   submitAnswers,
 } from "./score.functions";
 import { PROFILE_SCHEMA_VERSION } from "./app-version";
-import { hasProgress, mergeProfiles, saveLocalBackup } from "./profile-storage";
+import { hasProgress, mergeProfiles } from "./profile-storage";
 
 export type Boosts = {
   /** epoch ms until which coins are doubled */
@@ -84,6 +84,8 @@ export const ICONS = [
 
 export type Profile = {
   onboarded: boolean;
+  /** שלב ההצטרפות נשמר כדי שחזרה מהתחברות תמשיך למבחן המיקום */
+  onboardingStep: "name" | "auth" | "test";
   guest: boolean;
   userId: number;
   name: string;
@@ -172,6 +174,7 @@ const monthKey = () => new Date().toISOString().slice(0, 7);
 
 const defaultProfile: Profile = {
   onboarded: false,
+  onboardingStep: "name",
   guest: false,
   userId: 3,
   name: "אלוף/ה",
@@ -276,7 +279,7 @@ export const CHESTS: Record<
     emoji: "🎁",
     price: 1500,
     money: 7.9,
-    desc: "100-300 מטבעות · 4-8 רמזים · 3-5 מדבקות (לפחות 1 מדהימה)",
+    desc: "100-300 מטבעות · 4-8 רמזים · 5-7 מדבקות (לפחות 1 מדהימה)",
   },
   legendary: {
     title: "תיבה אגדית",
@@ -655,8 +658,6 @@ type Ctx = {
   unlockAchievement: (id: string) => void;
   sound: (kind: Parameters<typeof playSound>[0]) => void;
   reset: () => void;
-  /** שחזור מקובץ גיבוי — ממזג ולא מוחק התקדמות קיימת */
-  importProfile: (data: Partial<Profile>) => void;
   premium: boolean;
   doubling: boolean;
   event: EventInfo;
@@ -816,9 +817,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
         if (event === "SIGNED_OUT") {
-          // גיבוי מקומי אחרון של החשבון שיצא — כדי שלא ילך לאיבוד בהחלפת חשבון
-          const leaving = authUidRef.current;
-          if (leaving) saveLocalBackup(leaving, profileRef.current);
           pulledRef.current = null;
           // אחרי התנתקות מתחילים מפרופיל אורח נקי — לא נשארים עם הנתונים של החשבון הקודם
           setProfile((p) => ({ ...defaultProfile, soundOn: p.soundOn, guest: true }));
@@ -877,7 +875,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
             guest: false,
           };
           // התקדמות אורח עוברת לחשבון החדש; התקדמות של חשבון אחר לא עוברת
-          return p.guest && hasProgress(p) ? mergeProfiles(fresh, p) : fresh;
+          return p.guest && (hasProgress(p) || p.onboardingStep !== "name")
+            ? mergeProfiles(fresh, p)
+            : fresh;
         });
       } else {
         // קישור ראשון של התקדמות אורח לחשבון
@@ -1575,18 +1575,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     void syncNow();
   }, [syncNow]);
 
-  const importProfile = useCallback(
-    (data: Partial<Profile>) => {
-      const current = profileRef.current;
-      // שחזור = מיזוג. שום שדה קיים לא נמחק.
-      const restored = mergeProfiles({ ...current, ...data, guest: current.guest }, current);
-      profileRef.current = restored;
-      setProfile(restored);
-      void syncNow();
-    },
-    [syncNow],
-  );
-
   const value = useMemo<Ctx>(
     () => ({
       profile,
@@ -1609,7 +1597,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
       unlockAchievement,
       sound,
       reset,
-      importProfile,
       restoreFromCode,
       premium: (now || Date.now()) < profile.boosts.premiumUntil,
       doubling:
@@ -1648,7 +1635,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
       unlockAchievement,
       sound,
       reset,
-      importProfile,
       restoreFromCode,
     ],
   );

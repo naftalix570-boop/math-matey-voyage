@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { isNativeApp, NATIVE_APP_SCHEME, SITE_URL } from "@/lib/native";
 import { Screen } from "@/components/app-shell";
@@ -13,6 +13,7 @@ export const Route = createFileRoute("/auth")({
       search["mode"] === "signin" || search["mode"] === "signup"
         ? (search["mode"] as "signin" | "signup")
         : undefined,
+    onboarding: search["onboarding"] === true || search["onboarding"] === "true",
   }),
   head: () => ({
     meta: [
@@ -20,13 +21,15 @@ export const Route = createFileRoute("/auth")({
       { name: "description", content: "התחברו עם גוגל או אימייל כדי לשמור את ההתקדמות בענן." },
       { property: "og:title", content: "התחברות — מסע המתמטיקס" },
       { property: "og:description", content: "שמירת התקדמות בענן ומעבר בין מכשירים." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
 });
 
 function AuthPage() {
-  const { sound, linked, authEmail, syncNow, cloudSyncing } = useGame();
+  const { profile, update, sound, linked, authEmail, syncNow, cloudSyncing } = useGame();
   const search = Route.useSearch();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">(search.mode ?? "signup");
@@ -35,6 +38,12 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const onboarding = search.onboarding || (!profile.onboarded && profile.onboardingStep === "auth");
+
+  const continueToTest = () => {
+    update({ onboardingStep: "test" });
+    void navigate({ to: "/" });
+  };
 
   // שמירה מיידית של ההתקדמות לענן לפני יציאה/החלפת חשבון
   const saveToCloud = syncNow;
@@ -178,10 +187,18 @@ function AuthPage() {
             <p className="mt-2 text-xs text-muted-foreground">
               ההתקדמות נשמרת אוטומטית בענן בכל שינוי — אפשר להחליף חשבון בלי לאבד כלום.
             </p>
+            {onboarding && (
+              <button
+                onClick={continueToTest}
+                className="mt-3 h-12 w-full rounded-xl bg-primary font-bold text-primary-foreground shadow-pop active:scale-95"
+              >
+                המשך למבחן המיקום
+              </button>
+            )}
             <button
               disabled={busy}
               onClick={() => void switchAccount()}
-              className="mt-3 h-12 w-full rounded-xl bg-primary font-bold text-primary-foreground shadow-pop active:scale-95 disabled:opacity-50"
+              className={`${onboarding ? "mt-2 bg-muted text-ink" : "mt-3 bg-primary text-primary-foreground shadow-pop"} h-12 w-full rounded-xl font-bold active:scale-95 disabled:opacity-50`}
             >
               {busy || cloudSyncing ? "שומרים בענן…" : "🔄 החלפת חשבון"}
             </button>
@@ -277,12 +294,16 @@ function AuthPage() {
               </button>
             </section>
 
-            <Link
-              to="/"
-              className="text-center text-sm text-muted-foreground underline"
+            <button
+              onClick={() => {
+                sound("click");
+                update({ guest: true, onboardingStep: "test" });
+                void navigate({ to: "/" });
+              }}
+              className="h-11 text-center text-sm text-muted-foreground underline"
             >
-              המשך כאורח/ת — ההתקדמות תישמר רק במכשיר הזה
-            </Link>
+              המשך עם קוד אישי בלי התחברות
+            </button>
           </>
         )}
       </div>
