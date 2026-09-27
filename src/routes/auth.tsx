@@ -13,7 +13,8 @@ export const Route = createFileRoute("/auth")({
       search["mode"] === "signin" || search["mode"] === "signup"
         ? (search["mode"] as "signin" | "signup")
         : undefined,
-    onboarding: search["onboarding"] === true || search["onboarding"] === "true",
+    onboarding:
+      search["onboarding"] === true || search["onboarding"] === "true" ? true : undefined,
   }),
   head: () => ({
     meta: [
