@@ -8,14 +8,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    mode:
-      search["mode"] === "signin" || search["mode"] === "signup"
-        ? (search["mode"] as "signin" | "signup")
-        : undefined,
-    onboarding:
-      search["onboarding"] === true || search["onboarding"] === "true" ? true : undefined,
-  }),
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { mode?: "signin" | "signup"; onboarding?: boolean } => {
+    const out: { mode?: "signin" | "signup"; onboarding?: boolean } = {};
+    if (search["mode"] === "signin" || search["mode"] === "signup") out.mode = search["mode"];
+    if (search["onboarding"] === true || search["onboarding"] === "true") out.onboarding = true;
+    return out;
+  },
   head: () => ({
     meta: [
       { title: "התחברות — מסע המתמטיקס" },
