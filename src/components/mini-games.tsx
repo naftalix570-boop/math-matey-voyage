@@ -95,7 +95,7 @@ export function MemoryGame() {
                     : "bg-primary text-primary-foreground",
               )}
             >
-              {open ? c.label : "🃏"}
+              <span dir="ltr">{open ? c.label : "🃏"}</span>
             </button>
           );
         })}
