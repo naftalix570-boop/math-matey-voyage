@@ -10,6 +10,8 @@ import { ALBUM_SIZE } from "@/lib/stickers";
 import { useOnline } from "@/lib/use-online";
 import { useI18n } from "@/lib/i18n";
 import { cn, fmtNum } from "@/lib/utils";
+import { isNativeApp, SITE_URL } from "@/lib/native";
+import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -38,19 +40,56 @@ function Home() {
   const navigate = useNavigate();
   const [name, setName] = useState(profile.name === "אלוף/ה" ? "" : profile.name);
   const [iconPicker, setIconPicker] = useState(false);
+  const [loginErr, setLoginErr] = useState<string | null>(null);
   const online = useOnline();
 
   if (!ready) return <div className="min-h-screen bg-background" />;
 
   if (!profile.onboarded) {
-    const showTest = profile.onboardingStep === "test" || (profile.onboardingStep === "auth" && linked);
+    // סדר: התחברות (גוגל/אפל) ← שם ← מבחן מיקום (אפשר לדלג)
+    const step: "login" | "name" | "test" = !linked
+      ? "login"
+      : profile.onboardingStep === "test"
+        ? "test"
+        : "name";
+    const oauth = async (provider: "google" | "apple") => {
+      sound("click");
+      setLoginErr(null);
+      if (isNativeApp()) {
+        const { Browser } = await import("@capacitor/browser");
+        await Browser.open({ url: `${SITE_URL}/auth?native=1` });
+        return;
+      }
+      const r = await lovable.auth.signInWithOAuth(provider, {
+        redirect_uri: window.location.origin,
+      });
+      if (r.error) setLoginErr("ההתחברות נכשלה — נסו שוב");
+    };
     return (
       <Screen back={false} nav={false}>
-        {!showTest ? (
+        {step === "login" ? (
           <div className="flex flex-col items-center gap-4 pt-10 text-center">
             <Logo size={130} bounce={1} />
             <h1 className="text-3xl font-bold text-ink">{t("app.name")}</h1>
-            <p className="text-muted-foreground">{t("home.tagline")}</p>
+            <p className="text-muted-foreground">כדי להתחיל צריך להתחבר לחשבון</p>
+            <button
+              onClick={() => void oauth("google")}
+              className="h-14 w-full rounded-xl bg-card text-lg font-bold text-ink shadow-pop active:scale-95"
+            >
+              המשך עם Google
+            </button>
+            <button
+              onClick={() => void oauth("apple")}
+              className="h-14 w-full rounded-xl bg-ink text-lg font-bold text-background shadow-pop active:scale-95"
+            >
+               המשך עם Apple
+            </button>
+            {loginErr && <p className="font-bold text-destructive">{loginErr}</p>}
+          </div>
+        ) : step === "name" ? (
+          <div className="flex flex-col items-center gap-4 pt-10 text-center">
+            <Logo size={130} bounce={1} />
+            <h1 className="text-3xl font-bold text-ink">איך קוראים לך?</h1>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -62,15 +101,13 @@ function Home() {
                 sound("click");
                 const cleanName = name.trim();
                 if (!cleanName) return;
-                update({ name: cleanName, onboardingStep: "auth", guest: true });
-                void navigate({ to: "/auth", search: { mode: "signup", onboarding: true } });
+                update({ name: cleanName, onboardingStep: "test", guest: false });
               }}
               disabled={!name.trim()}
               className="h-14 w-full rounded-xl bg-primary text-xl font-bold text-primary-foreground shadow-pop active:scale-95 disabled:opacity-50"
             >
-              המשך להתחברות
+              המשך למבחן
             </button>
-            <p className="text-sm text-muted-foreground">אחרי ההתחברות נעבור למבחן מיקום קצר.</p>
           </div>
         ) : (
           <div className="pt-6">
@@ -83,6 +120,15 @@ function Home() {
                 update({ level, onboarded: true, onboardingStep: "test" });
               }}
             />
+            <button
+              onClick={() => {
+                sound("click");
+                update({ onboarded: true, onboardingStep: "test" });
+              }}
+              className="mt-4 h-12 w-full rounded-xl bg-muted font-bold text-ink active:scale-95"
+            >
+              ⏭️ דלג על המבחן
+            </button>
           </div>
         )}
       </Screen>
