@@ -4,12 +4,13 @@ import { ArrowLeft, Home, Gamepad2, Trophy, ShoppingCart, Settings } from "lucid
 import { useGame } from "@/lib/game-state";
 import { useI18n } from "@/lib/i18n";
 import { exitLockMessage, useExitLocked } from "@/lib/exit-lock";
+import { isEnabled } from "@/lib/app-version";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { to: "/", key: "nav.home", icon: Home },
   { to: "/games", key: "nav.games", icon: Gamepad2 },
-  { to: "/shop", key: "nav.shop", icon: ShoppingCart },
+  ...(isEnabled("shop") ? [{ to: "/shop", key: "nav.shop", icon: ShoppingCart } as const] : []),
   { to: "/leaderboard", key: "nav.top", icon: Trophy },
   { to: "/settings", key: "nav.settings", icon: Settings },
 ] as const;
