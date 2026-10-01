@@ -17,15 +17,8 @@ export function OfflineGate({ children }: { children: ReactNode }) {
       <div className="text-5xl">📴</div>
       <h2 className="mt-3 text-xl font-bold text-ink">אין חיבור לאינטרנט</h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        כדי לשחק צריך קליטה. עם <span className="font-bold text-ink">פרימיום 👑</span> אפשר לשחק גם
-        לגמרי אופליין — בלי רשת ובלי סים.
+        כדי לשחק צריך קליטה. התחברו לרשת ונסו שוב.
       </p>
-      <a
-        href="/shop"
-        className="mt-4 inline-flex h-12 items-center justify-center rounded-xl bg-primary px-5 font-bold text-primary-foreground active:scale-95"
-      >
-        לפרטים על פרימיום
-      </a>
     </div>
   );
 }

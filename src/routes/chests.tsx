@@ -6,6 +6,7 @@ import { ChestOpenOverlay } from "@/components/effects";
 import { CHESTS, useGame, type ChestKind, type ChestReward } from "@/lib/game-state";
 import { rewardItems } from "@/lib/chest-rewards";
 import { useMidnightCountdown } from "@/lib/daily";
+import { isEnabled } from "@/lib/app-version";
 
 export const Route = createFileRoute("/chests")({
   head: () => ({
