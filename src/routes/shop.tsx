@@ -211,7 +211,7 @@ function ShopPage() {
             {t.label}
           </button>
         ))}
-      </div>
+      </div>)}
 
       {msg && (
         <div
