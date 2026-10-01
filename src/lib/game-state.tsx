@@ -727,6 +727,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // איפוס כללי (השקה מחדש): מוחק נתונים מקומיים ומנתק את כולם פעם אחת
+    try {
+      const RESET_EPOCH = "2026-10-01";
+      if (localStorage.getItem("mj:reset-epoch") !== RESET_EPOCH) {
+        for (const k of Object.keys(localStorage)) {
+          if (k.startsWith("math-journey") || k.startsWith("sb-")) localStorage.removeItem(k);
+        }
+        localStorage.setItem("mj:reset-epoch", RESET_EPOCH);
+        void supabase.auth.signOut({ scope: "local" });
+      }
+    } catch {
+      /* ignore */
+    }
     try {
       const raw = localStorage.getItem(KEY);
       const parsed: Profile = raw
