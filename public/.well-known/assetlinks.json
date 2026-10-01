@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.mathjourney.app",
+        "sha256_cert_fingerprints": ["BE:2E:EF:CA:26:3E:E1:2E:A0:5A:0E:7B:36:09:AF:0B:71:48:86:B3:E7:4C:B5:C0:6E:F3:B3:35:C6:A2:FD:47"]
+      }
+    }]
