@@ -190,7 +190,7 @@ function ShopPage() {
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-2 gap-2 rounded-2xl bg-muted p-1">
+      {isEnabled("payments") && (<div className="mt-4 grid grid-cols-2 gap-2 rounded-2xl bg-muted p-1">
         {(
           [
             { id: "coins", label: "🪙 מטבעות" },
@@ -211,7 +211,7 @@ function ShopPage() {
             {t.label}
           </button>
         ))}
-      </div>
+      </div>)}
 
       {msg && (
         <div
