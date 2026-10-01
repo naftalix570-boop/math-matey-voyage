@@ -268,7 +268,7 @@ export function LineMatchGame() {
                     : "bg-primary text-primary-foreground",
               )}
             >
-              {l.text}
+              <span dir="ltr">{l.text}</span>
             </div>
           ))}
         </div>
@@ -341,7 +341,7 @@ export function TrueFalseGame() {
   return (
     <div className="pt-4">
       <p className="text-center font-bold text-muted-foreground">תרגיל {idx + 1}/10</p>
-      <div
+      <div dir="ltr"
         className={cn(
           "mt-4 flex h-40 items-center justify-center rounded-2xl text-4xl font-bold shadow-card transition-colors",
           feedback === "ok"
