@@ -442,7 +442,7 @@ export function BuilderGame() {
   return (
     <div className="pt-2">
       <p className="mb-3 text-center font-bold text-ink">תרגיל {round + 1}/8 — בנה תרגיל משלך</p>
-      <div className="flex min-h-20 items-center justify-center gap-2 rounded-2xl bg-sky p-4 text-3xl font-bold text-ink shadow-card">
+      <div dir="ltr" className="flex min-h-20 items-center justify-center gap-2 rounded-2xl bg-sky p-4 text-3xl font-bold text-ink shadow-card">
         <span>{a ?? "?"}</span>
         <span>{op ? OP_SIGN[op] : "?"}</span>
         <span>{b ?? "?"}</span>
@@ -623,7 +623,7 @@ export function FlashGame() {
           style={{ width: `${(time / FLASH_SECONDS) * 100}%` }}
         />
       </div>
-      <div className="mt-3 flex min-h-32 items-center justify-center rounded-2xl bg-sky p-6 text-4xl font-bold text-ink shadow-card">
+      <div dir="ltr" className="mt-3 flex min-h-32 items-center justify-center rounded-2xl bg-sky p-6 text-4xl font-bold text-ink shadow-card">
         {q.text}
       </div>
       <div className="mt-4 grid gap-3">
@@ -677,7 +677,7 @@ export function PlacementTest({ onDone }: { onDone: (level: number) => void }) {
           style={{ width: `${((step + 1) / 10) * 100}%` }}
         />
       </div>
-      <div className="flex min-h-32 items-center justify-center rounded-2xl bg-sky p-6 text-4xl font-bold text-ink shadow-card">
+      <div dir="ltr" className="flex min-h-32 items-center justify-center rounded-2xl bg-sky p-6 text-4xl font-bold text-ink shadow-card">
         {q.text}
       </div>
       <div className="mt-4 grid gap-3">
