@@ -93,7 +93,7 @@ function ChestsPage() {
       )}
 
       <h2 className="mt-6 text-lg font-bold text-ink">🎒 התיבות שלי</h2>
-      <p className="text-sm text-muted-foreground">תיבות שקיבלת ממשימות, מהרצף היומי ומהחנות</p>
+      <p className="text-sm text-muted-foreground">תיבות שקיבלת ממשימות ומהרצף היומי</p>
       <div className="mt-2 grid gap-3">
         {KINDS.map((kind) => {
           const c = CHESTS[kind];
@@ -124,12 +124,14 @@ function ChestsPage() {
         })}
       </div>
 
-      <Link
-        to="/shop"
-        className="mt-4 flex h-14 items-center justify-center rounded-2xl bg-shop text-lg font-bold text-white shadow-pop active:scale-95"
-      >
-        🛒 לקנות תיבות בחנות
-      </Link>
+      {isEnabled("shop") && (
+        <Link
+          to="/shop"
+          className="mt-4 flex h-14 items-center justify-center rounded-2xl bg-shop text-lg font-bold text-white shadow-pop active:scale-95"
+        >
+          🛒 לקנות תיבות בחנות
+        </Link>
+      )}
       <p className="mt-3 pb-28 text-center text-xs text-muted-foreground">
         פתחתם עד היום {profile.chestsOpened} תיבות
       </p>
