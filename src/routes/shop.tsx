@@ -194,7 +194,7 @@ function ShopPage() {
         {(
           [
             { id: "coins", label: "🪙 מטבעות" },
-            ...(isEnabled("payments") ? [{ id: "money", label: "💳 כסף" } as const] : []),
+            { id: "money", label: "💳 כסף" },
           ] as const
         ).map((t) => (
           <button
