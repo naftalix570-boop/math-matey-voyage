@@ -11,7 +11,7 @@ export const PROFILE_SCHEMA_VERSION = 2;
 
 export const FEATURES = {
   /** חנות — הוחבאה זמנית לצורך בדיקת החנות של גוגל. להחזרה מלאה: true */
-  shop: false,
+  shop: true,
   /** רכישות בתוך האפליקציה — יידלק בגרסה עתידית */
   payments: false,
   /** פרסומות — יידלק בגרסה עתידית */

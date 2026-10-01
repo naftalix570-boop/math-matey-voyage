@@ -190,11 +190,11 @@ function ShopPage() {
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-2 gap-2 rounded-2xl bg-muted p-1">
+      {isEnabled("payments") && (<div className="mt-4 grid grid-cols-2 gap-2 rounded-2xl bg-muted p-1">
         {(
           [
             { id: "coins", label: "🪙 מטבעות" },
-            { id: "money", label: "💳 כסף" },
+            ...(isEnabled("payments") ? [{ id: "money", label: "💳 כסף" } as const] : []),
           ] as const
         ).map((t) => (
           <button
