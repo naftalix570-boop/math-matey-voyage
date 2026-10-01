@@ -4,6 +4,7 @@ import { Screen } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
 import { Confetti } from "@/components/effects";
 import { useGame, type WheelPrize } from "@/lib/game-state";
+import { isEnabled } from "@/lib/app-version";
 
 export const Route = createFileRoute("/wheel")({
   head: () => ({
@@ -99,13 +100,15 @@ function WheelPage() {
         >
           {profile.spins > 0 ? `סובבו! (נשארו ${profile.spins})` : "אין סיבובים"}
         </button>
-        <Link
-          to="/shop"
-          onClick={() => sound("click")}
-          className="flex h-12 w-full items-center justify-center rounded-2xl bg-shop text-lg font-bold text-white active:scale-95"
-        >
-          🛒 לקנות סיבובים בחנות
-        </Link>
+        {isEnabled("shop") && (
+          <Link
+            to="/shop"
+            onClick={() => sound("click")}
+            className="flex h-12 w-full items-center justify-center rounded-2xl bg-shop text-lg font-bold text-white active:scale-95"
+          >
+            🛒 לקנות סיבובים בחנות
+          </Link>
+        )}
 
         <p className="text-center text-xs text-muted-foreground">
           {event.week === 1

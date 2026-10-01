@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { isEnabled } from "@/lib/app-version";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { redeemPromoCode } from "@/lib/admin.functions";
@@ -76,6 +77,8 @@ const MONEY_ITEMS = [
 ];
 
 function ShopPage() {
+  // החנות מוחבאת זמנית (FEATURES.shop=false) — כל גישה ישירה מופנית לבית
+  if (!isEnabled("shop")) return <Navigate to="/" />;
   const { t } = useI18n();
   const { profile, spendCoins, update, grantSticker, sound, premium, doubling, openChest, linked } =
     useGame();
