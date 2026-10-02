@@ -10,10 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AlbumRouteImport } from './routes/album'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ChestsRouteImport } from './routes/chests'
+import { Route as CreditsRouteImport } from './routes/credits'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as MissionsRouteImport } from './routes/missions'
@@ -21,16 +23,23 @@ import { Route as ParentsRouteImport } from './routes/parents'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProgressRouteImport } from './routes/progress'
+import { Route as ReportRouteImport } from './routes/report'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as StreakRouteImport } from './routes/streak'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as UpdatesRouteImport } from './routes/updates'
 import { Route as WheelRouteImport } from './routes/wheel'
 import { Route as PlayGameIdRouteImport } from './routes/play.$gameId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -51,6 +60,11 @@ const AuthRoute = AuthRouteImport.update({
 const ChestsRoute = ChestsRouteImport.update({
   id: '/chests',
   path: '/chests',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreditsRoute = CreditsRouteImport.update({
+  id: '/credits',
+  path: '/credits',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GamesRoute = GamesRouteImport.update({
@@ -88,6 +102,11 @@ const ProgressRoute = ProgressRouteImport.update({
   path: '/progress',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportRoute = ReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -108,6 +127,11 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UpdatesRoute = UpdatesRouteImport.update({
+  id: '/updates',
+  path: '/updates',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WheelRoute = WheelRouteImport.update({
   id: '/wheel',
   path: '/wheel',
@@ -121,10 +145,12 @@ const PlayGameIdRoute = PlayGameIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
   '/album': typeof AlbumRoute
   '/auth': typeof AuthRoute
   '/chests': typeof ChestsRoute
+  '/credits': typeof CreditsRoute
   '/games': typeof GamesRoute
   '/leaderboard': typeof LeaderboardRoute
   '/missions': typeof MissionsRoute
@@ -132,19 +158,23 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/progress': typeof ProgressRoute
+  '/report': typeof ReportRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/streak': typeof StreakRoute
   '/terms': typeof TermsRoute
+  '/updates': typeof UpdatesRoute
   '/wheel': typeof WheelRoute
   '/play/$gameId': typeof PlayGameIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
   '/album': typeof AlbumRoute
   '/auth': typeof AuthRoute
   '/chests': typeof ChestsRoute
+  '/credits': typeof CreditsRoute
   '/games': typeof GamesRoute
   '/leaderboard': typeof LeaderboardRoute
   '/missions': typeof MissionsRoute
@@ -152,20 +182,24 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/progress': typeof ProgressRoute
+  '/report': typeof ReportRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/streak': typeof StreakRoute
   '/terms': typeof TermsRoute
+  '/updates': typeof UpdatesRoute
   '/wheel': typeof WheelRoute
   '/play/$gameId': typeof PlayGameIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
   '/album': typeof AlbumRoute
   '/auth': typeof AuthRoute
   '/chests': typeof ChestsRoute
+  '/credits': typeof CreditsRoute
   '/games': typeof GamesRoute
   '/leaderboard': typeof LeaderboardRoute
   '/missions': typeof MissionsRoute
@@ -173,10 +207,12 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/progress': typeof ProgressRoute
+  '/report': typeof ReportRoute
   '/settings': typeof SettingsRoute
   '/shop': typeof ShopRoute
   '/streak': typeof StreakRoute
   '/terms': typeof TermsRoute
+  '/updates': typeof UpdatesRoute
   '/wheel': typeof WheelRoute
   '/play/$gameId': typeof PlayGameIdRoute
 }
@@ -184,10 +220,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/admin'
     | '/album'
     | '/auth'
     | '/chests'
+    | '/credits'
     | '/games'
     | '/leaderboard'
     | '/missions'
@@ -195,19 +233,23 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/profile'
     | '/progress'
+    | '/report'
     | '/settings'
     | '/shop'
     | '/streak'
     | '/terms'
+    | '/updates'
     | '/wheel'
     | '/play/$gameId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/admin'
     | '/album'
     | '/auth'
     | '/chests'
+    | '/credits'
     | '/games'
     | '/leaderboard'
     | '/missions'
@@ -215,19 +257,23 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/profile'
     | '/progress'
+    | '/report'
     | '/settings'
     | '/shop'
     | '/streak'
     | '/terms'
+    | '/updates'
     | '/wheel'
     | '/play/$gameId'
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/admin'
     | '/album'
     | '/auth'
     | '/chests'
+    | '/credits'
     | '/games'
     | '/leaderboard'
     | '/missions'
@@ -235,20 +281,24 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/profile'
     | '/progress'
+    | '/report'
     | '/settings'
     | '/shop'
     | '/streak'
     | '/terms'
+    | '/updates'
     | '/wheel'
     | '/play/$gameId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRoute
   AlbumRoute: typeof AlbumRoute
   AuthRoute: typeof AuthRoute
   ChestsRoute: typeof ChestsRoute
+  CreditsRoute: typeof CreditsRoute
   GamesRoute: typeof GamesRoute
   LeaderboardRoute: typeof LeaderboardRoute
   MissionsRoute: typeof MissionsRoute
@@ -256,10 +306,12 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   ProgressRoute: typeof ProgressRoute
+  ReportRoute: typeof ReportRoute
   SettingsRoute: typeof SettingsRoute
   ShopRoute: typeof ShopRoute
   StreakRoute: typeof StreakRoute
   TermsRoute: typeof TermsRoute
+  UpdatesRoute: typeof UpdatesRoute
   WheelRoute: typeof WheelRoute
   PlayGameIdRoute: typeof PlayGameIdRoute
 }
@@ -271,6 +323,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -299,6 +358,13 @@ declare module '@tanstack/react-router' {
       path: '/chests'
       fullPath: '/chests'
       preLoaderRoute: typeof ChestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/credits': {
+      id: '/credits'
+      path: '/credits'
+      fullPath: '/credits'
+      preLoaderRoute: typeof CreditsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/games': {
@@ -350,6 +416,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProgressRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/report': {
+      id: '/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -378,6 +451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/updates': {
+      id: '/updates'
+      path: '/updates'
+      fullPath: '/updates'
+      preLoaderRoute: typeof UpdatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/wheel': {
       id: '/wheel'
       path: '/wheel'
@@ -397,10 +477,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   AdminRoute: AdminRoute,
   AlbumRoute: AlbumRoute,
   AuthRoute: AuthRoute,
   ChestsRoute: ChestsRoute,
+  CreditsRoute: CreditsRoute,
   GamesRoute: GamesRoute,
   LeaderboardRoute: LeaderboardRoute,
   MissionsRoute: MissionsRoute,
@@ -408,10 +490,12 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   ProgressRoute: ProgressRoute,
+  ReportRoute: ReportRoute,
   SettingsRoute: SettingsRoute,
   ShopRoute: ShopRoute,
   StreakRoute: StreakRoute,
   TermsRoute: TermsRoute,
+  UpdatesRoute: UpdatesRoute,
   WheelRoute: WheelRoute,
   PlayGameIdRoute: PlayGameIdRoute,
 }

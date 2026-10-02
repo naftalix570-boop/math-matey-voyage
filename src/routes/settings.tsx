@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { CURRENT_VERSION, showUpdateDot } from "@/lib/updates";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Screen } from "@/components/app-shell";
 import { ICONS, useGame } from "@/lib/game-state";
@@ -7,7 +8,6 @@ import { MAX_LEVEL } from "@/lib/math";
 import { cn, fmtNum } from "@/lib/utils";
 import { useI18n, LANGS } from "@/lib/i18n";
 import { verifyAdminCode } from "@/lib/admin.functions";
-import { APP_VERSION } from "@/lib/app-version";
 
 
 export const Route = createFileRoute("/settings")({
@@ -336,6 +336,8 @@ function SettingsPage() {
 
         <PersonalCode />
 
+        <AppSection />
+
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <p className="text-lg font-bold text-ink">ℹ️ עוד</p>
           <div className="mt-3 grid gap-2">
@@ -364,7 +366,7 @@ function SettingsPage() {
               📄 תנאי שימוש
             </Link>
           </div>
-          <p className="mt-3 text-center text-xs text-muted-foreground">גרסה {APP_VERSION}</p>
+          <p className="mt-3 text-center text-xs text-muted-foreground">גרסה v{CURRENT_VERSION}</p>
         </section>
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
@@ -463,6 +465,47 @@ function PersonalCode() {
         </button>
       </div>
       {msg && <p className="mt-2 font-bold text-ink">{msg}</p>}
+    </section>
+  );
+}
+
+function AppSection() {
+  const [dot, setDot] = useState(false);
+  const [notif, setNotif] = useState<string>("default");
+  useEffect(() => {
+    setDot(showUpdateDot());
+    if (typeof Notification !== "undefined") setNotif(Notification.permission);
+    else setNotif("unsupported");
+  }, []);
+  const row = "flex h-12 items-center justify-between rounded-xl bg-muted px-4 font-bold text-ink active:scale-95";
+  return (
+    <section className="rounded-2xl bg-card p-4 shadow-card">
+      <p className="text-lg font-bold text-ink">⚙️ האפליקציה</p>
+      <div className="mt-3 grid gap-2">
+        <button
+          className={row}
+          disabled={notif === "unsupported" || notif === "denied"}
+          onClick={async () => {
+            if (typeof Notification === "undefined") return;
+            setNotif(await Notification.requestPermission());
+          }}
+        >
+          <span>🔔 התראות</span>
+          <span className="text-sm text-muted-foreground">
+            {notif === "granted" ? "פעילות" : notif === "denied" ? "חסומות בהגדרות המכשיר" : notif === "unsupported" ? "לא נתמך" : "הפעלה"}
+          </span>
+        </button>
+        <Link to="/updates" className={row}>
+          <span className="flex items-center gap-2">
+            🔄 עדכונים
+            {dot && <span aria-label="עדכון חדש" className="size-2.5 rounded-full bg-destructive" />}
+          </span>
+          <span className="text-sm text-muted-foreground" dir="ltr">v{CURRENT_VERSION}</span>
+        </Link>
+        <Link to="/report" className={row}>🐛 דיווח על תקלה</Link>
+        <Link to="/privacy" className={row}>🔒 פרטיות</Link>
+        <Link to="/about" className={row}>ℹ️ אודות</Link>
+      </div>
     </section>
   );
 }

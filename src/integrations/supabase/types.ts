@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      bug_reports: {
+        Row: {
+          app_version: string | null
+          category: string
+          created_at: string
+          description: string
+          device: string | null
+          id: string
+          os: string | null
+        }
+        Insert: {
+          app_version?: string | null
+          category: string
+          created_at?: string
+          description: string
+          device?: string | null
+          id?: string
+          os?: string | null
+        }
+        Update: {
+          app_version?: string | null
+          category?: string
+          created_at?: string
+          description?: string
+          device?: string | null
+          id?: string
+          os?: string | null
+        }
+        Relationships: []
+      }
       guest_players: {
         Row: {
           answered: number
