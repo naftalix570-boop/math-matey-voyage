@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { EmptyState } from "@/components/states";
 import { ACHIEVEMENTS, useGame } from "@/lib/game-state";
@@ -142,16 +141,6 @@ function ParentsPage() {
           </div>
         </section>
 
-        <button
-          onClick={() => {
-            update({ parentCode: "" });
-            setOpen(false);
-            setPin("");
-          }}
-          className="h-11 rounded-xl bg-muted font-bold text-ink active:scale-95"
-        >
-          איפוס קוד ההורים
-        </button>
       </div>
     </Screen>
   );
