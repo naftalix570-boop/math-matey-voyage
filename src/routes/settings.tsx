@@ -354,12 +354,6 @@ function SettingsPage() {
               👤 הפרופיל שלי
             </Link>
             <Link
-              to="/privacy"
-              className="flex h-11 items-center justify-center rounded-xl bg-muted font-bold text-ink active:scale-95"
-            >
-              🔒 מדיניות פרטיות
-            </Link>
-            <Link
               to="/terms"
               className="flex h-11 items-center justify-center rounded-xl bg-muted font-bold text-ink active:scale-95"
             >
