@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { EmptyState } from "@/components/states";
 import { ACHIEVEMENTS, useGame } from "@/lib/game-state";
@@ -30,45 +29,7 @@ const TOPICS: Record<string, { name: string; emoji: string }> = {
 const mins = (s: number) => (s < 60 ? `${s} שנ׳` : `${Math.round(s / 60)} דק׳`);
 
 function ParentsPage() {
-  const { profile, update } = useGame();
-  const [pin, setPin] = useState("");
-  const [open, setOpen] = useState(false);
-  const [err, setErr] = useState("");
-
-  if (!open) {
-    const creating = !profile.parentCode;
-    return (
-      <Screen title="אזור הורים">
-        <div className="mx-auto mt-6 max-w-sm rounded-2xl bg-card p-5 text-center shadow-card">
-          <div className="text-4xl">👨‍👩‍👧</div>
-          <p className="mt-2 font-bold text-ink">
-            {creating ? "בחרו קוד הורים בן 4 ספרות" : "הקלידו את קוד ההורים"}
-          </p>
-          <input
-            inputMode="numeric"
-            maxLength={4}
-            value={pin}
-            onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-            aria-label="קוד הורים"
-            className="mt-3 h-12 w-full rounded-xl border-2 border-muted bg-background text-center text-2xl tracking-[0.5em] text-ink outline-none focus:border-primary"
-          />
-          {err && <p className="mt-2 text-sm font-bold text-destructive">{err}</p>}
-          <button
-            onClick={() => {
-              if (pin.length !== 4) return setErr("צריך 4 ספרות");
-              if (creating) update({ parentCode: pin });
-              else if (pin !== profile.parentCode) return setErr("קוד שגוי");
-              setErr("");
-              setOpen(true);
-            }}
-            className="mt-3 h-11 w-full rounded-xl bg-primary font-bold text-primary-foreground active:scale-95"
-          >
-            {creating ? "שמירה וכניסה" : "כניסה"}
-          </button>
-        </div>
-      </Screen>
-    );
-  }
+  const { profile } = useGame();
 
   const topics = Object.entries(profile.topicStats ?? {}).filter(([, v]) => v.a > 0);
   const weak = [...topics]
@@ -180,16 +141,6 @@ function ParentsPage() {
           </div>
         </section>
 
-        <button
-          onClick={() => {
-            update({ parentCode: "" });
-            setOpen(false);
-            setPin("");
-          }}
-          className="h-11 rounded-xl bg-muted font-bold text-ink active:scale-95"
-        >
-          איפוס קוד ההורים
-        </button>
       </div>
     </Screen>
   );
