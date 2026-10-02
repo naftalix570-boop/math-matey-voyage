@@ -336,6 +336,8 @@ function SettingsPage() {
 
         <PersonalCode />
 
+        <AppSection />
+
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <p className="text-lg font-bold text-ink">ℹ️ עוד</p>
           <div className="mt-3 grid gap-2">
