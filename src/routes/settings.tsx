@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { CURRENT_VERSION, showUpdateDot } from "@/lib/updates";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Screen } from "@/components/app-shell";
 import { ICONS, useGame } from "@/lib/game-state";
@@ -8,7 +8,6 @@ import { MAX_LEVEL } from "@/lib/math";
 import { cn, fmtNum } from "@/lib/utils";
 import { useI18n, LANGS } from "@/lib/i18n";
 import { verifyAdminCode } from "@/lib/admin.functions";
-import { APP_VERSION } from "@/lib/app-version";
 
 
 export const Route = createFileRoute("/settings")({
