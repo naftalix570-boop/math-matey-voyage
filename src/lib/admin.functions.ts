@@ -168,42 +168,10 @@ export const grantToUser = createServerFn({ method: "POST" })
     const amount = Math.round(data.amount);
     if (!Number.isFinite(amount) || amount === 0) throw new Error("כמות לא תקינה");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row, error } = await supabaseAdmin
-      .from("profiles")
-      .select("user_id, score, data")
-      .eq("user_id", data.userId)
-      .maybeSingle();
+    // נשמר כמענק ממתין; המכשיר של השחקן מוסיף אותו להתקדמות (כדי שהשמירה המקומית לא תדרוס)
+    const { error } = await supabaseAdmin
+      .from("admin_grants")
+      .insert({ user_id: data.userId, reward_type: data.rewardType, amount });
     if (error) throw new Error(error.message);
-    if (!row) throw new Error("משתמש לא נמצא");
-
-    const d = { ...((row.data ?? {}) as Record<string, unknown>) };
-    const num = (k: string) => Number(d[k] ?? 0);
-    let score = Number(row.score ?? 0);
-
-    if (data.rewardType === "coins") d["coins"] = Math.max(0, num("coins") + amount);
-    else if (data.rewardType === "hints") d["hints"] = Math.max(0, num("hints") + amount);
-    else if (data.rewardType === "trophies") {
-      d["trophies"] = Math.max(0, num("trophies") + amount);
-      score = Math.max(0, score + amount);
-    } else if (data.rewardType === "chest") {
-      const inv = { ...((d["chestInv"] ?? {}) as Record<string, number>) };
-      inv["regular"] = Math.max(0, Number(inv["regular"] ?? 0) + amount);
-      d["chestInv"] = inv;
-    } else if (data.rewardType === "stickers") {
-      const owned = Array.isArray(d["stickers"]) ? (d["stickers"] as number[]) : [];
-      const next = [...owned];
-      for (let i = 0; i < amount && next.length < 200; i++) {
-        let slot = 0;
-        while (next.includes(slot) && slot < 200) slot++;
-        if (slot < 200) next.push(slot);
-      }
-      d["stickers"] = next;
-    }
-
-    const { error: upErr } = await supabaseAdmin
-      .from("profiles")
-      .update({ data: d as never, score })
-      .eq("user_id", data.userId);
-    if (upErr) throw new Error(upErr.message);
     return { ok: true };
   });
