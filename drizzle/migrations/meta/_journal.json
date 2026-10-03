@@ -71,6 +71,13 @@
       "when": 1790939247749,
       "tag": "0009_bug_reports_and_reset",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791051755749,
+      "tag": "0010_admin_grants",
+      "breakpoints": true
     }
   ]
 }
