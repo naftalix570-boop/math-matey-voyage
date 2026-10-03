@@ -690,7 +690,14 @@ function freeSlots(owned: number[], rarity?: Rarity) {
   );
 }
 
-function drawStickers(owned: number[], count: number, guaranteed?: Rarity, lucky = false) {
+// סיכויי נדירות לפי סוג התיבה: [נדיר, מדהים, אגדי]
+const RARITY_ODDS: Record<"regular" | "amazing" | "legendary", [number, number]> = {
+  regular: [0.9, 0.99],
+  amazing: [0.55, 0.93],
+  legendary: [0.3, 0.75],
+};
+
+function drawStickers(owned: number[], count: number, guaranteed?: Rarity, lucky = false, tier: "regular" | "amazing" | "legendary" = "regular") {
   const picked: number[] = [];
   const take = (rarity?: Rarity) => {
     const pool = freeSlots([...owned, ...picked], rarity);
@@ -701,9 +708,11 @@ function drawStickers(owned: number[], count: number, guaranteed?: Rarity, lucky
   while (picked.length < count) {
     // מזל 🍀 מכפיל את הסיכוי למדבקות מדהימות ואגדיות
     const roll = Math.random();
-    const rarity: Rarity = lucky
-      ? roll < 0.36 ? "rare" : roll < 0.86 ? "amazing" : "legendary"
-      : roll < 0.68 ? "rare" : roll < 0.93 ? "amazing" : "legendary";
+    const [a, b] = RARITY_ODDS[tier];
+    // מזל 🍀 מקטין את הסיכוי לנדיר רגיל לחצי
+    const ra = lucky ? a / 2 : a;
+    const rb = lucky ? ra + (b - a) * 1.5 : b;
+    const rarity: Rarity = roll < ra ? "rare" : roll < rb ? "amazing" : "legendary";
     const before = picked.length;
     take(rarity);
     if (picked.length === before) {
@@ -1191,13 +1200,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const count = daily
         ? rnd(1, 2)
         : kind === "regular"
-          ? rnd(2, 3)
+          ? rnd(1, 3)
           : kind === "amazing"
             ? rnd(5, 7)
             : rnd(8, 11);
       const guaranteed: Rarity | undefined =
         kind === "amazing" ? "amazing" : kind === "legendary" ? "legendary" : undefined;
-      const picked = drawStickers(p.stickers, count, guaranteed, lucky);
+      const picked = drawStickers(p.stickers, count, guaranteed, lucky, daily ? "regular" : kind);
 
       // פרימיום נדיר — 1 ל-10,000 בתיבה אגדית
       const rarePremium = kind === "legendary" && Math.random() < 1 / 10000;

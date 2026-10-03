@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_grants: {
+        Row: {
+          amount: number
+          applied: boolean
+          created_at: string
+          id: string
+          reward_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          applied?: boolean
+          created_at?: string
+          id?: string
+          reward_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          applied?: boolean
+          created_at?: string
+          id?: string
+          reward_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bug_reports: {
         Row: {
           app_version: string | null

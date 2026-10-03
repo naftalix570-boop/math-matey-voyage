@@ -59,6 +59,39 @@ export function PromoAutoRedeem() {
     })();
   }, [pending, ready, linked, redeem, update, grantSticker, sound]);
 
+  // מענקים מהמנהל — נבדקים כל 20 שניות ומתווספים להתקדמות
+  useEffect(() => {
+    if (!ready || !linked) return;
+    let busy = false;
+    const pull = async () => {
+      if (busy) return;
+      busy = true;
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data: rows } = await supabase
+          .from("admin_grants")
+          .select("id, reward_type, amount")
+          .eq("applied", false);
+        for (const g of rows ?? []) {
+          const { error } = await supabase.from("admin_grants").update({ applied: true }).eq("id", g.id);
+          if (error) continue;
+          const n = g.amount;
+          if (g.reward_type === "coins") update((p) => ({ coins: Math.max(0, p.coins + n) }));
+          else if (g.reward_type === "hints") update((p) => ({ hints: Math.max(0, p.hints + n) }));
+          else if (g.reward_type === "trophies") update((p) => ({ trophies: Math.max(0, p.trophies + n) }));
+          else if (g.reward_type === "chest")
+            update((p) => ({ chestInv: { ...p.chestInv, regular: Math.max(0, p.chestInv.regular + n) } }));
+          else if (g.reward_type === "stickers") for (let i = 0; i < n; i++) grantSticker();
+        }
+      } finally {
+        busy = false;
+      }
+    };
+    void pull();
+    const t = setInterval(pull, 20000);
+    return () => clearInterval(t);
+  }, [ready, linked, update, grantSticker]);
+
   const close = () => {
     setMsg(null);
     setErr(null);
