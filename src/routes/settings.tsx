@@ -338,30 +338,6 @@ function SettingsPage() {
 
         <AppSection />
 
-        <section className="rounded-2xl bg-card p-4 shadow-card">
-          <p className="text-lg font-bold text-ink">ℹ️ עוד</p>
-          <div className="mt-3 grid gap-2">
-            <Link
-              to="/parents"
-              className="flex h-11 items-center justify-center rounded-xl bg-muted font-bold text-ink active:scale-95"
-            >
-              👨‍👩‍👧 אזור הורים
-            </Link>
-            <Link
-              to="/profile"
-              className="flex h-11 items-center justify-center rounded-xl bg-muted font-bold text-ink active:scale-95"
-            >
-              👤 הפרופיל שלי
-            </Link>
-            <Link
-              to="/terms"
-              className="flex h-11 items-center justify-center rounded-xl bg-muted font-bold text-ink active:scale-95"
-            >
-              📄 תנאי שימוש
-            </Link>
-          </div>
-          <p className="mt-3 text-center text-xs text-muted-foreground">גרסה v{CURRENT_VERSION}</p>
-        </section>
 
         <section className="rounded-2xl bg-card p-4 shadow-card">
           <label htmlFor="admincode" className="text-lg font-bold text-ink">
@@ -478,15 +454,17 @@ function AppSection() {
       <div className="mt-3 grid gap-2">
         <button
           className={row}
-          disabled={notif === "unsupported" || notif === "denied"}
+          disabled={notif === "unsupported"}
           onClick={async () => {
             if (typeof Notification === "undefined") return;
-            setNotif(await Notification.requestPermission());
+            const r = await Notification.requestPermission();
+            setNotif(r);
+            if (r === "denied") alert("ההתראות כבויות. כדי להפעיל: הגדרות הטלפון ← אפליקציות ← מסע המתמטיקס ← התראות ← הפעלה.");
           }}
         >
           <span>🔔 התראות</span>
           <span className="text-sm text-muted-foreground">
-            {notif === "granted" ? "פעילות" : notif === "denied" ? "חסומות בהגדרות המכשיר" : notif === "unsupported" ? "לא נתמך" : "הפעלה"}
+            {notif === "granted" ? "פעילות" : notif === "denied" ? "כבויות" : notif === "unsupported" ? "לא נתמך" : "הפעלה"}
           </span>
         </button>
         <Link to="/updates" className={row}>
@@ -499,6 +477,9 @@ function AppSection() {
         <Link to="/report" className={row}>🐛 דיווח על תקלה</Link>
         <Link to="/privacy" className={row}>🔒 פרטיות</Link>
         <Link to="/about" className={row}>ℹ️ אודות</Link>
+        <Link to="/parents" className={row}>👨‍👩‍👧 אזור הורים</Link>
+        <Link to="/profile" className={row}>👤 הפרופיל שלי</Link>
+        <Link to="/terms" className={row}>📄 תנאי שימוש</Link>
       </div>
     </section>
   );
