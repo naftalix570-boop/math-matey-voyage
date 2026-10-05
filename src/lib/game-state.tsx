@@ -875,16 +875,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const data = Array.isArray(rows) ? rows[0] : null;
       if (data?.data && typeof data.data === "object" && Object.keys(data.data).length) {
         const cloud = data.data as Partial<Profile>;
-        setProfile((p) => ({
-          ...defaultProfile,
-          ...cloud,
-          tickets: { ...defaultProfile.tickets, ...(cloud.tickets ?? {}) },
-          boosts: { ...defaultProfile.boosts, ...(cloud.boosts ?? {}) },
-          name: data.display_name || cloud.name || p.name,
-          icon: data.icon || cloud.icon || p.icon,
-          country: data.country || "IL",
-          guest: false,
-        }));
+        setProfile((p) => {
+          const name = data.display_name || cloud.name || p.name;
+          // חשבון קיים עם שם — לא מחזירים אותו למסך ההרשמה
+          const onboarded =
+            Boolean(cloud.onboarded) ||
+            (prevUid === authUid && p.onboarded) ||
+            (Boolean(name) && name !== defaultProfile.name);
+          return {
+            ...defaultProfile,
+            ...cloud,
+            tickets: { ...defaultProfile.tickets, ...(cloud.tickets ?? {}) },
+            boosts: { ...defaultProfile.boosts, ...(cloud.boosts ?? {}) },
+            name,
+            icon: data.icon || cloud.icon || p.icon,
+            country: data.country || "IL",
+            guest: false,
+            onboarded,
+            onboardingStep: onboarded ? "test" : (cloud.onboardingStep ?? "name"),
+          };
+        });
       } else if (prevUid && prevUid !== authUid) {
         // חשבון חדש שאין לו נתונים בענן
         setProfile((p) => {
