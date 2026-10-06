@@ -1065,7 +1065,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   // שחקן בלי התחברות מקבל קוד אישי ונרשם לטבלת המובילים
   useEffect(() => {
-    if (!ready || authUid || !profile.onboarded || profile.guestCode) return;
+    // רק מי שבחר במפורש "קוד אישי בלי התחברות" — לא בזמן שההתחברות עוד נטענת
+    if (!ready || authUid || !profile.guest || !profile.onboarded || profile.guestCode) return;
     let cancelled = false;
     const t = window.setTimeout(async () => {
       if (authUidRef.current) return;
