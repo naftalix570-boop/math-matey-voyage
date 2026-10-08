@@ -82,6 +82,7 @@ function AlbumPage() {
     return idx < 0 ? ALBUM_WORLDS.length - 1 : idx;
   });
   const [dir, setDir] = useState(1);
+  const [subPage, setSubPage] = useState(0);
   const [prize, setPrize] = useState<AlbumWorld["reward"] | null>(null);
 
   const world = ALBUM_WORLDS[page] as AlbumWorld;
@@ -89,11 +90,17 @@ function AlbumPage() {
   const prog = worldProgress(world, owned);
   const canClaim = prog.done && !claimed.has(world.id);
 
+  const PER_PAGE = 20;
+  const subPages = Math.ceil(world.slots.length / PER_PAGE);
+  const safeSub = Math.min(subPage, subPages - 1);
+  const pageSlots = world.slots.slice(safeSub * PER_PAGE, (safeSub + 1) * PER_PAGE);
+
   const go = (delta: number) => {
     const next = page + delta;
     if (next < 0 || next >= ALBUM_WORLDS.length) return;
     setDir(delta);
     setPage(next);
+    setSubPage(0);
   };
 
   const claim = () => {
