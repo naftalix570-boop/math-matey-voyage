@@ -35,7 +35,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const { profile, ready, update, sound, premium, event, linked } = useGame();
+  const { profile, ready, update, sound, premium, event, linked, missionProgress } = useGame();
   const { t } = useI18n();
   const navigate = useNavigate();
   const [name, setName] = useState(profile.name === "אלוף/ה" ? "" : profile.name);
