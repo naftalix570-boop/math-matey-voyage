@@ -313,7 +313,11 @@ function EventCard() {
   const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
   const next = nextEventChange();
-  const dateStr = next.toLocaleDateString(lang === "he" ? "he-IL" : lang, { weekday: "long", day: "numeric", month: "long" });
+  const sat = new Date(next.getTime() - 86400000);
+  const dateStr =
+    lang === "he"
+      ? `מוצאי שבת ${sat.toLocaleDateString("he-IL", { day: "numeric", month: "long" })} בחצות`
+      : next.toLocaleDateString(lang, { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">

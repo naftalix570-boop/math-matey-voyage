@@ -169,8 +169,13 @@ export type Profile = {
 
 const KEY = "math-journey-v1";
 
-const todayKey = () => new Date().toISOString().slice(0, 10);
-const monthKey = () => new Date().toISOString().slice(0, 7);
+// לפי שעון מקומי — המשימות מתחלפות בחצות
+const localDate = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+const todayKey = () => localDate();
+const monthKey = () => localDate().slice(0, 7);
 
 const defaultProfile: Profile = {
   onboarded: false,

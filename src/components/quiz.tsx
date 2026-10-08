@@ -198,7 +198,18 @@ export function QuizGame({
   const { profile, recordAnswer, useHint, useTicket, sound, premium, recordGameWin } = useGame();
   const { t } = useI18n();
   const [index, setIndex] = useState(0);
-  const [item, setItem] = useState<QuizItem>(() => makeItem(0, null));
+  // מונע תרגיל זהה או תוצאה זהה ברצף
+  const lastItemRef = useRef<QuizItem | null>(null);
+  const makeUnique = (i: number, prev: number | null): QuizItem => {
+    let it = makeItem(i, prev);
+    const last = lastItemRef.current;
+    for (let n = 0; last && n < 15 && (it.display === last.display || it.answer === last.answer); n++) {
+      it = makeItem(i, prev);
+    }
+    lastItemRef.current = it;
+    return it;
+  };
+  const [item, setItem] = useState<QuizItem>(() => makeUnique(0, null));
   const [correct, setCorrect] = useState(0);
   const [hearts, setHearts] = useState(heartsMax);
   const [time, setTime] = useState(timerSec);
@@ -247,7 +258,7 @@ export function QuizGame({
         return;
       }
       setIndex(nextIndex);
-      setItem(makeItem(nextIndex, prev));
+      setItem(makeUnique(nextIndex, prev));
       setChosen(null);
       setLocked(false);
       setHintText(null);
