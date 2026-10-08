@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { Logo, Confetti } from "@/components/effects";
 import { PlacementTest } from "@/components/mini-games";
-import { useGame, EVENTS, nextEventChange, ICONS } from "@/lib/game-state";
+import { useGame, EVENTS, nextEventChange, ICONS, DAILY_MISSIONS, MONTHLY_MISSIONS } from "@/lib/game-state";
 import { weeklyChallenge } from "@/lib/games";
 import { ALBUM_SIZE } from "@/lib/stickers";
 import { useOnline } from "@/lib/use-online";
@@ -35,7 +35,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const { profile, ready, update, sound, premium, event, linked } = useGame();
+  const { profile, ready, update, sound, premium, event, linked, missionProgress } = useGame();
   const { t } = useI18n();
   const navigate = useNavigate();
   const [name, setName] = useState(profile.name === "אלוף/ה" ? "" : profile.name);
@@ -136,6 +136,9 @@ function Home() {
   }
 
   const weekly = weeklyChallenge();
+  const missionReady =
+    DAILY_MISSIONS.some((m) => !profile.dailyClaimed.includes(m.id) && !(m.premiumOnly && !premium) && missionProgress(m) >= m.goal) ||
+    MONTHLY_MISSIONS.some((m) => !profile.monthlyClaimed.includes(m.id) && !(m.premiumOnly && !premium) && missionProgress(m) >= m.goal);
   const pct = Math.round((profile.history.slice(-40).filter(Boolean).length / 40) * 100);
   const showRating = profile.correctSinceRating >= 10 && !profile.rated;
 
@@ -267,7 +270,7 @@ function Home() {
 
       <div className="mt-3 grid grid-cols-3 gap-2">
         <Tile to="/streak" emoji="🔥" label={t("tile.streak")} />
-        <Tile to="/missions" emoji="🗒️" label={t("tile.missions")} />
+        <Tile to="/missions" emoji="🗒️" label={t("tile.missions")} dot={missionReady} />
         <Tile to="/progress" emoji="📊" label={t("tile.progress")} />
       </div>
 
@@ -313,7 +316,11 @@ function EventCard() {
   const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
   const next = nextEventChange();
-  const dateStr = next.toLocaleDateString(lang === "he" ? "he-IL" : lang, { weekday: "long", day: "numeric", month: "long" });
+  const sat = new Date(next.getTime() - 86400000);
+  const dateStr =
+    lang === "he"
+      ? `מוצאי שבת ${sat.toLocaleDateString("he-IL", { day: "numeric", month: "long" })} בחצות`
+      : next.toLocaleDateString(lang, { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <div className="mt-4 rounded-2xl bg-card p-4 shadow-card">
@@ -460,6 +467,7 @@ function Tile({
   to,
   emoji,
   label,
+  dot,
 }: {
   to:
     | "/games"
@@ -474,12 +482,16 @@ function Tile({
     | "/leaderboard";
   emoji: string;
   label: string;
+  dot?: boolean;
 }) {
   return (
     <Link
       to={to}
-      className="flex flex-col items-center rounded-2xl bg-card p-3 shadow-card active:scale-95"
+      className="relative flex flex-col items-center rounded-2xl bg-card p-3 shadow-card active:scale-95"
     >
+      {dot && (
+        <span aria-label="יש תגמול לקבל" className="absolute top-2 left-2 size-3 animate-pulse rounded-full bg-destructive" />
+      )}
       <span className="text-2xl">{emoji}</span>
       <span className="text-sm font-bold text-ink">{label}</span>
     </Link>
