@@ -17,6 +17,8 @@ import {
   createGuestPlayer,
   guestClaim,
   guestSync,
+  getMyScore,
+  guestRequestPin,
   guestTransfer,
   submitAnswers,
 } from "./score.functions";
@@ -671,7 +673,8 @@ type Ctx = {
   authEmail: string | null;
   authUid: string | null;
   syncNow: () => Promise<boolean>;
-  restoreFromCode: (code: string) => Promise<boolean>;
+  restoreFromCode: (code: string, pin: string) => Promise<"ok" | "fail" | "locked">;
+  requestTransferPin: () => Promise<string | null>;
   cloudSyncing: boolean;
 };
 
@@ -887,11 +890,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
             Boolean(cloud.onboarded) ||
             (prevUid === authUid && p.onboarded) ||
             (Boolean(name) && name !== defaultProfile.name);
-          return {
+          const cloudFull: Profile = {
             ...defaultProfile,
             ...cloud,
             tickets: { ...defaultProfile.tickets, ...(cloud.tickets ?? {}) },
             boosts: { ...defaultProfile.boosts, ...(cloud.boosts ?? {}) },
+            chestInv: { ...defaultProfile.chestInv, ...(cloud.chestInv ?? {}) },
+          };
+          // מיזוג עם המצב המקומי של אותו חשבון (או אורח) במקום דריסה
+          const sameOwner = !prevUid || prevUid === authUid || p.guest;
+          const base = sameOwner ? mergeProfiles(cloudFull, p) : cloudFull;
+          return {
+            ...base,
             name,
             icon: data.icon || cloud.icon || p.icon,
             country: data.country || "IL",
@@ -926,6 +936,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
         /* ignore */
       }
       pulledRef.current = authUid;
+      // הגביעים המוצגים = הגבוה מבין המקומי לניקוד בשרת
+      try {
+        const srv = await getMyScoreFn();
+        if (!cancelled && authUidRef.current === authUid && srv.score > 0) {
+          setProfile((p) => (srv.score > p.trophies ? { ...p, trophies: srv.score } : p));
+        }
+      } catch (e) {
+        console.error("server score load failed", e);
+      }
     };
     void loadCloudProfile();
     return () => {
