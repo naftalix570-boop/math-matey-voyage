@@ -3,15 +3,20 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /* ================= הגנה על הניקוד =================
    השרת הוא הסמכות היחידה לניקוד שמוצג בטבלת המובילים.
-   המכשיר שולח מנות של תשובות, והשרת מוסיף גביעים רק לפי כללי המשחק. */
+   המכשיר שולח מנה אחת (עד 30 תשובות) כל 30 שניות, עם מזהה מנה לשליחה חוזרת בטוחה. */
 
 /** מקסימום תשובות במנה אחת */
-const MAX_BATCH = 120;
-/** חלון בדיקה (ms) ומקסימום תשובות בתוכו */
+const MAX_BATCH = 30;
+/** חלון בדיקה (ms) ומקסימום תשובות בתוכו — עודף נחתך */
 const WINDOW_MS = 60_000;
-const MAX_PER_WINDOW = 200;
+const MAX_PER_WINDOW = 60;
+/** כמה חריגות באותה שעה מסמנות חשד */
+const STRIKE_HOUR_MS = 3_600_000;
+const STRIKES_FOR_SUSPICIOUS = 3;
+/** כמה מזהי מנות אחרונים נשמרים לכל שחקן */
+const RECENT_BATCHES = 50;
 
-type Batch = { correct: number; answered: number };
+type Batch = { correct: number; answered: number; batchId: string };
 
 function cleanBatch(input: unknown): Batch {
   const raw = (input ?? {}) as Record<string, unknown>;
@@ -20,9 +25,11 @@ function cleanBatch(input: unknown): Batch {
   if (!Number.isFinite(answered) || !Number.isFinite(correct)) {
     throw new Error("bad batch");
   }
+  const id = typeof raw["batchId"] === "string" ? raw["batchId"].slice(0, 64) : "";
   return {
     answered: Math.max(0, Math.min(MAX_BATCH, answered)),
     correct: Math.max(0, Math.min(MAX_BATCH, correct)),
+    batchId: /^[A-Za-z0-9-]{8,64}$/.test(id) ? id : "",
   };
 }
 
@@ -37,25 +44,45 @@ type Row = {
   suspicious: boolean;
   window_start: string;
   window_answers: number;
+  recent_batches?: string[] | null;
+  strike_hour?: string | null;
+  strikes?: number | null;
 };
 
-/** מחשב את השורה החדשה אחרי מנת תשובות, כולל תקרות ודגל חשד */
+/** מחשב את השורה החדשה אחרי מנת תשובות. null = מנה שכבר טופלה */
 function applyBatch(row: Row, batch: Batch) {
+  const recent = row.recent_batches ?? [];
+  if (batch.batchId && recent.includes(batch.batchId)) return null;
+
   const now = Date.now();
   const windowStart = new Date(row.window_start).getTime();
   const fresh = !Number.isFinite(windowStart) || now - windowStart > WINDOW_MS;
-  const windowAnswers = (fresh ? 0 : row.window_answers) + batch.answered;
+  const before = fresh ? 0 : row.window_answers;
+  const room = Math.max(0, MAX_PER_WINDOW - before);
 
-  // יותר מדי תשובות בזמן קצר, או יותר נכונות מתשובות — חשוד
-  const cheating = batch.correct > batch.answered || windowAnswers > MAX_PER_WINDOW;
-  const allowed = cheating ? 0 : Math.min(batch.correct, batch.answered);
+  const impossible = batch.correct > batch.answered;
+  const answered = impossible ? 0 : Math.min(batch.answered, room);
+  const correct = Math.min(batch.correct, answered);
+  const exceeded = impossible || batch.answered > room;
+
+  const strikeStart = new Date(row.strike_hour ?? 0).getTime();
+  const sameHour = Number.isFinite(strikeStart) && now - strikeStart <= STRIKE_HOUR_MS;
+  let strikes = sameHour ? (row.strikes ?? 0) : 0;
+  let strikeHour = sameHour ? strikeStart : now;
+  if (exceeded) {
+    strikes += 1;
+    if (!sameHour) strikeHour = now;
+  }
 
   return {
-    score: row.score + allowed,
-    answered: row.answered + (cheating ? 0 : batch.answered),
-    suspicious: row.suspicious || cheating,
+    score: row.score + correct,
+    answered: row.answered + answered,
+    suspicious: row.suspicious || strikes >= STRIKES_FOR_SUSPICIOUS,
     window_start: new Date(fresh ? now : windowStart).toISOString(),
-    window_answers: windowAnswers,
+    window_answers: before + answered,
+    recent_batches: batch.batchId ? [...recent, batch.batchId].slice(-RECENT_BATCHES) : recent,
+    strike_hour: new Date(strikeHour).toISOString(),
+    strikes,
     updated_at: new Date().toISOString(),
   };
 }
@@ -68,6 +95,45 @@ const EMPTY_ROW: Row = {
   window_answers: 0,
 };
 
+const ROW_COLS = "score, answered, suspicious, window_start, window_answers, recent_batches, strike_hour, strikes";
+
+async function clientIp(): Promise<string> {
+  try {
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const h =
+      getRequestHeader("cf-connecting-ip") ||
+      getRequestHeader("x-real-ip") ||
+      getRequestHeader("x-forwarded-for") ||
+      "";
+    return h.split(",")[0].trim() || "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+/** מספר אירועים מסוג נתון בחלון זמן */
+async function countEvents(kind: string, key: string, windowMs: number) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const since = new Date(Date.now() - windowMs).toISOString();
+  const { count } = await supabaseAdmin
+    .from("rate_events")
+    .select("id", { count: "exact", head: true })
+    .eq("kind", kind)
+    .eq("key", key)
+    .gt("created_at", since);
+  return count ?? 0;
+}
+
+async function addEvent(kind: string, key: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  await supabaseAdmin.from("rate_events").insert({ kind, key });
+}
+
+async function sha256(text: string) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 /* ---------- שחקנים רשומים ---------- */
 
 export const submitAnswers = createServerFn({ method: "POST" })
@@ -79,11 +145,13 @@ export const submitAnswers = createServerFn({ method: "POST" })
 
     const { data: existing } = await supabaseAdmin
       .from("player_scores")
-      .select("score, answered, suspicious, window_start, window_answers")
+      .select(ROW_COLS)
       .eq("user_id", userId)
       .maybeSingle();
 
-    const next = applyBatch((existing as Row | null) ?? EMPTY_ROW, data);
+    const current = (existing as Row | null) ?? EMPTY_ROW;
+    const next = applyBatch(current, data);
+    if (!next) return { score: current.score, suspicious: current.suspicious, duplicate: true };
     const { error } = await supabaseAdmin
       .from("player_scores")
       .upsert({ user_id: userId, ...next }, { onConflict: "user_id" });
@@ -92,7 +160,7 @@ export const submitAnswers = createServerFn({ method: "POST" })
     // הניקוד המוצג בטבלה מגיע מהשרת בלבד
     await supabaseAdmin.from("profiles").update({ score: next.score }).eq("user_id", userId);
 
-    return { score: next.score, suspicious: next.suspicious };
+    return { score: next.score, suspicious: next.suspicious, duplicate: false };
   });
 
 export const getMyScore = createServerFn({ method: "GET" })
