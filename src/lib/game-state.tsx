@@ -17,6 +17,8 @@ import {
   createGuestPlayer,
   guestClaim,
   guestSync,
+  getMyScore,
+  guestRequestPin,
   guestTransfer,
   submitAnswers,
 } from "./score.functions";
@@ -671,7 +673,8 @@ type Ctx = {
   authEmail: string | null;
   authUid: string | null;
   syncNow: () => Promise<boolean>;
-  restoreFromCode: (code: string) => Promise<boolean>;
+  restoreFromCode: (code: string, pin: string) => Promise<"ok" | "fail" | "locked">;
+  requestTransferPin: () => Promise<string | null>;
   cloudSyncing: boolean;
 };
 
@@ -730,6 +733,7 @@ function drawStickers(owned: number[], count: number, guaranteed?: Rarity, lucky
 
 export function GameProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile>(defaultProfile);
+  const getMyScoreFn = useServerFn(getMyScore);
   const [ready, setReady] = useState(false);
   const opStats = useRef<Record<string, number>>({});
   const [now, setNow] = useState(0);
@@ -887,11 +891,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
             Boolean(cloud.onboarded) ||
             (prevUid === authUid && p.onboarded) ||
             (Boolean(name) && name !== defaultProfile.name);
-          return {
+          const cloudFull: Profile = {
             ...defaultProfile,
             ...cloud,
             tickets: { ...defaultProfile.tickets, ...(cloud.tickets ?? {}) },
             boosts: { ...defaultProfile.boosts, ...(cloud.boosts ?? {}) },
+            chestInv: { ...defaultProfile.chestInv, ...(cloud.chestInv ?? {}) },
+          };
+          // מיזוג עם המצב המקומי של אותו חשבון (או אורח) במקום דריסה
+          const sameOwner = !prevUid || prevUid === authUid || p.guest;
+          const base = sameOwner ? mergeProfiles(cloudFull, p) : cloudFull;
+          return {
+            ...base,
             name,
             icon: data.icon || cloud.icon || p.icon,
             country: data.country || "IL",
@@ -926,6 +937,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
         /* ignore */
       }
       pulledRef.current = authUid;
+      // הגביעים המוצגים = הגבוה מבין המקומי לניקוד בשרת
+      try {
+        const srv = await getMyScoreFn();
+        if (!cancelled && authUidRef.current === authUid && srv.score > 0) {
+          setProfile((p) => (srv.score > p.trophies ? { ...p, trophies: srv.score } : p));
+        }
+      } catch (e) {
+        console.error("server score load failed", e);
+      }
     };
     void loadCloudProfile();
     return () => {
@@ -994,10 +1014,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const createGuestFn = useServerFn(createGuestPlayer);
   const guestClaimFn = useServerFn(guestClaim);
   const guestTransferFn = useServerFn(guestTransfer);
+  const guestRequestPinFn = useServerFn(guestRequestPin);
+  // מנה שנשלחה ועוד לא אושרה — נשמרת עם ה-batchId עד אישור השרת
+  const INFLIGHT_KEY = "math-journey:pending-batch";
+  const inflightRef = useRef<{ batchId: string; answered: number; correct: number } | null>(null);
+  const lastFlushRef = useRef(0);
 
   const savePending = useCallback(() => {
     try {
       localStorage.setItem(PENDING_KEY, JSON.stringify(pendingRef.current));
+      if (inflightRef.current) localStorage.setItem(INFLIGHT_KEY, JSON.stringify(inflightRef.current));
+      else localStorage.removeItem(INFLIGHT_KEY);
     } catch {
       /* ignore */
     }
@@ -1010,46 +1037,60 @@ export function GameProvider({ children }: { children: ReactNode }) {
         const v = JSON.parse(raw) as { answered?: number; correct?: number };
         pendingRef.current = { answered: Number(v.answered) || 0, correct: Number(v.correct) || 0 };
       }
+      const fl = localStorage.getItem(INFLIGHT_KEY);
+      if (fl) {
+        const b = JSON.parse(fl) as { batchId?: string; answered?: number; correct?: number };
+        if (b.batchId) inflightRef.current = { batchId: b.batchId, answered: Number(b.answered) || 0, correct: Number(b.correct) || 0 };
+      }
     } catch {
       /* ignore */
     }
   }, []);
 
+  /** שולח מנה אחת בלבד (עד 30 תשובות), לכל היותר פעם ב-30 שניות */
   const flushAnswers = useCallback(async () => {
     if (flushingRef.current || !navigator.onLine) return;
     const p = profileRef.current;
     const uid = authUidRef.current;
     if (!uid && !p.guestCode) return;
+    const hasAnswers = Boolean(inflightRef.current) || pendingRef.current.answered > 0;
+    if (uid && !hasAnswers) return;
+    if (hasAnswers && Date.now() - lastFlushRef.current < 30_000) return;
     flushingRef.current = true;
     try {
-      while (true) {
+      if (!inflightRef.current && pendingRef.current.answered > 0) {
         const pend = pendingRef.current;
-        const batch = { answered: Math.min(120, pend.answered), correct: Math.min(120, pend.correct, Math.min(120, pend.answered)) };
-        const cur = profileRef.current;
-        if (uid) {
-          if (!batch.answered) break;
-          await submitAnswersFn({ data: batch });
-        } else {
-          const res = await guestSyncFn({
-            data: {
-              code: cur.guestCode,
-              secret: cur.guestSecret,
-              name: cur.name,
-              icon: cur.icon,
-              country: cur.country,
-              data: JSON.parse(JSON.stringify({ ...cur, guestSecret: "" })),
-              batch,
-            },
-          });
-          if (!res.ok) break;
-        }
+        const answered = Math.min(30, pend.answered);
+        const correct = Math.min(answered, pend.correct);
+        inflightRef.current = { batchId: crypto.randomUUID(), answered, correct };
         pendingRef.current = {
-          answered: Math.max(0, pendingRef.current.answered - batch.answered),
-          correct: Math.max(0, pendingRef.current.correct - batch.correct),
+          answered: Math.max(0, pend.answered - answered),
+          correct: Math.max(0, pend.correct - correct),
         };
         savePending();
-        if (pendingRef.current.answered <= 0) break;
       }
+      const batch = inflightRef.current ?? { batchId: "", answered: 0, correct: 0 };
+      if (batch.answered) lastFlushRef.current = Date.now();
+      const cur = profileRef.current;
+      if (uid) {
+        await submitAnswersFn({ data: batch });
+      } else {
+        const res = await guestSyncFn({
+          data: {
+            code: cur.guestCode,
+            secret: cur.guestSecret,
+            name: cur.name,
+            icon: cur.icon,
+            country: cur.country,
+            data: JSON.parse(JSON.stringify({ ...cur, guestSecret: "" })),
+            batch,
+          },
+        });
+        if (!res.ok) return;
+      }
+      // השרת אישר — אפשר לשכוח את המנה
+      inflightRef.current = null;
+      savePending();
     } catch (e) {
       console.error("score submit failed", e);
     } finally {
@@ -1060,6 +1101,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const scheduleFlush = useCallback(() => {
     if (flushTimer.current) window.clearTimeout(flushTimer.current);
     flushTimer.current = window.setTimeout(() => void flushAnswers(), 2500);
+  }, [flushAnswers]);
+
+  // מנה אחת כל 30 שניות עד שהתור מתרוקן
+  useEffect(() => {
+    const t = window.setInterval(() => void flushAnswers(), 30_000);
+    return () => window.clearInterval(t);
   }, [flushAnswers]);
 
   useEffect(() => {
@@ -1119,11 +1166,22 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(t);
   }, [authUid, profile.guestCode, profile.name, profile.icon, profile.country, flushAnswers]);
 
+  const requestTransferPin = useCallback(async (): Promise<string | null> => {
+    const p = profileRef.current;
+    if (!p.guestCode || !p.guestSecret) return null;
+    try {
+      const r = await guestRequestPinFn({ data: { code: p.guestCode, secret: p.guestSecret } });
+      return r.ok ? r.pin : null;
+    } catch {
+      return null;
+    }
+  }, [guestRequestPinFn]);
+
   const restoreFromCode = useCallback(
-    async (code: string): Promise<boolean> => {
+    async (code: string, pin: string): Promise<"ok" | "fail" | "locked"> => {
       try {
-        const r = await guestTransferFn({ data: { code: code.trim().toUpperCase() } });
-        if (!r.ok) return false;
+        const r = await guestTransferFn({ data: { code: code.trim().toUpperCase(), pin: pin.trim() } });
+        if (!r.ok) return r.locked ? "locked" : "fail";
         const cloud = JSON.parse(r.data || "{}") as Partial<Profile>;
         setProfile((p) => {
           const incoming: Profile = {
@@ -1142,9 +1200,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
           };
           return hasProgress(p) ? { ...mergeProfiles(incoming, p), guestCode: incoming.guestCode, guestSecret: r.secret } : incoming;
         });
-        return true;
+        return "ok";
       } catch {
-        return false;
+        return "fail";
       }
     },
     [guestTransferFn],
@@ -1636,6 +1694,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       sound,
       reset,
       restoreFromCode,
+      requestTransferPin,
       premium: (now || Date.now()) < profile.boosts.premiumUntil,
       doubling:
         (now || Date.now()) < profile.boosts.doubleUntil ||
@@ -1674,6 +1733,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       sound,
       reset,
       restoreFromCode,
+      requestTransferPin,
     ],
   );
 

@@ -81,8 +81,12 @@ export type Database = {
           data: Json
           display_name: string
           icon: string
+          public_id: string
+          recent_batches: string[]
           score: number
           secret: string
+          strike_hour: string
+          strikes: number
           suspicious: boolean
           updated_at: string
           window_answers: number
@@ -97,8 +101,12 @@ export type Database = {
           data?: Json
           display_name?: string
           icon?: string
+          public_id?: string
+          recent_batches?: string[]
           score?: number
           secret: string
+          strike_hour?: string
+          strikes?: number
           suspicious?: boolean
           updated_at?: string
           window_answers?: number
@@ -113,8 +121,12 @@ export type Database = {
           data?: Json
           display_name?: string
           icon?: string
+          public_id?: string
+          recent_batches?: string[]
           score?: number
           secret?: string
+          strike_hour?: string
+          strikes?: number
           suspicious?: boolean
           updated_at?: string
           window_answers?: number
@@ -122,10 +134,34 @@ export type Database = {
         }
         Relationships: []
       }
+      guest_transfer_pins: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          pin_hash: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at: string
+          pin_hash: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          pin_hash?: string
+        }
+        Relationships: []
+      }
       player_scores: {
         Row: {
           answered: number
+          recent_batches: string[]
           score: number
+          strike_hour: string
+          strikes: number
           suspicious: boolean
           updated_at: string
           user_id: string
@@ -134,7 +170,10 @@ export type Database = {
         }
         Insert: {
           answered?: number
+          recent_batches?: string[]
           score?: number
+          strike_hour?: string
+          strikes?: number
           suspicious?: boolean
           updated_at?: string
           user_id: string
@@ -143,7 +182,10 @@ export type Database = {
         }
         Update: {
           answered?: number
+          recent_batches?: string[]
           score?: number
+          strike_hour?: string
+          strikes?: number
           suspicious?: boolean
           updated_at?: string
           user_id?: string
@@ -234,6 +276,27 @@ export type Database = {
             referencedColumns: ["code"]
           },
         ]
+      }
+      rate_events: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          kind: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          kind: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          kind?: string
+        }
+        Relationships: []
       }
     }
     Views: {

@@ -368,8 +368,10 @@ function SettingsPage() {
 }
 
 function PersonalCode() {
-  const { profile, linked, restoreFromCode, sound } = useGame();
+  const { profile, linked, restoreFromCode, requestTransferPin, sound } = useGame();
   const [input, setInput] = useState("");
+  const [pinInput, setPinInput] = useState("");
+  const [myPin, setMyPin] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -406,28 +408,70 @@ function PersonalCode() {
             העתק
           </button>
         </div>
-      ) : (
+      ) : null}
+      {profile.guestCode && (
+        <div className="mt-2">
+          <button
+            onClick={async () => {
+              sound("click");
+              setMsg(null);
+              const pin = await requestTransferPin();
+              setMyPin(pin);
+              if (!pin) setMsg("❌ לא הצלחנו ליצור קוד מעבר");
+            }}
+            className="h-11 w-full rounded-xl bg-muted px-4 font-bold text-ink active:scale-95"
+          >
+            📲 מעבר למכשיר אחר — קבל קוד חד-פעמי
+          </button>
+          {myPin && (
+            <p className="mt-2 text-center text-sm text-ink">
+              קוד המעבר (בתוקף 10 דקות):{" "}
+              <span className="font-mono text-xl font-bold tracking-widest" dir="ltr">{myPin}</span>
+            </p>
+          )}
+        </div>
+      )}
+      {!profile.guestCode && (
         <p className="mt-3 text-sm font-bold text-ink">⏳ הקוד נוצר… (צריך חיבור לאינטרנט)</p>
       )}
       <div className="mt-3 flex min-w-0 gap-2">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value.toUpperCase())}
-          placeholder="MATH-XXXX"
+          placeholder="MATH-XXXXXXXXXX"
           dir="ltr"
-          maxLength={12}
+          maxLength={16}
           className="h-11 min-w-0 flex-1 rounded-xl border-2 border-border bg-background px-3 text-center font-mono font-bold text-ink"
         />
+        <input
+          value={pinInput}
+          onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          placeholder="PIN"
+          aria-label="קוד מעבר חד-פעמי"
+          inputMode="numeric"
+          dir="ltr"
+          className="h-11 w-24 shrink-0 rounded-xl border-2 border-border bg-background px-2 text-center font-mono font-bold text-ink"
+        />
         <button
-          disabled={busy || input.trim().length < 6}
+          disabled={busy || input.trim().length < 6 || pinInput.length !== 6}
           onClick={async () => {
             setBusy(true);
             setMsg(null);
-            const ok = await restoreFromCode(input);
+            const res = await restoreFromCode(input, pinInput);
+            const ok = res === "ok";
             setBusy(false);
-            setMsg(ok ? "✅ ההתקדמות הועברה למכשיר הזה" : "❌ הקוד לא נמצא");
+            setMsg(
+              ok
+                ? "✅ ההתקדמות הועברה למכשיר הזה"
+                : res === "locked"
+                  ? "⛔ יותר מדי ניסיונות. נסו שוב בעוד 15 דקות"
+                  : "❌ הקוד או ה-PIN שגויים",
+            );
             sound(ok ? "win" : "wrong");
-            if (ok) setInput("");
+            if (ok) {
+              setInput("");
+              setPinInput("");
+            }
           }}
           className="h-11 shrink-0 rounded-xl bg-muted px-4 font-bold text-ink active:scale-95 disabled:opacity-50"
         >
