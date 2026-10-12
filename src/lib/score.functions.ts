@@ -184,6 +184,9 @@ function randomString(len: number) {
   return Array.from(bytes, (b) => ALPHABET[b % ALPHABET.length]).join("");
 }
 
+/** עד 5 יצירות שחקן אורח לשעה לכל כתובת IP */
+const GUEST_CREATE_PER_HOUR = 5;
+
 export const createGuestPlayer = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => {
     const raw = (input ?? {}) as Record<string, unknown>;
@@ -195,9 +198,13 @@ export const createGuestPlayer = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const ip = await clientIp();
+    if ((await countEvents("guest_create", ip, 3_600_000)) >= GUEST_CREATE_PER_HOUR) {
+      throw new Error("too many guest players");
+    }
     const secret = randomString(24);
     for (let attempt = 0; attempt < 6; attempt++) {
-      const code = `MATH-${randomString(4)}`;
+      const code = `MATH-${randomString(10)}`;
       const { error } = await supabaseAdmin.from("guest_players").insert({
         code,
         secret,
@@ -205,7 +212,10 @@ export const createGuestPlayer = createServerFn({ method: "POST" })
         icon: data.icon,
         country: data.country,
       });
-      if (!error) return { code, secret };
+      if (!error) {
+        await addEvent("guest_create", ip);
+        return { code, secret };
+      }
     }
     throw new Error("could not create code");
   });
@@ -222,7 +232,7 @@ async function loadGuest(code: string, secret: string) {
     .select("*")
     .eq("code", code)
     .maybeSingle();
-  if (!data || data.secret !== secret) return null;
+  if (!data || !secret || data.secret !== secret) return null;
   return data;
 }
 
@@ -247,7 +257,7 @@ export const guestSync = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin
       .from("guest_players")
       .update({
-        ...next,
+        ...(next ?? {}),
         display_name: data.name,
         icon: data.icon,
         country: data.country,
@@ -255,10 +265,15 @@ export const guestSync = createServerFn({ method: "POST" })
       })
       .eq("code", data.code);
     if (error) return { ok: false as const, score: row.score };
-    return { ok: true as const, score: next.score, suspicious: next.suspicious };
+    return {
+      ok: true as const,
+      score: next ? next.score : row.score,
+      suspicious: next ? next.suspicious : row.suspicious,
+      duplicate: !next,
+    };
   });
 
-/** שחזור התקדמות במכשיר אחר לפי קוד */
+/** שחזור התקדמות במכשיר אחר לפי קוד + סוד */
 export const guestRestore = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => guestAuth((input ?? {}) as Record<string, unknown>))
   .handler(async ({ data }) => {
@@ -274,13 +289,69 @@ export const guestRestore = createServerFn({ method: "POST" })
     };
   });
 
-/** מעבר מכשיר: הקוד לבדו מספיק, אך מייצר סוד חדש ומבטל את הישן */
+const PIN_TTL_MS = 10 * 60_000;
+const FAIL_WINDOW_MS = 15 * 60_000;
+const MAX_FAILS = 5;
+
+/** המכשיר הישן מבקש PIN חד-פעמי בן 6 ספרות (בתוקף 10 דקות) */
+export const guestRequestPin = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => guestAuth((input ?? {}) as Record<string, unknown>))
+  .handler(async ({ data }) => {
+    const row = await loadGuest(data.code, data.secret);
+    if (!row || row.claimed_by) return { ok: false as const };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const n = new Uint32Array(1);
+    crypto.getRandomValues(n);
+    const pin = String(n[0] % 1_000_000).padStart(6, "0");
+    const expiresAt = new Date(Date.now() + PIN_TTL_MS).toISOString();
+    const { error } = await supabaseAdmin.from("guest_transfer_pins").upsert(
+      { code: data.code, pin_hash: await sha256(`${data.code}:${pin}`), expires_at: expiresAt },
+      { onConflict: "code" },
+    );
+    if (error) return { ok: false as const };
+    return { ok: true as const, pin, expiresAt };
+  });
+
+/** מעבר מכשיר: קוד + PIN חד-פעמי. מייצר סוד חדש ומבטל את הישן */
 export const guestTransfer = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => ({
-    code: cleanText(((input ?? {}) as Record<string, unknown>)["code"], "", 16).toUpperCase(),
-  }))
+  .inputValidator((input: unknown) => {
+    const raw = (input ?? {}) as Record<string, unknown>;
+    return {
+      code: cleanText(raw["code"], "", 16).toUpperCase(),
+      pin: cleanText(raw["pin"], "", 6).replace(/\D/g, ""),
+    };
+  })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const ip = await clientIp();
+    if (
+      (await countEvents("transfer_fail_code", data.code, FAIL_WINDOW_MS)) >= MAX_FAILS ||
+      (await countEvents("transfer_fail_ip", ip, FAIL_WINDOW_MS)) >= MAX_FAILS
+    ) {
+      return { ok: false as const, locked: true };
+    }
+    const fail = async () => {
+      await addEvent("transfer_fail_code", data.code);
+      await addEvent("transfer_fail_ip", ip);
+      return { ok: false as const, locked: false };
+    };
+    if (!data.code || data.pin.length !== 6) return fail();
+
+    const { data: pinRow } = await supabaseAdmin
+      .from("guest_transfer_pins")
+      .select("pin_hash, expires_at")
+      .eq("code", data.code)
+      .maybeSingle();
+    if (
+      !pinRow ||
+      new Date(pinRow.expires_at).getTime() < Date.now() ||
+      pinRow.pin_hash !== (await sha256(`${data.code}:${data.pin}`))
+    ) {
+      return fail();
+    }
+    // חד-פעמי
+    await supabaseAdmin.from("guest_transfer_pins").delete().eq("code", data.code);
+
     const secret = randomString(24);
     const { data: row, error } = await supabaseAdmin
       .from("guest_players")
@@ -289,7 +360,7 @@ export const guestTransfer = createServerFn({ method: "POST" })
       .is("claimed_by", null)
       .select("*")
       .maybeSingle();
-    if (error || !row) return { ok: false as const };
+    if (error || !row) return { ok: false as const, locked: false };
     return {
       ok: true as const,
       secret,
@@ -313,7 +384,7 @@ export const guestClaim = createServerFn({ method: "POST" })
 
     const { data: mine } = await supabaseAdmin
       .from("player_scores")
-      .select("score, answered, suspicious, window_start, window_answers")
+      .select(ROW_COLS)
       .eq("user_id", userId)
       .maybeSingle();
 
