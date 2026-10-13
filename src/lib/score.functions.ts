@@ -349,8 +349,16 @@ export const guestTransfer = createServerFn({ method: "POST" })
     ) {
       return fail();
     }
-    // חד-פעמי
-    await supabaseAdmin.from("guest_transfer_pins").delete().eq("code", data.code);
+    // מחיקה מותנית אטומית: רק בקשה אחת יכולה לצרוך את ה-PIN.
+    const { data: consumed, error: consumeError } = await supabaseAdmin
+      .from("guest_transfer_pins")
+      .delete()
+      .eq("code", data.code)
+      .eq("pin_hash", pinRow.pin_hash)
+      .gt("expires_at", new Date().toISOString())
+      .select("code")
+      .maybeSingle();
+    if (consumeError || !consumed) return fail();
 
     const secret = randomString(24);
     const { data: row, error } = await supabaseAdmin
