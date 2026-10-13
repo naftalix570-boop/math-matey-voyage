@@ -105,6 +105,28 @@ export function makeOptions(answer: number, count = 3): number[] {
   return [...set].sort(() => Math.random() - 0.5);
 }
 
+/** Matching boards have distinct answers, so every correct connection is unambiguous. */
+export function makeMatchingQuestions(level: number, count: number): Question[] {
+  const questions: Question[] = [];
+  const answers = new Set<number>();
+  const add = (q: Question) => {
+    if (answers.has(q.answer)) return;
+    answers.add(q.answer);
+    questions.push(q);
+  };
+  for (let attempt = 0; attempt < 500 && questions.length < count; attempt++) {
+    add(makeQuestion(level, undefined, 2));
+  }
+  const { max } = rangeFor(level);
+  for (let answer = 2; answer <= max * 2 && questions.length < count; answer++) {
+    const a = Math.min(max, answer - 1);
+    const b = answer - a;
+    add({ a, b, op: "add", text: `${a} + ${b}`, answer, options: makeOptions(answer, 2) });
+  }
+  if (questions.length < count) throw new Error("Too many matching questions for this level");
+  return questions;
+}
+
 /** מצב "נכון / לא נכון" — מציגים תרגיל עם תשובה והמשתמש מחליט */
 export type TrueFalseQuestion = { text: string; shown: number; isTrue: boolean };
 

@@ -33,6 +33,8 @@ export const Route = createFileRoute("/play/$gameId")({
         { name: "description", content: loaderData.game.desc },
         { property: "og:title", content: t },
         { property: "og:description", content: loaderData.game.desc },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
       ],
     };
   },

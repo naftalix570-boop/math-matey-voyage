@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useGame } from "@/lib/game-state";
 import { cn } from "@/lib/utils";
 import { Confetti, Logo } from "@/components/effects";
-import { makeOptions, makeQuestion, makeTrueFalse, OP_SIGN, pick, type Op } from "@/lib/math";
+import { makeMatchingQuestions, makeOptions, makeQuestion, makeTrueFalse, OP_SIGN, pick, type Op } from "@/lib/math";
 import { ResultScreen, type QuizResult } from "@/components/quiz";
 import { useExitLock } from "@/lib/exit-lock";
 
@@ -21,7 +21,7 @@ export function MemoryGame() {
 
   const build = useMemo(
     () => () => {
-      const pairs = Array.from({ length: 6 }, (_, i) => makeQuestion(profile.level, undefined, 2));
+      const pairs = makeMatchingQuestions(profile.level, 6);
       const list: Card[] = [];
       pairs.forEach((q, i) => {
         list.push({ id: i * 2, pairId: i, label: q.text });
@@ -52,7 +52,7 @@ export function MemoryGame() {
     setFlipped(next);
     if (next.length !== 2) return;
     setMoves((m) => m + 1);
-    const [a, b] = next.map((id) => cards.find((c) => c.id === id)!);
+    const [a, b] = next.map((id) => cards.find((c) => c.id === id));
     const hit = a && b && a.pairId === b.pairId;
     recordAnswer(!!hit, "mul");
     setTimeout(() => {
@@ -95,7 +95,7 @@ export function MemoryGame() {
                     : "bg-primary text-primary-foreground",
               )}
             >
-              <span dir="rtl">{open ? c.label : "🃏"}</span>
+              <span dir="ltr">{open ? c.label : "🃏"}</span>
             </button>
           );
         })}
@@ -120,7 +120,7 @@ export function LineMatchGame() {
   const nodes = useRef<Record<string, HTMLElement | null>>({});
 
   function buildPairs(level: number) {
-    const qs = Array.from({ length: 4 }, () => makeQuestion(level, undefined, 2));
+    const qs = makeMatchingQuestions(level, 4);
     return {
       left: qs.map((q, i) => ({ i, text: q.text })),
       right: qs.map((q, i) => ({ i, text: String(q.answer) })).sort(() => Math.random() - 0.5),
@@ -268,7 +268,7 @@ export function LineMatchGame() {
                     : "bg-primary text-primary-foreground",
               )}
             >
-              <span dir="rtl">{l.text}</span>
+              <span dir="ltr">{l.text}</span>
             </div>
           ))}
         </div>
@@ -341,7 +341,7 @@ export function TrueFalseGame() {
   return (
     <div className="pt-4">
       <p className="text-center font-bold text-muted-foreground">תרגיל {idx + 1}/10</p>
-      <div dir="rtl"
+      <div dir="ltr"
         className={cn(
           "mt-4 flex h-40 items-center justify-center rounded-2xl text-4xl font-bold shadow-card transition-colors",
           feedback === "ok"
@@ -442,7 +442,7 @@ export function BuilderGame() {
   return (
     <div className="pt-2">
       <p className="mb-3 text-center font-bold text-ink">תרגיל {round + 1}/8 — בנה תרגיל משלך</p>
-      <div dir="rtl" className="flex min-h-20 items-center justify-center gap-2 rounded-2xl bg-sky p-4 text-3xl font-bold text-ink shadow-card">
+      <div dir="ltr" className="flex min-h-20 items-center justify-center gap-2 rounded-2xl bg-sky p-4 text-3xl font-bold text-ink shadow-card">
         <span>{a ?? "?"}</span>
         <span>{op ? OP_SIGN[op] : "?"}</span>
         <span>{b ?? "?"}</span>
@@ -623,7 +623,7 @@ export function FlashGame() {
           style={{ width: `${(time / FLASH_SECONDS) * 100}%` }}
         />
       </div>
-      <div dir="rtl" className="mt-3 flex min-h-32 items-center justify-center rounded-2xl bg-sky p-6 text-4xl font-bold text-ink shadow-card">
+      <div dir="ltr" className="mt-3 flex min-h-32 items-center justify-center rounded-2xl bg-sky p-6 text-4xl font-bold text-ink shadow-card">
         {q.text}
       </div>
       <div className="mt-4 grid gap-3">
@@ -677,7 +677,7 @@ export function PlacementTest({ onDone }: { onDone: (level: number) => void }) {
           style={{ width: `${((step + 1) / 10) * 100}%` }}
         />
       </div>
-      <div dir="rtl" className="flex min-h-32 items-center justify-center rounded-2xl bg-sky p-6 text-4xl font-bold text-ink shadow-card">
+      <div dir="ltr" className="flex min-h-32 items-center justify-center rounded-2xl bg-sky p-6 text-4xl font-bold text-ink shadow-card">
         {q.text}
       </div>
       <div className="mt-4 grid gap-3">
