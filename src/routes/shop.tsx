@@ -18,6 +18,8 @@ import { ChestOpenOverlay } from "@/components/effects";
 import { rewardItems } from "@/lib/chest-rewards";
 import { cn, fmtNum } from "@/lib/utils";
 import { useMidnightCountdown } from "@/lib/daily";
+import { ChestLuckToggle } from "@/components/chest-luck-toggle";
+import { collectableSlots } from "@/lib/stickers";
 
 export const Route = createFileRoute("/shop")({
   head: () => ({
@@ -26,6 +28,8 @@ export const Route = createFileRoute("/shop")({
       { name: "description", content: "חבילות רמזים, תיבות, כרטיסים ובוסטים במטבעות שצברת." },
       { property: "og:title", content: "חנות — מסע המתמטיקס" },
       { property: "og:description", content: "חבילות רמזים, תיבות, כרטיסים ובוסטים." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: ShopPage,
@@ -86,6 +90,7 @@ function ShopPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const countdown = useMidnightCountdown();
   const [chestReward, setChestReward] = useState<ChestReward | null>(null);
+  const [useLuck, setUseLuck] = useState(false);
   const [promoInput, setPromoInput] = useState("");
   const [promoMsg, setPromoMsg] = useState<string | null>(null);
   const [promoErr, setPromoErr] = useState<string | null>(null);
@@ -138,7 +143,7 @@ function ShopPage() {
   };
 
   const buyChest = (kind: ChestKind) => {
-    const r = openChest(kind, "coins");
+    const r = openChest(kind, "coins", useLuck);
     if (!r) {
       sound("wrong");
       setMsg("אין מספיק מטבעות 😅 שחקו עוד כדי לצבור!");
@@ -146,11 +151,12 @@ function ShopPage() {
     }
     sound("levelup");
     setChestReward(r);
+    setUseLuck(false);
     setMsg(null);
   };
 
   const openOwned = (kind: ChestKind, src: "free" | "inv") => {
-    const r = openChest(kind, src);
+    const r = openChest(kind, src, useLuck);
     if (!r) {
       sound("wrong");
       setMsg(src === "free" ? "התיבה היומית כבר נפתחה — חוזרים מחר! 🕒" : "אין לך תיבה כזו במלאי");
@@ -158,6 +164,7 @@ function ShopPage() {
     }
     sound("levelup");
     setChestReward(r);
+    setUseLuck(false);
     setMsg(null);
   };
 
@@ -244,6 +251,7 @@ function ShopPage() {
       {tab === "coins" ? (
         <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3 pb-28">
           <p className="font-bold text-ink">🎁 התיבות שלי</p>
+          <ChestLuckToggle count={profile.tickets.luck} selected={useLuck} onChange={setUseLuck} />
           {profile.chests > 0 ? (
             <div className="rounded-2xl bg-sky p-4 text-center shadow-card">
               <p className="text-lg font-bold text-ink">תיבה יומית חינם</p>
@@ -370,7 +378,9 @@ function ShopPage() {
                 </div>
                 {ticket.price != null ? (
                   <button
-                    onClick={() => buyTicket(t, ticket.price!)}
+                    onClick={() => {
+                      if (ticket.price != null) buyTicket(t, ticket.price);
+                    }}
                     className="shrink-0 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
                   >
                     🪙 {ticket.price}
@@ -392,14 +402,19 @@ function ShopPage() {
               <p className="text-sm text-muted-foreground">מדבקה אקראית לאלבום</p>
             </div>
             <button
-              onClick={() =>
+              onClick={() => {
+                const owned = new Set(profile.stickers);
+                if (!collectableSlots(owned).some((slot) => !owned.has(slot))) {
+                  setMsg("האלבום מלא! 🎉");
+                  return;
+                }
                 buy("sticker", 60, () => {
                   const slot = grantSticker();
                   return slot == null
-                    ? "האלבום מלא! 🎉"
+                    ? "לא נוספה מדבקה — נסו שוב"
                     : `קיבלת מדבקה: ${stickerForSlot(slot).emoji} ${stickerForSlot(slot).name}`;
-                })
-              }
+                });
+              }}
               className="shrink-0 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground active:scale-95"
             >
               🪙 60
