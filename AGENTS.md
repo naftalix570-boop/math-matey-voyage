@@ -10,3 +10,5 @@
 <!-- LOVABLE:END -->
 
 - Persist first-time setup as `name → auth/personal code → placement test`, so OAuth returns resume safely without losing the entered name.
+- Actions returning immediate rewards must compute from and synchronously update the profile ref before scheduling React state, so callers receive the actual reward rather than a deferred placeholder.
+- Chest opening controls share one luck selector and pass an explicit choice into the opening action, keeping inventory consumption consistent across shop and chest screens.

@@ -7,6 +7,7 @@ import { CHESTS, useGame, type ChestKind, type ChestReward } from "@/lib/game-st
 import { rewardItems } from "@/lib/chest-rewards";
 import { useMidnightCountdown } from "@/lib/daily";
 import { isEnabled } from "@/lib/app-version";
+import { ChestLuckToggle } from "@/components/chest-luck-toggle";
 
 export const Route = createFileRoute("/chests")({
   head: () => ({
@@ -18,6 +19,8 @@ export const Route = createFileRoute("/chests")({
       },
       { property: "og:title", content: "תיבות אוצר — מסע המתמטיקס" },
       { property: "og:description", content: "תיבה רגילה, מדהימה ואגדית — פרסים בכל פתיחה." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: ChestsPage,
@@ -30,10 +33,11 @@ function ChestsPage() {
   const { profile, openChest, sound, premium } = useGame();
   const [reward, setReward] = useState<ChestReward | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [useLuck, setUseLuck] = useState(false);
   const countdown = useMidnightCountdown();
 
   const open = (kind: ChestKind, src: "free" | "inv") => {
-    const r = openChest(kind, src);
+    const r = openChest(kind, src, useLuck);
     if (!r) {
       sound("wrong");
       setMsg(src === "free" ? "התיבה היומית כבר נפתחה — חוזרים מחר! 🕒" : "אין לך תיבה כזו במלאי");
@@ -41,6 +45,7 @@ function ChestsPage() {
     }
     sound("levelup");
     setMsg(null);
+    setUseLuck(false);
     setReward(r);
   };
 
@@ -55,17 +60,15 @@ function ChestsPage() {
         />
       )}
 
-      <div className="mt-2 flex items-center justify-center gap-3 text-lg font-bold text-ink">
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-lg font-bold text-ink">
         <span className="rounded-full bg-card px-4 py-1 shadow-card">🪙 {profile.coins}</span>
         <span className="rounded-full bg-card px-4 py-1 shadow-card">💡 {profile.hints}</span>
         <span className="rounded-full bg-card px-4 py-1 shadow-card">🍀 {profile.tickets.luck}</span>
         <span className="rounded-full bg-card px-4 py-1 shadow-card">⏭️ {profile.tickets.skip}</span>
       </div>
-      {profile.tickets.luck > 0 && (
-        <p className="mt-2 text-center text-sm font-bold text-success">
-          🍀 מזל פעיל! בתיבה הבאה הסיכוי למדבקות נדירות מוכפל
-        </p>
-      )}
+      <div className="mt-3">
+        <ChestLuckToggle count={profile.tickets.luck} selected={useLuck} onChange={setUseLuck} />
+      </div>
 
       {profile.chests > 0 ? (
         <div className="mt-4 rounded-2xl bg-sky p-4 text-center shadow-card">

@@ -451,7 +451,7 @@ export function QuizGame({
 
       <div className="relative flex min-h-32 items-center justify-center rounded-2xl bg-sky p-6 text-center shadow-card">
         <Sparkles trigger={sparks} />
-        <p dir="rtl" className="text-3xl font-bold text-ink">
+        <p dir={/[\u0590-\u05ff]/.test(item.display) ? "rtl" : "ltr"} className="text-3xl font-bold text-ink">
           {hidden ? "🧠 מה הייתה התשובה?" : item.display}
         </p>
       </div>

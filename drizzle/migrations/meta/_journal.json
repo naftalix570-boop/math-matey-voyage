@@ -85,6 +85,13 @@
       "when": 1791828364359,
       "tag": "0011_score_safety_and_guest_security",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791926524660,
+      "tag": "0012_protect_all_guest_leaderboard_ids",
+      "breakpoints": true
     }
   ]
 }

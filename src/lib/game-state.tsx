@@ -24,6 +24,7 @@ import {
 } from "./score.functions";
 import { PROFILE_SCHEMA_VERSION } from "./app-version";
 import { hasProgress, mergeProfiles } from "./profile-storage";
+import { chestLuck } from "./chest-luck";
 
 export type Boosts = {
   /** epoch ms until which coins are doubled */
@@ -59,7 +60,7 @@ export const TICKETS: Record<
     emoji: "🍀",
     rarity: "legendary",
     price: 500,
-    desc: "מכפיל סיכויים למדבקות נדירות — פועל אוטומטית בפתיחת התיבה הבאה",
+    desc: "מגדיל סיכויים למדבקות נדירות — לבחירה לפני פתיחת תיבה",
   },
   skip: {
     title: "דילוג על שלב",
@@ -653,7 +654,7 @@ type Ctx = {
   useTicket: (id: TicketId) => boolean;
   grantSticker: () => number | null;
   /** src: "free" = תיבה יומית · "inv" = מהמלאי · "coins" = קנייה במטבעות */
-  openChest: (kind: ChestKind, src?: "free" | "inv" | "coins") => ChestReward | null;
+  openChest: (kind: ChestKind, src?: "free" | "inv" | "coins", useLuck?: boolean) => ChestReward | null;
   recordGameWin: (gameId: string) => void;
   markGameSeen: (gameId: string) => void;
   claimStreak: () => { coins: number } | null;
@@ -1236,25 +1237,24 @@ export function GameProvider({ children }: { children: ReactNode }) {
   );
 
   const grantSticker = useCallback((): number | null => {
-    let granted: number | null = null;
-    setProfile((p) => {
-      const free = freeSlots(p.stickers);
-      if (!free.length) return p;
-      const slot = free[Math.floor(Math.random() * free.length)] as number;
-      granted = slot;
-      return { ...p, stickers: [...p.stickers, slot] };
-    });
-    return granted;
+    const p = profileRef.current;
+    const free = freeSlots(p.stickers);
+    const slot = free[Math.floor(Math.random() * free.length)];
+    if (slot === undefined) return null;
+    const next = { ...p, stickers: [...p.stickers, slot] };
+    profileRef.current = next;
+    setProfile(next);
+    return slot;
   }, []);
 
-  const openChest = useCallback<Ctx["openChest"]>((kind, src = "coins") => {
+  const openChest = useCallback<Ctx["openChest"]>((kind, src = "coins", useLuck = false) => {
     const cfg = CHESTS[kind];
-    let reward: ChestReward | null = null;
-    setProfile((p) => {
-      if (src === "free" && (kind !== "regular" || p.chests <= 0)) return p;
-      if (src === "inv" && p.chestInv[kind] <= 0) return p;
-      if (src === "coins" && p.coins < cfg.price) return p;
-      const lucky = p.tickets.luck > 0;
+    const p = profileRef.current;
+      if (src === "free" && (kind !== "regular" || p.chests <= 0)) return null;
+      if (src === "inv" && p.chestInv[kind] <= 0) return null;
+      if (src === "coins" && p.coins < cfg.price) return null;
+      const luck = chestLuck(p.tickets.luck, useLuck);
+      const lucky = luck.active;
       // התיבה היומית החינמית פשוטה יותר — פחות מהתיבה הרגילה
       const daily = src === "free";
       const coins = daily
@@ -1301,14 +1301,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
             ? r < 0.2 ? "luck" : r < 0.45 ? "skip" : r < 0.6 ? "shield" : null
             : r < 0.06 ? "luck" : r < 0.16 ? "skip" : null;
 
-      reward = { coins, hints, stickers: picked, boost, rarePremium, ticket, kind };
+      const reward: ChestReward = { coins, hints, stickers: picked, boost, rarePremium, ticket, kind };
 
       const achievements = [...p.achievements];
       if (p.chestsOpened + 1 >= 5 && !achievements.includes("chest5")) achievements.push("chest5");
 
       const premiumAdd = rarePremium ? 86400000 : boost === "premium" ? 86400000 : 0;
 
-      return {
+      const next: Profile = {
         ...p,
         coins: p.coins - (src === "coins" ? cfg.price : 0) + coins,
         hints: p.hints + hints,
@@ -1319,7 +1319,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         monthlyChests: p.monthlyChests + 1,
         stickers: [...p.stickers, ...picked],
         tickets: (() => {
-          const base = lucky ? { ...p.tickets, luck: p.tickets.luck - 1 } : { ...p.tickets };
+          const base = { ...p.tickets, luck: luck.remaining };
           if (ticket) base[ticket] = base[ticket] + 1;
           return base;
         })(),
@@ -1332,7 +1332,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
             : p.boosts.premiumUntil,
         },
       };
-    });
+    profileRef.current = next;
+    setProfile(next);
     return reward;
   }, []);
 
