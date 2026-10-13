@@ -105,7 +105,7 @@ async function clientIp(): Promise<string> {
       getRequestHeader("x-real-ip") ||
       getRequestHeader("x-forwarded-for") ||
       "";
-    return h.split(",")[0].trim() || "unknown";
+    return h.split(",")[0]?.trim() || "unknown";
   } catch {
     return "unknown";
   }
@@ -302,7 +302,7 @@ export const guestRequestPin = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const n = new Uint32Array(1);
     crypto.getRandomValues(n);
-    const pin = String(n[0] % 1_000_000).padStart(6, "0");
+    const pin = String((n[0] ?? 0) % 1_000_000).padStart(6, "0");
     const expiresAt = new Date(Date.now() + PIN_TTL_MS).toISOString();
     const { error } = await supabaseAdmin.from("guest_transfer_pins").upsert(
       { code: data.code, pin_hash: await sha256(`${data.code}:${pin}`), expires_at: expiresAt },
