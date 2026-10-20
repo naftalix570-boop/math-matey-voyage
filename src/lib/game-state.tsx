@@ -1559,11 +1559,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const recordAnswer = useCallback<Ctx["recordAnswer"]>((correct, op) => {
-    if (op && correct) opStats.current[op] = (opStats.current[op] ?? 0) + 1;
     let sticker: number | null = null;
     let levelUp = false;
 
-    setProfile((p) => {
+    const p = profileRef.current;
+    {
+      const opCorrect = { ...(p.opCorrect ?? {}) };
+      if (op && correct) opCorrect[op] = (opCorrect[op] ?? 0) + 1;
       const history = [...p.history, correct].slice(-200);
       let level = p.level;
 
