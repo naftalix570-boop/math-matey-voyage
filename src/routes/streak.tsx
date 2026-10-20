@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
 import { Confetti } from "@/components/effects";
-import { streakReward, useGame } from "@/lib/game-state";
+import { streakReward, todayKey, useGame } from "@/lib/game-state";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/streak")({
@@ -17,8 +17,6 @@ export const Route = createFileRoute("/streak")({
   }),
   component: StreakPage,
 });
-
-const todayKey = () => new Date().toISOString().slice(0, 10);
 
 function dayReward(day: number) {
   const r = streakReward(Math.max(1, day));
