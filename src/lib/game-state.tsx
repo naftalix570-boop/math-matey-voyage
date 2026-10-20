@@ -168,16 +168,18 @@ export type Profile = {
   /** קוד אישי לשחקן בלי התחברות */
   guestCode: string;
   guestSecret: string;
+  /** נקודת בסיס של מונים כלל-זמניים בתחילת החודש — למשימות חודשיות */
+  monthBaseline: Record<string, number>;
+  /** תשובות נכונות לפי פעולה (הישגי מומחה כפל/חילוק) — נשמר בפרופיל */
+  opCorrect: Record<string, number>;
 };
 
 const KEY = "math-journey-v1";
 
 // לפי שעון מקומי — המשימות מתחלפות בחצות
-const localDate = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
-const todayKey = () => localDate();
+const localDate = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+export const todayKey = () => localDate();
 const monthKey = () => localDate().slice(0, 7);
 
 const defaultProfile: Profile = {
@@ -242,6 +244,8 @@ const defaultProfile: Profile = {
   parentCode: "",
   guestCode: "",
   guestSecret: "",
+  monthBaseline: {},
+  opCorrect: {},
 };
 
 function trimDayLog(log: Profile["dayLog"]) {
@@ -280,7 +284,7 @@ export const CHESTS: Record<
     emoji: "📦",
     price: 400,
     money: 4.9,
-    desc: "20-100 מטבעות · 1-3 רמזים · 2-3 מדבקות רגילות",
+    desc: "20-100 מטבעות · 0-2 רמזים · 1-3 מדבקות",
   },
   amazing: {
     title: "תיבה מדהימה",
@@ -294,7 +298,7 @@ export const CHESTS: Record<
     emoji: "🏆",
     price: 3500,
     money: 11.9,
-    desc: "300-700 מטבעות · 8-15 רמזים · 4-8 מדבקות (לפחות 1 אגדית)",
+    desc: "300-700 מטבעות · 8-15 רמזים · 8-11 מדבקות (לפחות 1 אגדית) · תמיד עם בונוס: כפל מטבעות לשעה או פרימיום ליום",
   },
 };
 
@@ -718,9 +722,15 @@ function drawStickers(owned: number[], count: number, guaranteed?: Rarity, lucky
     // מזל 🍀 מכפיל את הסיכוי למדבקות מדהימות ואגדיות
     const roll = Math.random();
     const [a, b] = RARITY_ODDS[tier];
-    // מזל 🍀 מקטין את הסיכוי לנדיר רגיל לחצי
-    const ra = lucky ? a / 2 : a;
-    const rb = lucky ? ra + (b - a) * 1.5 : b;
+    // מזל 🍀: מכפיל ×1.5 את הסיכוי למדהימה ואגדית — ההפרש יורד מהרגילה, שום סיכוי לא יורד
+    let ra = a;
+    let rb = b;
+    if (lucky) {
+      const amazing = (b - a) * 1.5;
+      const legendary = (1 - b) * 1.5;
+      ra = Math.max(0, 1 - amazing - legendary);
+      rb = ra + amazing;
+    }
     const rarity: Rarity = roll < ra ? "rare" : roll < rb ? "amazing" : "legendary";
     const before = picked.length;
     take(rarity);
