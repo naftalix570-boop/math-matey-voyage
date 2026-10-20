@@ -710,6 +710,20 @@ const RARITY_ODDS: Record<"regular" | "amazing" | "legendary", [number, number]>
   legendary: [0.3, 0.75],
 };
 
+/** תמונת מונים כלל-זמניים בתחילת חודש — משימות חודשיות נמדדות רק בהתקדמות של אותו חודש */
+function monthBaselineOf(p: Profile): Record<string, number> {
+  const b: Record<string, number> = {
+    streakDays: p.streakDays,
+    stickers: p.stickers.length,
+    amazingStickers: p.stickers.filter((s) => stickerForSlot(s).rarity === "amazing").length,
+    legendaryStickers: p.stickers.filter((s) => stickerForSlot(s).rarity === "legendary").length,
+    coinsEarned: p.coins,
+    hintsUsed: p.hints,
+  };
+  for (const [g, w] of Object.entries(p.gameWins ?? {})) b[`gameWins:${g}`] = w;
+  return b;
+}
+
 function drawStickers(owned: number[], count: number, guaranteed?: Rarity, lucky = false, tier: "regular" | "amazing" | "legendary" = "regular") {
   const picked: number[] = [];
   const take = (rarity?: Rarity) => {
@@ -781,12 +795,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
       parsed.topicStats = parsed.topicStats ?? {};
       parsed.dayLog = parsed.dayLog ?? {};
       parsed.albumWorlds100 = parsed.albumWorlds100 ?? [];
+      parsed.monthBaseline = parsed.monthBaseline ?? {};
+      parsed.opCorrect = parsed.opCorrect ?? {};
       if (!parsed.trophies) parsed.trophies = parsed.totalCorrect;
       // עדכון גרסה משלים שדות חדשים בלבד — אף שדה קיים לא נמחק ולא מתאפס
       parsed.schemaVersion = PROFILE_SCHEMA_VERSION;
       const today = todayKey();
       if (parsed.lastDay !== today) {
-        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+        const y = new Date();
+        y.setDate(y.getDate() - 1);
+        const yesterday = localDate(y);
         const protectedStreak = Date.now() < parsed.streakShieldUntil;
         parsed.streakDays =
           parsed.lastDay === yesterday || protectedStreak ? parsed.streakDays + 1 : 1;
@@ -812,6 +830,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         parsed.monthlyAnswers = 0;
         parsed.monthlyChests = 0;
         parsed.monthlyClaimed = [];
+        parsed.monthBaseline = monthBaselineOf(parsed);
       }
       setProfile(parsed);
     } catch {
