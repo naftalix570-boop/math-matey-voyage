@@ -1382,95 +1382,97 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const claimStreak = useCallback<Ctx["claimStreak"]>(() => {
     const today = todayKey();
-    let out: { coins: number } | null = null;
-    setProfile((p) => {
-      if (p.streakClaimedDay === today) return p;
-      const ev = currentEvent();
-      const bonus = ev.week === 3 || Date.now() < p.boosts.premiumUntil ? 35 : 0;
-      const r = streakReward(Math.max(1, p.streakDays));
-      const coins = r.coins + bonus;
-      out = { coins };
-      return {
-        ...p,
-        streakClaimedDay: today,
-        coins: p.coins + coins,
-        hints: p.hints + r.hints,
-        chestInv: r.chest
-          ? { ...p.chestInv, [r.chest]: p.chestInv[r.chest] + 1 }
-          : p.chestInv,
-        tickets: r.ticket ? { ...p.tickets, [r.ticket]: p.tickets[r.ticket] + 1 } : p.tickets,
-      };
-
-    });
-    return out;
+    const p = profileRef.current;
+    if (p.streakClaimedDay === today) return null;
+    const ev = currentEvent();
+    const bonus = ev.week === 3 || Date.now() < p.boosts.premiumUntil ? 35 : 0;
+    const r = streakReward(Math.max(1, p.streakDays));
+    const coins = r.coins + bonus;
+    const next: Profile = {
+      ...p,
+      streakClaimedDay: today,
+      coins: p.coins + coins,
+      hints: p.hints + r.hints,
+      chestInv: r.chest
+        ? { ...p.chestInv, [r.chest]: p.chestInv[r.chest] + 1 }
+        : p.chestInv,
+      tickets: r.ticket ? { ...p.tickets, [r.ticket]: p.tickets[r.ticket] + 1 } : p.tickets,
+    };
+    profileRef.current = next;
+    setProfile(next);
+    return { coins };
   }, []);
 
   const claimAlbumWorld = useCallback<Ctx["claimAlbumWorld"]>((worldId) => {
-    let out: AlbumWorld["reward"] | null = null;
-    setProfile((p) => {
-      const world = ALBUM_WORLDS[worldId];
-      if (!world) return p;
-      if ((p.albumWorlds100 ?? []).includes(worldId)) return p;
-      if (!worldProgress(world, new Set(p.stickers)).done) return p;
-      const r = world.reward;
-      out = r;
-      const chestInv = r.chest
-        ? { ...p.chestInv, [r.chest]: p.chestInv[r.chest] + (r.chestCount ?? 1) }
-        : p.chestInv;
-      return {
-        ...p,
-        albumWorlds100: [...(p.albumWorlds100 ?? []), worldId],
-        albumTitles: Array.from(new Set([...(p.albumTitles ?? []), r.title])),
-        coins: p.coins + r.coins,
-        hints: p.hints + r.hints,
-        trophies: p.trophies + r.trophies,
-        chestInv,
-        icons: r.icon && !p.icons.includes(r.icon) ? [...p.icons, r.icon] : p.icons,
-      };
-    });
-    return out;
+    const p = profileRef.current;
+    const world = ALBUM_WORLDS[worldId];
+    if (!world) return null;
+    if ((p.albumWorlds100 ?? []).includes(worldId)) return null;
+    if (!worldProgress(world, new Set(p.stickers)).done) return null;
+    const r = world.reward;
+    const chestInv = r.chest
+      ? { ...p.chestInv, [r.chest]: p.chestInv[r.chest] + (r.chestCount ?? 1) }
+      : p.chestInv;
+    const next: Profile = {
+      ...p,
+      albumWorlds100: [...(p.albumWorlds100 ?? []), worldId],
+      albumTitles: Array.from(new Set([...(p.albumTitles ?? []), r.title])),
+      coins: p.coins + r.coins,
+      hints: p.hints + r.hints,
+      trophies: p.trophies + r.trophies,
+      chestInv,
+      icons: r.icon && !p.icons.includes(r.icon) ? [...p.icons, r.icon] : p.icons,
+    };
+    profileRef.current = next;
+    setProfile(next);
+    return r;
   }, []);
 
   const spinWheel = useCallback<Ctx["spinWheel"]>((free) => {
-    let out: WheelPrize | null = null;
-    setProfile((p) => {
-      const today = todayKey();
-      const ev = currentEvent();
-      const freeAllowed =
-        free && p.lastFreeSpin !== today && (ev.week === 1 || Date.now() < p.boosts.premiumUntil);
-      if (!freeAllowed && p.spins <= 0) return p;
+    const p = profileRef.current;
+    const today = todayKey();
+    const ev = currentEvent();
+    const freeAllowed =
+      free && p.lastFreeSpin !== today && (ev.week === 1 || Date.now() < p.boosts.premiumUntil);
+    if (!freeAllowed && p.spins <= 0) return null;
 
-      const roll = Math.random();
-      let prize: WheelPrize;
-      if (roll < 0.4) prize = { label: `${rnd(20, 120)} מטבעות`, emoji: "🪙", coins: rnd(20, 120) };
-      else if (roll < 0.65) prize = { label: `${rnd(1, 4)} רמזים`, emoji: "💡", hints: rnd(1, 4) };
-      else if (roll < 0.85) {
-        const slots = freeSlots(p.stickers);
-        const slot = slots.length ? (slots[Math.floor(Math.random() * slots.length)] as number) : null;
-        prize = { label: "מדבקה", emoji: "🎟️", sticker: slot };
-      } else if (roll < 0.95) prize = { label: TICKETS.shield.title, emoji: "🛡️", ticket: "shield" };
-      else {
-        const locked = ICONS.filter((i) => !p.icons.includes(i.emoji));
-        const ic = locked.length ? (locked[Math.floor(Math.random() * locked.length)] as (typeof ICONS)[number]) : null;
-        prize = ic
-          ? { label: "אייקון חדש", emoji: ic.emoji, icon: ic.emoji }
-          : { label: "300 מטבעות", emoji: "🪙", coins: 300 };
-      }
-      out = prize;
-      return {
-        ...p,
-        spins: freeAllowed ? p.spins : p.spins - 1,
-        lastFreeSpin: freeAllowed ? today : p.lastFreeSpin,
-        coins: p.coins + (prize.coins ?? 0),
-        hints: p.hints + (prize.hints ?? 0),
-        stickers: prize.sticker != null ? [...p.stickers, prize.sticker] : p.stickers,
-        icons: prize.icon ? [...p.icons, prize.icon] : p.icons,
-        tickets: prize.ticket
-          ? { ...p.tickets, [prize.ticket]: p.tickets[prize.ticket] + 1 }
-          : p.tickets,
-      };
-    });
-    return out;
+    const roll = Math.random();
+    let prize: WheelPrize;
+    if (roll < 0.4) {
+      // הסכום נגרל פעם אחת — אותו ערך מוצג וגם ניתן
+      const c = rnd(20, 120);
+      prize = { label: `${c} מטבעות`, emoji: "🪙", coins: c };
+    } else if (roll < 0.65) {
+      const h = rnd(1, 4);
+      prize = { label: `${h} רמזים`, emoji: "💡", hints: h };
+    } else if (roll < 0.85) {
+      const slots = freeSlots(p.stickers);
+      const slot = slots.length ? (slots[Math.floor(Math.random() * slots.length)] as number) : null;
+      prize = { label: "מדבקה", emoji: "🎟️", sticker: slot };
+    } else if (roll < 0.95) {
+      prize = { label: TICKETS.shield.title, emoji: "🛡️", ticket: "shield" };
+    } else {
+      const locked = ICONS.filter((i) => !p.icons.includes(i.emoji));
+      const ic = locked.length ? (locked[Math.floor(Math.random() * locked.length)] as (typeof ICONS)[number]) : null;
+      prize = ic
+        ? { label: "אייקון חדש", emoji: ic.emoji, icon: ic.emoji }
+        : { label: "300 מטבעות", emoji: "🪙", coins: 300 };
+    }
+    const next: Profile = {
+      ...p,
+      spins: freeAllowed ? p.spins : p.spins - 1,
+      lastFreeSpin: freeAllowed ? today : p.lastFreeSpin,
+      coins: p.coins + (prize.coins ?? 0),
+      hints: p.hints + (prize.hints ?? 0),
+      stickers: prize.sticker != null ? [...p.stickers, prize.sticker] : p.stickers,
+      icons: prize.icon ? [...p.icons, prize.icon] : p.icons,
+      tickets: prize.ticket
+        ? { ...p.tickets, [prize.ticket]: p.tickets[prize.ticket] + 1 }
+        : p.tickets,
+    };
+    profileRef.current = next;
+    setProfile(next);
+    return prize;
   }, []);
 
   const progressOf = (p: Profile, m: Mission, scope: "daily" | "monthly") => {
