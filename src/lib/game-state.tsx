@@ -168,16 +168,18 @@ export type Profile = {
   /** קוד אישי לשחקן בלי התחברות */
   guestCode: string;
   guestSecret: string;
+  /** נקודת בסיס של מונים כלל-זמניים בתחילת החודש — למשימות חודשיות */
+  monthBaseline: Record<string, number>;
+  /** תשובות נכונות לפי פעולה (הישגי מומחה כפל/חילוק) — נשמר בפרופיל */
+  opCorrect: Record<string, number>;
 };
 
 const KEY = "math-journey-v1";
 
 // לפי שעון מקומי — המשימות מתחלפות בחצות
-const localDate = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
-const todayKey = () => localDate();
+const localDate = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+export const todayKey = () => localDate();
 const monthKey = () => localDate().slice(0, 7);
 
 const defaultProfile: Profile = {
@@ -242,6 +244,8 @@ const defaultProfile: Profile = {
   parentCode: "",
   guestCode: "",
   guestSecret: "",
+  monthBaseline: {},
+  opCorrect: {},
 };
 
 function trimDayLog(log: Profile["dayLog"]) {
@@ -280,7 +284,7 @@ export const CHESTS: Record<
     emoji: "📦",
     price: 400,
     money: 4.9,
-    desc: "20-100 מטבעות · 1-3 רמזים · 2-3 מדבקות רגילות",
+    desc: "20-100 מטבעות · 0-2 רמזים · 1-3 מדבקות",
   },
   amazing: {
     title: "תיבה מדהימה",
@@ -294,7 +298,7 @@ export const CHESTS: Record<
     emoji: "🏆",
     price: 3500,
     money: 11.9,
-    desc: "300-700 מטבעות · 8-15 רמזים · 4-8 מדבקות (לפחות 1 אגדית)",
+    desc: "300-700 מטבעות · 8-15 רמזים · 8-11 מדבקות (לפחות 1 אגדית) · תמיד עם בונוס: כפל מטבעות לשעה או פרימיום ליום",
   },
 };
 
@@ -706,6 +710,20 @@ const RARITY_ODDS: Record<"regular" | "amazing" | "legendary", [number, number]>
   legendary: [0.3, 0.75],
 };
 
+/** תמונת מונים כלל-זמניים בתחילת חודש — משימות חודשיות נמדדות רק בהתקדמות של אותו חודש */
+function monthBaselineOf(p: Profile): Record<string, number> {
+  const b: Record<string, number> = {
+    streakDays: p.streakDays,
+    stickers: p.stickers.length,
+    amazingStickers: p.stickers.filter((s) => stickerForSlot(s).rarity === "amazing").length,
+    legendaryStickers: p.stickers.filter((s) => stickerForSlot(s).rarity === "legendary").length,
+    coinsEarned: p.coins,
+    hintsUsed: p.hints,
+  };
+  for (const [g, w] of Object.entries(p.gameWins ?? {})) b[`gameWins:${g}`] = w;
+  return b;
+}
+
 function drawStickers(owned: number[], count: number, guaranteed?: Rarity, lucky = false, tier: "regular" | "amazing" | "legendary" = "regular") {
   const picked: number[] = [];
   const take = (rarity?: Rarity) => {
@@ -718,9 +736,15 @@ function drawStickers(owned: number[], count: number, guaranteed?: Rarity, lucky
     // מזל 🍀 מכפיל את הסיכוי למדבקות מדהימות ואגדיות
     const roll = Math.random();
     const [a, b] = RARITY_ODDS[tier];
-    // מזל 🍀 מקטין את הסיכוי לנדיר רגיל לחצי
-    const ra = lucky ? a / 2 : a;
-    const rb = lucky ? ra + (b - a) * 1.5 : b;
+    // מזל 🍀: מכפיל ×1.5 את הסיכוי למדהימה ואגדית — ההפרש יורד מהרגילה, שום סיכוי לא יורד
+    let ra = a;
+    let rb = b;
+    if (lucky) {
+      const amazing = (b - a) * 1.5;
+      const legendary = (1 - b) * 1.5;
+      ra = Math.max(0, 1 - amazing - legendary);
+      rb = ra + amazing;
+    }
     const rarity: Rarity = roll < ra ? "rare" : roll < rb ? "amazing" : "legendary";
     const before = picked.length;
     take(rarity);
@@ -736,7 +760,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile>(defaultProfile);
   const getMyScoreFn = useServerFn(getMyScore);
   const [ready, setReady] = useState(false);
-  const opStats = useRef<Record<string, number>>({});
   const [now, setNow] = useState(0);
 
   useEffect(() => {
@@ -771,12 +794,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
       parsed.topicStats = parsed.topicStats ?? {};
       parsed.dayLog = parsed.dayLog ?? {};
       parsed.albumWorlds100 = parsed.albumWorlds100 ?? [];
+      parsed.monthBaseline = parsed.monthBaseline ?? {};
+      parsed.opCorrect = parsed.opCorrect ?? {};
       if (!parsed.trophies) parsed.trophies = parsed.totalCorrect;
       // עדכון גרסה משלים שדות חדשים בלבד — אף שדה קיים לא נמחק ולא מתאפס
       parsed.schemaVersion = PROFILE_SCHEMA_VERSION;
       const today = todayKey();
       if (parsed.lastDay !== today) {
-        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+        const y = new Date();
+        y.setDate(y.getDate() - 1);
+        const yesterday = localDate(y);
         const protectedStreak = Date.now() < parsed.streakShieldUntil;
         parsed.streakDays =
           parsed.lastDay === yesterday || protectedStreak ? parsed.streakDays + 1 : 1;
@@ -802,6 +829,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         parsed.monthlyAnswers = 0;
         parsed.monthlyChests = 0;
         parsed.monthlyClaimed = [];
+        parsed.monthBaseline = monthBaselineOf(parsed);
       }
       setProfile(parsed);
     } catch {
@@ -1353,98 +1381,104 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const claimStreak = useCallback<Ctx["claimStreak"]>(() => {
     const today = todayKey();
-    let out: { coins: number } | null = null;
-    setProfile((p) => {
-      if (p.streakClaimedDay === today) return p;
-      const ev = currentEvent();
-      const bonus = ev.week === 3 || Date.now() < p.boosts.premiumUntil ? 35 : 0;
-      const r = streakReward(Math.max(1, p.streakDays));
-      const coins = r.coins + bonus;
-      out = { coins };
-      return {
-        ...p,
-        streakClaimedDay: today,
-        coins: p.coins + coins,
-        hints: p.hints + r.hints,
-        chestInv: r.chest
-          ? { ...p.chestInv, [r.chest]: p.chestInv[r.chest] + 1 }
-          : p.chestInv,
-        tickets: r.ticket ? { ...p.tickets, [r.ticket]: p.tickets[r.ticket] + 1 } : p.tickets,
-      };
-
-    });
-    return out;
+    const p = profileRef.current;
+    if (p.streakClaimedDay === today) return null;
+    const ev = currentEvent();
+    const bonus = ev.week === 3 || Date.now() < p.boosts.premiumUntil ? 35 : 0;
+    const r = streakReward(Math.max(1, p.streakDays));
+    const coins = r.coins + bonus;
+    const next: Profile = {
+      ...p,
+      streakClaimedDay: today,
+      coins: p.coins + coins,
+      hints: p.hints + r.hints,
+      chestInv: r.chest
+        ? { ...p.chestInv, [r.chest]: p.chestInv[r.chest] + 1 }
+        : p.chestInv,
+      tickets: r.ticket ? { ...p.tickets, [r.ticket]: p.tickets[r.ticket] + 1 } : p.tickets,
+    };
+    profileRef.current = next;
+    setProfile(next);
+    return { coins };
   }, []);
 
   const claimAlbumWorld = useCallback<Ctx["claimAlbumWorld"]>((worldId) => {
-    let out: AlbumWorld["reward"] | null = null;
-    setProfile((p) => {
-      const world = ALBUM_WORLDS[worldId];
-      if (!world) return p;
-      if ((p.albumWorlds100 ?? []).includes(worldId)) return p;
-      if (!worldProgress(world, new Set(p.stickers)).done) return p;
-      const r = world.reward;
-      out = r;
-      const chestInv = r.chest
-        ? { ...p.chestInv, [r.chest]: p.chestInv[r.chest] + (r.chestCount ?? 1) }
-        : p.chestInv;
-      return {
-        ...p,
-        albumWorlds100: [...(p.albumWorlds100 ?? []), worldId],
-        albumTitles: Array.from(new Set([...(p.albumTitles ?? []), r.title])),
-        coins: p.coins + r.coins,
-        hints: p.hints + r.hints,
-        trophies: p.trophies + r.trophies,
-        chestInv,
-        icons: r.icon && !p.icons.includes(r.icon) ? [...p.icons, r.icon] : p.icons,
-      };
-    });
-    return out;
+    const p = profileRef.current;
+    const world = ALBUM_WORLDS[worldId];
+    if (!world) return null;
+    if ((p.albumWorlds100 ?? []).includes(worldId)) return null;
+    if (!worldProgress(world, new Set(p.stickers)).done) return null;
+    const r = world.reward;
+    const chestInv = r.chest
+      ? { ...p.chestInv, [r.chest]: p.chestInv[r.chest] + (r.chestCount ?? 1) }
+      : p.chestInv;
+    const next: Profile = {
+      ...p,
+      albumWorlds100: [...(p.albumWorlds100 ?? []), worldId],
+      albumTitles: Array.from(new Set([...(p.albumTitles ?? []), r.title])),
+      coins: p.coins + r.coins,
+      hints: p.hints + r.hints,
+      trophies: p.trophies + r.trophies,
+      chestInv,
+      icons: r.icon && !p.icons.includes(r.icon) ? [...p.icons, r.icon] : p.icons,
+    };
+    profileRef.current = next;
+    setProfile(next);
+    return r;
   }, []);
 
   const spinWheel = useCallback<Ctx["spinWheel"]>((free) => {
-    let out: WheelPrize | null = null;
-    setProfile((p) => {
-      const today = todayKey();
-      const ev = currentEvent();
-      const freeAllowed =
-        free && p.lastFreeSpin !== today && (ev.week === 1 || Date.now() < p.boosts.premiumUntil);
-      if (!freeAllowed && p.spins <= 0) return p;
+    const p = profileRef.current;
+    const today = todayKey();
+    const ev = currentEvent();
+    const freeAllowed =
+      free && p.lastFreeSpin !== today && (ev.week === 1 || Date.now() < p.boosts.premiumUntil);
+    if (!freeAllowed && p.spins <= 0) return null;
 
-      const roll = Math.random();
-      let prize: WheelPrize;
-      if (roll < 0.4) prize = { label: `${rnd(20, 120)} מטבעות`, emoji: "🪙", coins: rnd(20, 120) };
-      else if (roll < 0.65) prize = { label: `${rnd(1, 4)} רמזים`, emoji: "💡", hints: rnd(1, 4) };
-      else if (roll < 0.85) {
-        const slots = freeSlots(p.stickers);
-        const slot = slots.length ? (slots[Math.floor(Math.random() * slots.length)] as number) : null;
-        prize = { label: "מדבקה", emoji: "🎟️", sticker: slot };
-      } else if (roll < 0.95) prize = { label: TICKETS.shield.title, emoji: "🛡️", ticket: "shield" };
-      else {
-        const locked = ICONS.filter((i) => !p.icons.includes(i.emoji));
-        const ic = locked.length ? (locked[Math.floor(Math.random() * locked.length)] as (typeof ICONS)[number]) : null;
-        prize = ic
-          ? { label: "אייקון חדש", emoji: ic.emoji, icon: ic.emoji }
-          : { label: "300 מטבעות", emoji: "🪙", coins: 300 };
-      }
-      out = prize;
-      return {
-        ...p,
-        spins: freeAllowed ? p.spins : p.spins - 1,
-        lastFreeSpin: freeAllowed ? today : p.lastFreeSpin,
-        coins: p.coins + (prize.coins ?? 0),
-        hints: p.hints + (prize.hints ?? 0),
-        stickers: prize.sticker != null ? [...p.stickers, prize.sticker] : p.stickers,
-        icons: prize.icon ? [...p.icons, prize.icon] : p.icons,
-        tickets: prize.ticket
-          ? { ...p.tickets, [prize.ticket]: p.tickets[prize.ticket] + 1 }
-          : p.tickets,
-      };
-    });
-    return out;
+    const roll = Math.random();
+    let prize: WheelPrize;
+    if (roll < 0.4) {
+      // הסכום נגרל פעם אחת — אותו ערך מוצג וגם ניתן
+      const c = rnd(20, 120);
+      prize = { label: `${c} מטבעות`, emoji: "🪙", coins: c };
+    } else if (roll < 0.65) {
+      const h = rnd(1, 4);
+      prize = { label: `${h} רמזים`, emoji: "💡", hints: h };
+    } else if (roll < 0.85) {
+      const slots = freeSlots(p.stickers);
+      const slot = slots.length ? (slots[Math.floor(Math.random() * slots.length)] as number) : null;
+      prize = { label: "מדבקה", emoji: "🎟️", sticker: slot };
+    } else if (roll < 0.95) {
+      prize = { label: TICKETS.shield.title, emoji: "🛡️", ticket: "shield" };
+    } else {
+      const locked = ICONS.filter((i) => !p.icons.includes(i.emoji));
+      const ic = locked.length ? (locked[Math.floor(Math.random() * locked.length)] as (typeof ICONS)[number]) : null;
+      prize = ic
+        ? { label: "אייקון חדש", emoji: ic.emoji, icon: ic.emoji }
+        : { label: "300 מטבעות", emoji: "🪙", coins: 300 };
+    }
+    const next: Profile = {
+      ...p,
+      spins: freeAllowed ? p.spins : p.spins - 1,
+      lastFreeSpin: freeAllowed ? today : p.lastFreeSpin,
+      coins: p.coins + (prize.coins ?? 0),
+      hints: p.hints + (prize.hints ?? 0),
+      stickers: prize.sticker != null ? [...p.stickers, prize.sticker] : p.stickers,
+      icons: prize.icon ? [...p.icons, prize.icon] : p.icons,
+      tickets: prize.ticket
+        ? { ...p.tickets, [prize.ticket]: p.tickets[prize.ticket] + 1 }
+        : p.tickets,
+    };
+    profileRef.current = next;
+    setProfile(next);
+    return prize;
   }, []);
 
   const progressOf = (p: Profile, m: Mission, scope: "daily" | "monthly") => {
+    // במשימות חודשיות מונים כלל-זמניים נמדדים יחסית לנקודת הבסיס של תחילת החודש
+    const base = scope === "monthly" ? (p.monthBaseline ?? {}) : {};
+    const sub = (key: string, v: number) =>
+      scope === "monthly" ? Math.max(0, v - (base[key] ?? 0)) : v;
     switch (m.metric) {
       case "answers":
         return scope === "daily" ? p.dailyAnswers : p.monthlyAnswers;
@@ -1453,20 +1487,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
       case "chests":
         return p.monthlyChests;
       case "streakDays":
-        return p.streakDays;
+        return sub("streakDays", p.streakDays);
       case "stickers":
-        return p.stickers.length;
+        return sub("stickers", p.stickers.length);
       case "amazingStickers":
-        return p.stickers.filter((s) => stickerForSlot(s).rarity === "amazing").length;
+        return sub(
+          "amazingStickers",
+          p.stickers.filter((s) => stickerForSlot(s).rarity === "amazing").length,
+        );
       case "legendaryStickers":
-        return p.stickers.filter((s) => stickerForSlot(s).rarity === "legendary").length;
+        return sub(
+          "legendaryStickers",
+          p.stickers.filter((s) => stickerForSlot(s).rarity === "legendary").length,
+        );
 
       case "gameWins":
-        return p.gameWins[m.gameId ?? ""] ?? 0;
+        return sub(`gameWins:${m.gameId ?? ""}`, p.gameWins[m.gameId ?? ""] ?? 0);
       case "coinsEarned":
-        return p.coins;
+        return sub("coinsEarned", p.coins);
       case "hintsUsed":
-        return p.hints;
+        return sub("hintsUsed", p.hints);
       default:
         return 0;
     }
@@ -1478,35 +1518,34 @@ export function GameProvider({ children }: { children: ReactNode }) {
   );
 
   const claimMission = useCallback<Ctx["claimMission"]>((m, scope) => {
-    let ok = false;
-    setProfile((p) => {
-      const claimed = scope === "daily" ? p.dailyClaimed : p.monthlyClaimed;
-      if (claimed.includes(m.id)) return p;
-      if (progressOf(p, m, scope) < m.goal) return p;
-      ok = true;
-      const month = monthKey();
-      const canLegendary =
-        m.reward.chest !== "legendary" ||
-        Date.now() < p.boosts.premiumUntil ||
-        p.lastLegendaryMonth !== month;
-      const gotChest = m.reward.chest && canLegendary ? m.reward.chest : null;
-      return {
-        ...p,
-        coins: p.coins + (m.reward.coins ?? 0),
-        hints: p.hints + (m.reward.hints ?? 0),
-        chestInv: gotChest
-          ? { ...p.chestInv, [gotChest]: p.chestInv[gotChest] + 1 }
-          : p.chestInv,
-        lastLegendaryMonth:
-          m.reward.chest === "legendary" && canLegendary ? month : p.lastLegendaryMonth,
-        tickets: m.reward.ticket
-          ? { ...p.tickets, [m.reward.ticket]: p.tickets[m.reward.ticket] + 1 }
-          : p.tickets,
-        dailyClaimed: scope === "daily" ? [...p.dailyClaimed, m.id] : p.dailyClaimed,
-        monthlyClaimed: scope === "monthly" ? [...p.monthlyClaimed, m.id] : p.monthlyClaimed,
-      };
-    });
-    return ok;
+    const p = profileRef.current;
+    const claimed = scope === "daily" ? p.dailyClaimed : p.monthlyClaimed;
+    if (claimed.includes(m.id)) return false;
+    if (progressOf(p, m, scope) < m.goal) return false;
+    const month = monthKey();
+    const canLegendary =
+      m.reward.chest !== "legendary" ||
+      Date.now() < p.boosts.premiumUntil ||
+      p.lastLegendaryMonth !== month;
+    const gotChest = m.reward.chest && canLegendary ? m.reward.chest : null;
+    const next: Profile = {
+      ...p,
+      coins: p.coins + (m.reward.coins ?? 0),
+      hints: p.hints + (m.reward.hints ?? 0),
+      chestInv: gotChest
+        ? { ...p.chestInv, [gotChest]: p.chestInv[gotChest] + 1 }
+        : p.chestInv,
+      lastLegendaryMonth:
+        m.reward.chest === "legendary" && canLegendary ? month : p.lastLegendaryMonth,
+      tickets: m.reward.ticket
+        ? { ...p.tickets, [m.reward.ticket]: p.tickets[m.reward.ticket] + 1 }
+        : p.tickets,
+      dailyClaimed: scope === "daily" ? [...p.dailyClaimed, m.id] : p.dailyClaimed,
+      monthlyClaimed: scope === "monthly" ? [...p.monthlyClaimed, m.id] : p.monthlyClaimed,
+    };
+    profileRef.current = next;
+    setProfile(next);
+    return true;
   }, []);
 
 
@@ -1519,11 +1558,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const recordAnswer = useCallback<Ctx["recordAnswer"]>((correct, op) => {
-    if (op && correct) opStats.current[op] = (opStats.current[op] ?? 0) + 1;
     let sticker: number | null = null;
     let levelUp = false;
 
-    setProfile((p) => {
+    const p = profileRef.current;
+    {
+      const opCorrect = { ...(p.opCorrect ?? {}) };
+      if (op && correct) opCorrect[op] = (opCorrect[op] ?? 0) + 1;
       const history = [...p.history, correct].slice(-200);
       let level = p.level;
 
@@ -1567,8 +1608,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (p.streakDays >= 7) add("days7");
       if (currentStreakCorrect >= 10) add("row10");
       if (level >= 5) add("lvl5");
-      if ((opStats.current["mul"] ?? 0) >= 30) add("mulmaster");
-      if ((opStats.current["div"] ?? 0) >= 30) add("divmaster");
+      if ((opCorrect["mul"] ?? 0) >= 30) add("mulmaster");
+      if ((opCorrect["div"] ?? 0) >= 30) add("divmaster");
       if (stickers.length >= 10) add("st10");
 
       const coinsFromAch = (achievements.length - p.achievements.length) * 3;
@@ -1586,8 +1627,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const ts = p.topicStats?.[topic] ?? { a: 0, c: 0 };
       const dk = todayKey();
       const dl = p.dayLog?.[dk] ?? { a: 0, c: 0, s: 0 };
-      return {
+      const next: Profile = {
         ...p,
+        opCorrect,
         topicStats: { ...(p.topicStats ?? {}), [topic]: { a: ts.a + 1, c: ts.c + (correct ? 1 : 0) } },
         dayLog: trimDayLog({ ...(p.dayLog ?? {}), [dk]: { ...dl, a: dl.a + 1, c: dl.c + (correct ? 1 : 0) } }),
         history,
@@ -1607,7 +1649,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         achievements,
         coins: p.coins + gain + coinsFromAch,
       };
-    });
+      profileRef.current = next;
+      setProfile(next);
+    }
     pendingRef.current = {
       answered: pendingRef.current.answered + 1,
       correct: pendingRef.current.correct + (correct ? 1 : 0),

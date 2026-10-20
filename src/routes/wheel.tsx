@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Screen } from "@/components/app-shell";
 import { useI18n } from "@/lib/i18n";
 import { Confetti } from "@/components/effects";
-import { useGame, type WheelPrize } from "@/lib/game-state";
+import { todayKey, useGame, type WheelPrize } from "@/lib/game-state";
 import { isEnabled } from "@/lib/app-version";
 
 export const Route = createFileRoute("/wheel")({
@@ -17,8 +17,6 @@ export const Route = createFileRoute("/wheel")({
   }),
   component: WheelPage,
 });
-
-const todayKey = () => new Date().toISOString().slice(0, 10);
 
 function WheelPage() {
   const { t } = useI18n();

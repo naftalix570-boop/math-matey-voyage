@@ -317,10 +317,6 @@ export function QuizGame({
             return;
           }
         }
-        if (variant === "tower" && towers - 1 < 0) {
-          setTimeout(() => finish(nextCorrect), 1200);
-          return;
-        }
       }
 
       setTimeout(
@@ -347,19 +343,19 @@ export function QuizGame({
     ],
   );
 
-  // timer
+  // timer — מוקפא בזמן שמסך העזרה פתוח
   useEffect(() => {
-    if (!timerSec || locked || finished) return;
+    if (!timerSec || locked || finished || showHelp) return;
     if (time <= 0) {
       handleAnswer(null);
       return;
     }
     const t = setTimeout(() => setTime((s) => s - 1), 1000);
     return () => clearTimeout(t);
-  }, [time, timerSec, locked, finished, handleAnswer]);
+  }, [time, timerSec, locked, finished, showHelp, handleAnswer]);
 
   const onHint = () => {
-    if (hintText) return;
+    if (hintText || locked || finished) return;
     if (!useHint()) {
       showToast("💡 אין כרגע רמזים. תוכל לרכוש חבילה בחנות!", 3000);
       return;

@@ -38,7 +38,9 @@ function ParentsPage() {
     .slice(0, 2);
 
   const days = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(Date.now() - (13 - i) * 86400000).toISOString().slice(0, 10);
+    const dd = new Date();
+    dd.setDate(dd.getDate() - (13 - i));
+    const d = `${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, "0")}-${String(dd.getDate()).padStart(2, "0")}`;
     return { d, v: profile.dayLog?.[d] ?? { a: 0, c: 0, s: 0 } };
   });
   const today = days[13]!.v.s;
