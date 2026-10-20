@@ -1476,6 +1476,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const progressOf = (p: Profile, m: Mission, scope: "daily" | "monthly") => {
+    // במשימות חודשיות מונים כלל-זמניים נמדדים יחסית לנקודת הבסיס של תחילת החודש
+    const base = scope === "monthly" ? (p.monthBaseline ?? {}) : {};
+    const sub = (key: string, v: number) =>
+      scope === "monthly" ? Math.max(0, v - (base[key] ?? 0)) : v;
     switch (m.metric) {
       case "answers":
         return scope === "daily" ? p.dailyAnswers : p.monthlyAnswers;
@@ -1484,20 +1488,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
       case "chests":
         return p.monthlyChests;
       case "streakDays":
-        return p.streakDays;
+        return sub("streakDays", p.streakDays);
       case "stickers":
-        return p.stickers.length;
+        return sub("stickers", p.stickers.length);
       case "amazingStickers":
-        return p.stickers.filter((s) => stickerForSlot(s).rarity === "amazing").length;
+        return sub(
+          "amazingStickers",
+          p.stickers.filter((s) => stickerForSlot(s).rarity === "amazing").length,
+        );
       case "legendaryStickers":
-        return p.stickers.filter((s) => stickerForSlot(s).rarity === "legendary").length;
+        return sub(
+          "legendaryStickers",
+          p.stickers.filter((s) => stickerForSlot(s).rarity === "legendary").length,
+        );
 
       case "gameWins":
-        return p.gameWins[m.gameId ?? ""] ?? 0;
+        return sub(`gameWins:${m.gameId ?? ""}`, p.gameWins[m.gameId ?? ""] ?? 0);
       case "coinsEarned":
-        return p.coins;
+        return sub("coinsEarned", p.coins);
       case "hintsUsed":
-        return p.hints;
+        return sub("hintsUsed", p.hints);
       default:
         return 0;
     }
@@ -1509,35 +1519,34 @@ export function GameProvider({ children }: { children: ReactNode }) {
   );
 
   const claimMission = useCallback<Ctx["claimMission"]>((m, scope) => {
-    let ok = false;
-    setProfile((p) => {
-      const claimed = scope === "daily" ? p.dailyClaimed : p.monthlyClaimed;
-      if (claimed.includes(m.id)) return p;
-      if (progressOf(p, m, scope) < m.goal) return p;
-      ok = true;
-      const month = monthKey();
-      const canLegendary =
-        m.reward.chest !== "legendary" ||
-        Date.now() < p.boosts.premiumUntil ||
-        p.lastLegendaryMonth !== month;
-      const gotChest = m.reward.chest && canLegendary ? m.reward.chest : null;
-      return {
-        ...p,
-        coins: p.coins + (m.reward.coins ?? 0),
-        hints: p.hints + (m.reward.hints ?? 0),
-        chestInv: gotChest
-          ? { ...p.chestInv, [gotChest]: p.chestInv[gotChest] + 1 }
-          : p.chestInv,
-        lastLegendaryMonth:
-          m.reward.chest === "legendary" && canLegendary ? month : p.lastLegendaryMonth,
-        tickets: m.reward.ticket
-          ? { ...p.tickets, [m.reward.ticket]: p.tickets[m.reward.ticket] + 1 }
-          : p.tickets,
-        dailyClaimed: scope === "daily" ? [...p.dailyClaimed, m.id] : p.dailyClaimed,
-        monthlyClaimed: scope === "monthly" ? [...p.monthlyClaimed, m.id] : p.monthlyClaimed,
-      };
-    });
-    return ok;
+    const p = profileRef.current;
+    const claimed = scope === "daily" ? p.dailyClaimed : p.monthlyClaimed;
+    if (claimed.includes(m.id)) return false;
+    if (progressOf(p, m, scope) < m.goal) return false;
+    const month = monthKey();
+    const canLegendary =
+      m.reward.chest !== "legendary" ||
+      Date.now() < p.boosts.premiumUntil ||
+      p.lastLegendaryMonth !== month;
+    const gotChest = m.reward.chest && canLegendary ? m.reward.chest : null;
+    const next: Profile = {
+      ...p,
+      coins: p.coins + (m.reward.coins ?? 0),
+      hints: p.hints + (m.reward.hints ?? 0),
+      chestInv: gotChest
+        ? { ...p.chestInv, [gotChest]: p.chestInv[gotChest] + 1 }
+        : p.chestInv,
+      lastLegendaryMonth:
+        m.reward.chest === "legendary" && canLegendary ? month : p.lastLegendaryMonth,
+      tickets: m.reward.ticket
+        ? { ...p.tickets, [m.reward.ticket]: p.tickets[m.reward.ticket] + 1 }
+        : p.tickets,
+      dailyClaimed: scope === "daily" ? [...p.dailyClaimed, m.id] : p.dailyClaimed,
+      monthlyClaimed: scope === "monthly" ? [...p.monthlyClaimed, m.id] : p.monthlyClaimed,
+    };
+    profileRef.current = next;
+    setProfile(next);
+    return true;
   }, []);
 
 
