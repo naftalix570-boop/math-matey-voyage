@@ -760,7 +760,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile>(defaultProfile);
   const getMyScoreFn = useServerFn(getMyScore);
   const [ready, setReady] = useState(false);
-  const opStats = useRef<Record<string, number>>({});
   const [now, setNow] = useState(0);
 
   useEffect(() => {
@@ -1609,8 +1608,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (p.streakDays >= 7) add("days7");
       if (currentStreakCorrect >= 10) add("row10");
       if (level >= 5) add("lvl5");
-      if ((opStats.current["mul"] ?? 0) >= 30) add("mulmaster");
-      if ((opStats.current["div"] ?? 0) >= 30) add("divmaster");
+      if ((opCorrect["mul"] ?? 0) >= 30) add("mulmaster");
+      if ((opCorrect["div"] ?? 0) >= 30) add("divmaster");
       if (stickers.length >= 10) add("st10");
 
       const coinsFromAch = (achievements.length - p.achievements.length) * 3;
@@ -1628,8 +1627,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const ts = p.topicStats?.[topic] ?? { a: 0, c: 0 };
       const dk = todayKey();
       const dl = p.dayLog?.[dk] ?? { a: 0, c: 0, s: 0 };
-      return {
+      const next: Profile = {
         ...p,
+        opCorrect,
         topicStats: { ...(p.topicStats ?? {}), [topic]: { a: ts.a + 1, c: ts.c + (correct ? 1 : 0) } },
         dayLog: trimDayLog({ ...(p.dayLog ?? {}), [dk]: { ...dl, a: dl.a + 1, c: dl.c + (correct ? 1 : 0) } }),
         history,
@@ -1649,7 +1649,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         achievements,
         coins: p.coins + gain + coinsFromAch,
       };
-    });
+      profileRef.current = next;
+      setProfile(next);
+    }
     pendingRef.current = {
       answered: pendingRef.current.answered + 1,
       correct: pendingRef.current.correct + (correct ? 1 : 0),
