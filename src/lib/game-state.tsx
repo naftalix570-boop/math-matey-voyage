@@ -21,10 +21,13 @@ import {
   guestRequestPin,
   guestTransfer,
   submitAnswers,
+  claimAlbumTrophies,
 } from "./score.functions";
 import { PROFILE_SCHEMA_VERSION } from "./app-version";
 import { hasProgress, mergeProfiles } from "./profile-storage";
 import { chestLuck } from "./chest-luck";
+import { localDate, progressOf, rollMissionPeriods } from "./mission-progress";
+import { raisedTrophies } from "./score-reconcile";
 
 export type Boosts = {
   /** epoch ms until which coins are doubled */
@@ -170,6 +173,8 @@ export type Profile = {
   guestSecret: string;
   /** נקודת בסיס של מונים כלל-זמניים בתחילת החודש — למשימות חודשיות */
   monthBaseline: Record<string, number>;
+  /** Lifetime counters at the start of the local mission day. */
+  dayBaseline: Record<string, number>;
   /** תשובות נכונות לפי פעולה (הישגי מומחה כפל/חילוק) — נשמר בפרופיל */
   opCorrect: Record<string, number>;
 };
@@ -177,8 +182,6 @@ export type Profile = {
 const KEY = "math-journey-v1";
 
 // לפי שעון מקומי — המשימות מתחלפות בחצות
-const localDate = (d = new Date()) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 export const todayKey = () => localDate();
 const monthKey = () => localDate().slice(0, 7);
 
@@ -245,6 +248,7 @@ const defaultProfile: Profile = {
   guestCode: "",
   guestSecret: "",
   monthBaseline: {},
+  dayBaseline: {},
   opCorrect: {},
 };
 
@@ -678,6 +682,7 @@ type Ctx = {
   authEmail: string | null;
   authUid: string | null;
   syncNow: () => Promise<boolean>;
+  refreshScore: () => Promise<void>;
   restoreFromCode: (code: string, pin: string) => Promise<"ok" | "fail" | "locked">;
   requestTransferPin: () => Promise<string | null>;
   cloudSyncing: boolean;
@@ -709,20 +714,6 @@ const RARITY_ODDS: Record<"regular" | "amazing" | "legendary", [number, number]>
   amazing: [0.55, 0.93],
   legendary: [0.3, 0.75],
 };
-
-/** תמונת מונים כלל-זמניים בתחילת חודש — משימות חודשיות נמדדות רק בהתקדמות של אותו חודש */
-function monthBaselineOf(p: Profile): Record<string, number> {
-  const b: Record<string, number> = {
-    streakDays: p.streakDays,
-    stickers: p.stickers.length,
-    amazingStickers: p.stickers.filter((s) => stickerForSlot(s).rarity === "amazing").length,
-    legendaryStickers: p.stickers.filter((s) => stickerForSlot(s).rarity === "legendary").length,
-    coinsEarned: p.coins,
-    hintsUsed: p.hints,
-  };
-  for (const [g, w] of Object.entries(p.gameWins ?? {})) b[`gameWins:${g}`] = w;
-  return b;
-}
 
 function drawStickers(owned: number[], count: number, guaranteed?: Rarity, lucky = false, tier: "regular" | "amazing" | "legendary" = "regular") {
   const picked: number[] = [];
@@ -795,6 +786,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       parsed.dayLog = parsed.dayLog ?? {};
       parsed.albumWorlds100 = parsed.albumWorlds100 ?? [];
       parsed.monthBaseline = parsed.monthBaseline ?? {};
+      parsed.dayBaseline = parsed.dayBaseline ?? {};
       parsed.opCorrect = parsed.opCorrect ?? {};
       if (!parsed.trophies) parsed.trophies = parsed.totalCorrect;
       // עדכון גרסה משלים שדות חדשים בלבד — אף שדה קיים לא נמחק ולא מתאפס
@@ -817,21 +809,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       } else {
         parsed.chests = Math.min(1, parsed.chests);
       }
-      if (parsed.missionDay !== today) {
-        parsed.missionDay = today;
-        parsed.dailyAnswers = 0;
-        parsed.dailyNoMissBest = 0;
-        parsed.dailyNoMissCur = 0;
-        parsed.dailyClaimed = [];
-      }
-      if (parsed.missionMonth !== monthKey()) {
-        parsed.missionMonth = monthKey();
-        parsed.monthlyAnswers = 0;
-        parsed.monthlyChests = 0;
-        parsed.monthlyClaimed = [];
-        parsed.monthBaseline = monthBaselineOf(parsed);
-      }
-      setProfile(parsed);
+      const current = rollMissionPeriods(parsed);
+      profileRef.current = current;
+      setProfile(current);
     } catch {
       /* ignore corrupt storage */
     }
@@ -856,6 +836,30 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const authUidRef = useRef<string | null>(null);
   const profileRef = useRef(profile);
   const syncQueueRef = useRef<Promise<boolean>>(Promise.resolve(true));
+
+  const raiseScore = useCallback((score: number) => {
+    const p = profileRef.current;
+    const trophies = raisedTrophies(p.trophies, score);
+    if (trophies === p.trophies) return;
+    const next = { ...p, trophies };
+    profileRef.current = next;
+    setProfile(next);
+  }, []);
+
+  const refreshPeriods = useCallback(() => {
+    const p = profileRef.current;
+    const next = rollMissionPeriods(p);
+    if (next !== p) { profileRef.current = next; setProfile(next); }
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    refreshPeriods();
+    const timer = window.setInterval(refreshPeriods, 1000);
+    const resume = () => { if (document.visibilityState === "visible") refreshPeriods(); };
+    document.addEventListener("visibilitychange", resume);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", resume); };
+  }, [ready, refreshPeriods]);
   const LAST_UID_KEY = "math-journey:last-uid";
 
   useEffect(() => {
@@ -930,7 +934,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           // מיזוג עם המצב המקומי של אותו חשבון (או אורח) במקום דריסה
           const sameOwner = !prevUid || prevUid === authUid || p.guest;
           const base = sameOwner ? mergeProfiles(cloudFull, p) : cloudFull;
-          return {
+          const next = rollMissionPeriods({
             ...base,
             name,
             icon: data.icon || cloud.icon || p.icon,
@@ -938,7 +942,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
             guest: false,
             onboarded,
             onboardingStep: onboarded ? "test" : (cloud.onboardingStep ?? "name"),
-          };
+          });
+          profileRef.current = next;
+          return next;
         });
       } else if (prevUid && prevUid !== authUid) {
         // חשבון חדש שאין לו נתונים בענן
@@ -970,7 +976,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       try {
         const srv = await getMyScoreFn();
         if (!cancelled && authUidRef.current === authUid && srv.score > 0) {
-          setProfile((p) => (srv.score > p.trophies ? { ...p, trophies: srv.score } : p));
+          raiseScore(srv.score);
         }
       } catch (e) {
         console.error("server score load failed", e);
@@ -1040,6 +1046,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const flushingRef = useRef(false);
   const submitAnswersFn = useServerFn(submitAnswers);
   const guestSyncFn = useServerFn(guestSync);
+  const claimAlbumTrophiesFn = useServerFn(claimAlbumTrophies);
   const createGuestFn = useServerFn(createGuestPlayer);
   const guestClaimFn = useServerFn(guestClaim);
   const guestTransferFn = useServerFn(guestTransfer);
@@ -1102,7 +1109,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (batch.answered) lastFlushRef.current = Date.now();
       const cur = profileRef.current;
       if (uid) {
-        await submitAnswersFn({ data: batch });
+        const res = await submitAnswersFn({ data: batch });
+        if (authUidRef.current === uid) raiseScore(res.score);
       } else {
         const res = await guestSyncFn({
           data: {
@@ -1116,6 +1124,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           },
         });
         if (!res.ok) return;
+        if (!authUidRef.current && profileRef.current.guestCode === cur.guestCode) raiseScore(res.score);
       }
       // השרת אישר — אפשר לשכוח את המנה
       inflightRef.current = null;
@@ -1125,7 +1134,54 @@ export function GameProvider({ children }: { children: ReactNode }) {
     } finally {
       flushingRef.current = false;
     }
-  }, [submitAnswersFn, guestSyncFn, savePending]);
+  }, [submitAnswersFn, guestSyncFn, savePending, raiseScore]);
+
+  // Claimed world ids already persist in the profile; retry server acknowledgement safely.
+  const albumSyncRef = useRef<Promise<void>>(Promise.resolve());
+  const syncAlbumScores = useCallback(async () => {
+    const uid = authUidRef.current;
+    if (!uid || pulledRef.current !== uid) return;
+    const request = albumSyncRef.current.catch(() => {}).then(async () => {
+      if (authUidRef.current !== uid || !await syncNow()) return;
+      for (const worldId of profileRef.current.albumWorlds100 ?? []) {
+        if (authUidRef.current !== uid) return;
+        const res = await claimAlbumTrophiesFn({ data: { worldId } });
+        if (authUidRef.current === uid) raiseScore(res.score);
+      }
+    });
+    albumSyncRef.current = request;
+    await request;
+  }, [syncNow, claimAlbumTrophiesFn, raiseScore]);
+
+  const refreshScore = useCallback(async () => {
+    if (!ready || !navigator.onLine) return;
+    refreshPeriods();
+    const uid = authUidRef.current;
+    try {
+      if (uid) {
+        if (pulledRef.current !== uid) return;
+        await flushAnswers();
+        await syncAlbumScores();
+        const res = await getMyScoreFn();
+        if (authUidRef.current === uid) raiseScore(res.score);
+      } else {
+        const p = profileRef.current;
+        if (!p.guestCode || !p.guestSecret) return;
+        const res = await guestSyncFn({ data: {
+          code: p.guestCode, secret: p.guestSecret, name: p.name, icon: p.icon,
+          country: p.country, data: JSON.parse(JSON.stringify({ ...p, guestSecret: "" })),
+          batch: { batchId: "", answered: 0, correct: 0 },
+        } });
+        if (res.ok && !authUidRef.current && profileRef.current.guestCode === p.guestCode) raiseScore(res.score);
+      }
+    } catch (e) { console.error("score refresh failed", e); }
+  }, [ready, refreshPeriods, flushAnswers, syncAlbumScores, getMyScoreFn, guestSyncFn, raiseScore]);
+
+  useEffect(() => {
+    const resume = () => { if (document.visibilityState === "visible") void refreshScore(); };
+    document.addEventListener("visibilitychange", resume);
+    return () => document.removeEventListener("visibilitychange", resume);
+  }, [refreshScore]);
 
   const scheduleFlush = useCallback(() => {
     if (flushTimer.current) window.clearTimeout(flushTimer.current);
@@ -1256,7 +1312,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [ready]);
 
   const update: Ctx["update"] = useCallback((patch) => {
-    setProfile((p) => ({ ...p, ...(typeof patch === "function" ? patch(p) : patch) }));
+    const p = profileRef.current;
+    const next = { ...p, ...(typeof patch === "function" ? patch(p) : patch) };
+    profileRef.current = next;
+    setProfile(next);
   }, []);
 
   const sound = useCallback(
@@ -1366,10 +1425,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const recordGameWin = useCallback<Ctx["recordGameWin"]>((gameId) => {
-    setProfile((p) => ({
-      ...p,
-      gameWins: { ...p.gameWins, [gameId]: (p.gameWins[gameId] ?? 0) + 1 },
-    }));
+    const p = rollMissionPeriods(profileRef.current);
+    const next = { ...p, gameWins: { ...p.gameWins, [gameId]: (p.gameWins[gameId] ?? 0) + 1 } };
+    profileRef.current = next;
+    setProfile(next);
   }, []);
 
   const markGameSeen = useCallback<Ctx["markGameSeen"]>((gameId) => {
@@ -1424,8 +1483,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
     profileRef.current = next;
     setProfile(next);
+    void syncAlbumScores().catch((e) => console.error("album score sync failed", e));
     return r;
-  }, []);
+  }, [syncAlbumScores]);
 
   const spinWheel = useCallback<Ctx["spinWheel"]>((free) => {
     const p = profileRef.current;
@@ -1474,51 +1534,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return prize;
   }, []);
 
-  const progressOf = (p: Profile, m: Mission, scope: "daily" | "monthly") => {
-    // במשימות חודשיות מונים כלל-זמניים נמדדים יחסית לנקודת הבסיס של תחילת החודש
-    const base = scope === "monthly" ? (p.monthBaseline ?? {}) : {};
-    const sub = (key: string, v: number) =>
-      scope === "monthly" ? Math.max(0, v - (base[key] ?? 0)) : v;
-    switch (m.metric) {
-      case "answers":
-        return scope === "daily" ? p.dailyAnswers : p.monthlyAnswers;
-      case "nomiss":
-        return p.dailyNoMissBest;
-      case "chests":
-        return p.monthlyChests;
-      case "streakDays":
-        return sub("streakDays", p.streakDays);
-      case "stickers":
-        return sub("stickers", p.stickers.length);
-      case "amazingStickers":
-        return sub(
-          "amazingStickers",
-          p.stickers.filter((s) => stickerForSlot(s).rarity === "amazing").length,
-        );
-      case "legendaryStickers":
-        return sub(
-          "legendaryStickers",
-          p.stickers.filter((s) => stickerForSlot(s).rarity === "legendary").length,
-        );
-
-      case "gameWins":
-        return sub(`gameWins:${m.gameId ?? ""}`, p.gameWins[m.gameId ?? ""] ?? 0);
-      case "coinsEarned":
-        return sub("coinsEarned", p.coins);
-      case "hintsUsed":
-        return sub("hintsUsed", p.hints);
-      default:
-        return 0;
-    }
-  };
-
   const missionProgress = useCallback<Ctx["missionProgress"]>(
     (m) => progressOf(profile, m, DAILY_MISSIONS.includes(m) ? "daily" : "monthly"),
     [profile],
   );
 
   const claimMission = useCallback<Ctx["claimMission"]>((m, scope) => {
-    const p = profileRef.current;
+    const p = rollMissionPeriods(profileRef.current);
     const claimed = scope === "daily" ? p.dailyClaimed : p.monthlyClaimed;
     if (claimed.includes(m.id)) return false;
     if (progressOf(p, m, scope) < m.goal) return false;
@@ -1561,7 +1583,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     let sticker: number | null = null;
     let levelUp = false;
 
-    const p = profileRef.current;
+    const p = rollMissionPeriods(profileRef.current);
     {
       const opCorrect = { ...(p.opCorrect ?? {}) };
       if (op && correct) opCorrect[op] = (opCorrect[op] ?? 0) + 1;
@@ -1749,6 +1771,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       authEmail,
       authUid,
       syncNow,
+      refreshScore,
       cloudSyncing,
     }),
     [
@@ -1759,6 +1782,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       ready,
       now,
       syncNow,
+      refreshScore,
       update,
       recordAnswer,
       addCoins,
