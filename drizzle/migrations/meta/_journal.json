@@ -92,6 +92,20 @@
       "when": 1791926524660,
       "tag": "0012_protect_all_guest_leaderboard_ids",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792564666790,
+      "tag": "0013_server_trophy_rewards",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792564684428,
+      "tag": "0014_atomic_promo_album_trophies",
+      "breakpoints": true
     }
   ]
 }

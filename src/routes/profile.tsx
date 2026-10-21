@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Screen } from "@/components/app-shell";
 import { ICONS, useGame } from "@/lib/game-state";
 import { cn, fmtNum } from "@/lib/utils";
@@ -10,6 +11,8 @@ export const Route = createFileRoute("/profile")({
       { name: "description", content: "שם, אימוג׳י, מדינה, סטטיסטיקות וסטטוס שמירה בענן." },
       { property: "og:title", content: "הפרופיל שלי — מסע המתמטיקס" },
       { property: "og:description", content: "כל הנתונים שלי במקום אחד." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ProfilePage,
@@ -26,7 +29,8 @@ function Stat({ emoji, label, value }: { emoji: string; label: string; value: st
 }
 
 function ProfilePage() {
-  const { profile, update, sound, linked, authEmail, cloudSyncing, syncNow } = useGame();
+  const { profile, update, sound, linked, authEmail, cloudSyncing, syncNow, refreshScore } = useGame();
+  useEffect(() => { void refreshScore(); }, [refreshScore, linked, profile.guestCode, cloudSyncing]);
 
   return (
     <Screen title="הפרופיל שלי">

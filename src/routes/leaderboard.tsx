@@ -14,6 +14,8 @@ export const Route = createFileRoute("/leaderboard")({
       { name: "description", content: "טבלת המובילים העולמית והארצית של מסע המתמטיקס." },
       { property: "og:title", content: "דירוג עולמי — מסע המתמטיקס" },
       { property: "og:description", content: "מי האלופים בחשבון? הדירוג העולמי והארצי." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: LeaderboardPage,
@@ -43,7 +45,8 @@ const COUNTRY_NAMES: Record<string, string> = {
 
 function LeaderboardPage() {
   const { t } = useI18n();
-  const { profile, linked, authUid } = useGame();
+  const { profile, linked, authUid, refreshScore } = useGame();
+  useEffect(() => { void refreshScore(); }, [refreshScore, linked, profile.guestCode]);
   const [tab, setTab] = useState<"world" | "country">("world");
   const [rows, setRows] = useState<Row[] | null>(null);
   const [myRank, setMyRank] = useState<number | null>(null);

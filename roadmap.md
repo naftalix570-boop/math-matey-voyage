@@ -1,5 +1,10 @@
 # Roadmap
 
+- [ ] Fix daily lifetime mission baselines, including midnight rollover.
+- [ ] Reconcile returned/foreground/profile/leaderboard server scores without lowering trophies.
+- [ ] Count promo and exactly-once album trophy rewards on the server.
+- [ ] Adjust score limits to 90 answers/minute and 6 strikes; verify tests and build.
+
 - [x] Make the daily chest smaller than a regular chest and event-specific.
 - [x] Fix the 60-second game timer, add 10 hearts, and block early exit.
 - [x] Open language choices in a picker.

@@ -41,6 +41,27 @@ export type Database = {
         }
         Relationships: []
       }
+      album_world_claims: {
+        Row: {
+          created_at: string
+          trophies: number
+          user_id: string
+          world_id: number
+        }
+        Insert: {
+          created_at?: string
+          trophies: number
+          user_id: string
+          world_id: number
+        }
+        Update: {
+          created_at?: string
+          trophies?: number
+          user_id?: string
+          world_id?: number
+        }
+        Relationships: []
+      }
       bug_reports: {
         Row: {
           app_version: string | null
@@ -323,6 +344,14 @@ export type Database = {
       }
     }
     Functions: {
+      add_server_trophies: {
+        Args: { _amount: number; _user_id: string }
+        Returns: number
+      }
+      claim_album_trophies: {
+        Args: { _user_id: string; _world_id: number }
+        Returns: number
+      }
       get_my_profile: {
         Args: never
         Returns: {
