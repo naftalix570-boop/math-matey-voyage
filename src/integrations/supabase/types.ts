@@ -348,6 +348,10 @@ export type Database = {
         Args: { _amount: number; _user_id: string }
         Returns: number
       }
+      claim_album_trophies: {
+        Args: { _user_id: string; _world_id: number }
+        Returns: number
+      }
       get_my_profile: {
         Args: never
         Returns: {

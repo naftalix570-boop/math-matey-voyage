@@ -99,6 +99,13 @@
       "when": 1792564666790,
       "tag": "0013_server_trophy_rewards",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792564684428,
+      "tag": "0014_atomic_promo_album_trophies",
+      "breakpoints": true
     }
   ]
 }
