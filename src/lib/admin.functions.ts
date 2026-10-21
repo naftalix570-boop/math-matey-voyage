@@ -140,7 +140,15 @@ export const redeemPromoCode = createServerFn({ method: "POST" })
       .update({ uses: row.uses + 1 })
       .eq("code", promo);
 
-    return { rewardType: row.reward_type as RewardType, amount: row.amount };
+    // The redemption insert credits trophy rewards atomically through the database trigger.
+    let score: number | null = null;
+    if (row.reward_type === "trophies") {
+      const { data: scored, error } = await supabaseAdmin.from("player_scores")
+        .select("score").eq("user_id", context.userId).single();
+      if (error) throw new Error("לא ניתן לקרוא את הניקוד כרגע");
+      score = scored.score;
+    }
+    return { rewardType: row.reward_type as RewardType, amount: row.amount, score };
   });
 
 export const getAdminUser = createServerFn({ method: "POST" })

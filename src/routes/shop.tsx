@@ -111,7 +111,7 @@ function ShopPage() {
       const n = res.amount;
       if (res.rewardType === "coins") update((p) => ({ coins: p.coins + n }));
       else if (res.rewardType === "hints") update((p) => ({ hints: p.hints + n }));
-      else if (res.rewardType === "trophies") update((p) => ({ trophies: p.trophies + n }));
+      else if (res.rewardType === "trophies") update((p) => ({ trophies: Math.max(p.trophies, res.score ?? p.trophies) }));
       else if (res.rewardType === "chest")
         update((p) => ({ chestInv: { ...p.chestInv, regular: p.chestInv.regular + n } }));
       else if (res.rewardType === "stickers") for (let i = 0; i < n; i++) grantSticker();

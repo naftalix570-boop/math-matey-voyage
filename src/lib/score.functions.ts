@@ -9,10 +9,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const MAX_BATCH = 30;
 /** חלון בדיקה (ms) ומקסימום תשובות בתוכו — עודף נחתך */
 const WINDOW_MS = 60_000;
-const MAX_PER_WINDOW = 60;
+export const MAX_PER_WINDOW = 90;
 /** כמה חריגות באותה שעה מסמנות חשד */
 const STRIKE_HOUR_MS = 3_600_000;
-const STRIKES_FOR_SUSPICIOUS = 3;
+export const STRIKES_FOR_SUSPICIOUS = 6;
 /** כמה מזהי מנות אחרונים נשמרים לכל שחקן */
 const RECENT_BATCHES = 50;
 
@@ -50,7 +50,7 @@ type Row = {
 };
 
 /** מחשב את השורה החדשה אחרי מנת תשובות. null = מנה שכבר טופלה */
-function applyBatch(row: Row, batch: Batch) {
+export function applyBatch(row: Row, batch: Batch) {
   const recent = row.recent_batches ?? [];
   if (batch.batchId && recent.includes(batch.batchId)) return null;
 
@@ -172,6 +172,23 @@ export const getMyScore = createServerFn({ method: "GET" })
       .eq("user_id", context.userId)
       .maybeSingle();
     return { score: data?.score ?? 0, suspicious: data?.suspicious ?? false };
+  });
+
+export const claimAlbumTrophies = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { worldId: number }) => {
+    if (!Number.isInteger(input.worldId) || input.worldId < 0 || input.worldId > 4) {
+      throw new Error("עולם לא תקין");
+    }
+    return { worldId: input.worldId };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: score, error } = await supabaseAdmin.rpc("claim_album_trophies", {
+      _user_id: context.userId, _world_id: data.worldId,
+    });
+    if (error) throw new Error("לא ניתן לשמור את פרס העולם כרגע");
+    return { score: score ?? 0 };
   });
 
 /* ---------- שחקני קוד (בלי התחברות) ---------- */
