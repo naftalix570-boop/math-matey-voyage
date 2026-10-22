@@ -881,7 +881,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     void supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
+      if (!active || deletingRef.current) return;
       setCurrentUser(data.session?.user.id ?? null, data.session?.user.email ?? null);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
@@ -1063,6 +1063,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const INFLIGHT_KEY = "math-journey:pending-batch";
   const inflightRef = useRef<{ batchId: string; answered: number; correct: number } | null>(null);
   const lastFlushRef = useRef(0);
+  const guestClaimPendingRef = useRef<Promise<void>>(Promise.resolve());
 
   const savePending = useCallback(() => {
     if (deletingRef.current) return;
@@ -1243,7 +1244,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       void flushAnswers();
       return;
     }
-    void (async () => {
+    guestClaimPendingRef.current = (async () => {
       try {
         await flushAnswers();
         if (deletingRef.current) return;
@@ -1308,7 +1309,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!ready) return;
     const t = window.setInterval(() => {
-      if (document.visibilityState !== "visible") return;
+      if (deletingRef.current || document.visibilityState !== "visible") return;
       const dk = todayKey();
       setProfile((p) => {
         const dl = p.dayLog?.[dk] ?? { a: 0, c: 0, s: 0 };
@@ -1762,6 +1763,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       // Allow already-started writes to settle; all new writes are blocked above.
       await syncQueueRef.current.catch(() => false);
       await albumSyncRef.current.catch(() => {});
+      await guestClaimPendingRef.current.catch(() => {});
       while (flushingRef.current) await new Promise((resolve) => window.setTimeout(resolve, 50));
       if (sessionData.session) await deleteMyAccountFn();
     } catch (error) {
