@@ -28,6 +28,7 @@ import { hasProgress, mergeProfiles } from "./profile-storage";
 import { chestLuck } from "./chest-luck";
 import { localDate, progressOf, rollMissionPeriods } from "./mission-progress";
 import { raisedTrophies } from "./score-reconcile";
+import { deleteMyAccount } from "./account.functions";
 
 export type Boosts = {
   /** epoch ms until which coins are doubled */
@@ -674,6 +675,7 @@ type Ctx = {
   unlockAchievement: (id: string) => void;
   sound: (kind: Parameters<typeof playSound>[0]) => void;
   reset: () => void;
+  deleteAccount: () => Promise<void>;
   premium: boolean;
   doubling: boolean;
   event: EventInfo;
@@ -749,6 +751,8 @@ function drawStickers(owned: number[], count: number, guaranteed?: Rarity, lucky
 
 export function GameProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile>(defaultProfile);
+  const deletingRef = useRef(false);
+  const deleteMyAccountFn = useServerFn(deleteMyAccount);
   const getMyScoreFn = useServerFn(getMyScore);
   const [ready, setReady] = useState(false);
   const [now, setNow] = useState(0);
@@ -819,7 +823,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || deletingRef.current) return;
     try {
       localStorage.setItem(KEY, JSON.stringify(profile));
     } catch {
@@ -838,6 +842,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const syncQueueRef = useRef<Promise<boolean>>(Promise.resolve(true));
 
   const raiseScore = useCallback((score: number) => {
+    if (deletingRef.current) return;
     const p = profileRef.current;
     const trophies = raisedTrophies(p.trophies, score);
     if (trophies === p.trophies) return;
@@ -847,6 +852,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshPeriods = useCallback(() => {
+    if (deletingRef.current) return;
     const p = profileRef.current;
     const next = rollMissionPeriods(p);
     if (next !== p) { profileRef.current = next; setProfile(next); }
@@ -879,6 +885,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setCurrentUser(data.session?.user.id ?? null, data.session?.user.email ?? null);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (deletingRef.current) return;
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
         if (event === "SIGNED_OUT") {
           pulledRef.current = null;
@@ -906,7 +913,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     const loadCloudProfile = async () => {
       const { data: rows, error } = await supabase.rpc("get_my_profile");
-      if (cancelled || authUidRef.current !== authUid) return;
+      if (cancelled || deletingRef.current || authUidRef.current !== authUid) return;
       if (error) {
         console.error("profile load failed", error);
         window.setTimeout(() => {
@@ -989,11 +996,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [authUid, ready]);
 
   const syncNow = useCallback(async (): Promise<boolean> => {
+    if (deletingRef.current) return false;
     const uid = authUidRef.current;
     if (!uid || pulledRef.current !== uid) return false;
     setCloudSyncing(true);
     const request = syncQueueRef.current.catch(() => false).then(async () => {
-      if (authUidRef.current !== uid || pulledRef.current !== uid) return false;
+      if (deletingRef.current || authUidRef.current !== uid || pulledRef.current !== uid) return false;
       const snapshot = profileRef.current;
       const { error } = await supabase.rpc("sync_my_profile", {
         _display_name: snapshot.name,
@@ -1057,6 +1065,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const lastFlushRef = useRef(0);
 
   const savePending = useCallback(() => {
+    if (deletingRef.current) return;
     try {
       localStorage.setItem(PENDING_KEY, JSON.stringify(pendingRef.current));
       if (inflightRef.current) localStorage.setItem(INFLIGHT_KEY, JSON.stringify(inflightRef.current));
@@ -1085,7 +1094,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   /** שולח מנה אחת בלבד (עד 30 תשובות), לכל היותר פעם ב-30 שניות */
   const flushAnswers = useCallback(async () => {
-    if (flushingRef.current || !navigator.onLine) return;
+    if (deletingRef.current || flushingRef.current || !navigator.onLine) return;
     const p = profileRef.current;
     const uid = authUidRef.current;
     if (!uid && !p.guestCode) return;
@@ -1139,12 +1148,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
   // Claimed world ids already persist in the profile; retry server acknowledgement safely.
   const albumSyncRef = useRef<Promise<void>>(Promise.resolve());
   const syncAlbumScores = useCallback(async () => {
+    if (deletingRef.current) return;
     const uid = authUidRef.current;
     if (!uid || pulledRef.current !== uid) return;
     const request = albumSyncRef.current.catch(() => {}).then(async () => {
       if (authUidRef.current !== uid || !await syncNow()) return;
       for (const worldId of profileRef.current.albumWorlds100 ?? []) {
-        if (authUidRef.current !== uid) return;
+        if (deletingRef.current || authUidRef.current !== uid) return;
         const res = await claimAlbumTrophiesFn({ data: { worldId } });
         if (authUidRef.current === uid) raiseScore(res.score);
       }
@@ -1154,7 +1164,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [syncNow, claimAlbumTrophiesFn, raiseScore]);
 
   const refreshScore = useCallback(async () => {
-    if (!ready || !navigator.onLine) return;
+    if (deletingRef.current || !ready || !navigator.onLine) return;
     refreshPeriods();
     const uid = authUidRef.current;
     try {
@@ -1206,12 +1216,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (!ready || authUid || !profile.guest || !profile.onboarded || profile.guestCode) return;
     let cancelled = false;
     const t = window.setTimeout(async () => {
-      if (authUidRef.current) return;
+      if (deletingRef.current || authUidRef.current) return;
       try {
         const r = await createGuestFn({
           data: { name: profile.name, icon: profile.icon, country: profile.country },
         });
-        if (cancelled || authUidRef.current) return;
+        if (cancelled || deletingRef.current || authUidRef.current) return;
         setProfile((p) => (p.guestCode ? p : { ...p, guestCode: r.code, guestSecret: r.secret }));
         // מעבירים את ההתקדמות הקיימת כנקודת פתיחה (עם תקרות השרת)
         window.setTimeout(() => void flushAnswers(), 500);
@@ -1236,11 +1246,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     void (async () => {
       try {
         await flushAnswers();
+        if (deletingRef.current) return;
         await guestClaimFn({ data: { code: p.guestCode, secret: p.guestSecret } });
       } catch (e) {
         console.error("guest claim failed", e);
       }
-      setProfile((cur) => ({ ...cur, guestCode: "", guestSecret: "" }));
+      if (!deletingRef.current) setProfile((cur) => ({ ...cur, guestCode: "", guestSecret: "" }));
     })();
   }, [authUid, cloudSyncing, guestClaimFn, flushAnswers]);
 
@@ -1738,6 +1749,40 @@ export function GameProvider({ children }: { children: ReactNode }) {
     void syncNow();
   }, [syncNow]);
 
+  const deleteAccount = useCallback(async () => {
+    if (deletingRef.current) return;
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || (authUidRef.current && !sessionData.session)) {
+      throw new Error("נדרשת התחברות מחדש לפני מחיקת החשבון");
+    }
+    deletingRef.current = true;
+    setReady(false);
+    if (flushTimer.current) window.clearTimeout(flushTimer.current);
+    try {
+      // Allow already-started writes to settle; all new writes are blocked above.
+      await syncQueueRef.current.catch(() => false);
+      await albumSyncRef.current.catch(() => {});
+      while (flushingRef.current) await new Promise((resolve) => window.setTimeout(resolve, 50));
+      if (sessionData.session) await deleteMyAccountFn();
+    } catch (error) {
+      deletingRef.current = false;
+      setReady(true);
+      throw error;
+    }
+    // Never call reset(): it deliberately syncs progress and would recreate rows.
+    authUidRef.current = null;
+    pulledRef.current = null;
+    pendingRef.current = { answered: 0, correct: 0 };
+    inflightRef.current = null;
+    await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+    localStorage.removeItem(KEY);
+    localStorage.removeItem(LAST_UID_KEY);
+    localStorage.removeItem(PENDING_KEY);
+    localStorage.removeItem(INFLIGHT_KEY);
+    sessionStorage.removeItem("math-journey:admin");
+    window.location.replace("/");
+  }, [deleteMyAccountFn]);
+
   const value = useMemo<Ctx>(
     () => ({
       profile,
@@ -1760,6 +1805,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       unlockAchievement,
       sound,
       reset,
+      deleteAccount,
       restoreFromCode,
       requestTransferPin,
       premium: (now || Date.now()) < profile.boosts.premiumUntil,
@@ -1801,6 +1847,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       unlockAchievement,
       sound,
       reset,
+      deleteAccount,
       restoreFromCode,
       requestTransferPin,
     ],

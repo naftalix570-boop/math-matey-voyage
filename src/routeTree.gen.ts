@@ -16,6 +16,7 @@ import { Route as AlbumRouteImport } from './routes/album'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ChestsRouteImport } from './routes/chests'
 import { Route as CreditsRouteImport } from './routes/credits'
+import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as MissionsRouteImport } from './routes/missions'
@@ -65,6 +66,11 @@ const ChestsRoute = ChestsRouteImport.update({
 const CreditsRoute = CreditsRouteImport.update({
   id: '/credits',
   path: '/credits',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeleteAccountRoute = DeleteAccountRouteImport.update({
+  id: '/delete-account',
+  path: '/delete-account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GamesRoute = GamesRouteImport.update({
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/chests': typeof ChestsRoute
   '/credits': typeof CreditsRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/games': typeof GamesRoute
   '/leaderboard': typeof LeaderboardRoute
   '/missions': typeof MissionsRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/chests': typeof ChestsRoute
   '/credits': typeof CreditsRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/games': typeof GamesRoute
   '/leaderboard': typeof LeaderboardRoute
   '/missions': typeof MissionsRoute
@@ -200,6 +208,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/chests': typeof ChestsRoute
   '/credits': typeof CreditsRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/games': typeof GamesRoute
   '/leaderboard': typeof LeaderboardRoute
   '/missions': typeof MissionsRoute
@@ -226,6 +235,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chests'
     | '/credits'
+    | '/delete-account'
     | '/games'
     | '/leaderboard'
     | '/missions'
@@ -250,6 +260,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chests'
     | '/credits'
+    | '/delete-account'
     | '/games'
     | '/leaderboard'
     | '/missions'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/chests'
     | '/credits'
+    | '/delete-account'
     | '/games'
     | '/leaderboard'
     | '/missions'
@@ -299,6 +311,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ChestsRoute: typeof ChestsRoute
   CreditsRoute: typeof CreditsRoute
+  DeleteAccountRoute: typeof DeleteAccountRoute
   GamesRoute: typeof GamesRoute
   LeaderboardRoute: typeof LeaderboardRoute
   MissionsRoute: typeof MissionsRoute
@@ -365,6 +378,13 @@ declare module '@tanstack/react-router' {
       path: '/credits'
       fullPath: '/credits'
       preLoaderRoute: typeof CreditsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/delete-account': {
+      id: '/delete-account'
+      path: '/delete-account'
+      fullPath: '/delete-account'
+      preLoaderRoute: typeof DeleteAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/games': {
@@ -483,6 +503,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ChestsRoute: ChestsRoute,
   CreditsRoute: CreditsRoute,
+  DeleteAccountRoute: DeleteAccountRoute,
   GamesRoute: GamesRoute,
   LeaderboardRoute: LeaderboardRoute,
   MissionsRoute: MissionsRoute,
