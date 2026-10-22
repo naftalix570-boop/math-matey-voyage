@@ -8,6 +8,7 @@ import { MAX_LEVEL } from "@/lib/math";
 import { cn, fmtNum } from "@/lib/utils";
 import { useI18n, LANGS } from "@/lib/i18n";
 import { verifyAdminCode } from "@/lib/admin.functions";
+import { DeleteAccountButton } from "@/components/delete-account-button";
 
 
 export const Route = createFileRoute("/settings")({
@@ -17,6 +18,8 @@ export const Route = createFileRoute("/settings")({
       { name: "description", content: "שם השחקן, צלילים ורמת קושי." },
       { property: "og:title", content: "הגדרות — מסע המתמטיקס" },
       { property: "og:description", content: "שם השחקן, צלילים ורמת קושי." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: SettingsPage,
@@ -334,6 +337,8 @@ function SettingsPage() {
           )}
         </section>
 
+        <DeleteAccountButton />
+
         <PersonalCode />
 
         <AppSection />
@@ -520,6 +525,7 @@ function AppSection() {
         </Link>
         <Link to="/report" className={row}>🐛 דיווח על תקלה</Link>
         <Link to="/privacy" className={row}>🔒 פרטיות</Link>
+        <Link to="/delete-account" className={row}>מחיקת חשבון ונתונים</Link>
         <Link to="/about" className={row}>ℹ️ אודות</Link>
         <Link to="/parents" className={row}>👨‍👩‍👧 אזור הורים</Link>
         <Link to="/profile" className={row}>👤 הפרופיל שלי</Link>

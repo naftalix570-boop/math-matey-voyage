@@ -14,3 +14,4 @@
 - Chest opening controls share one luck selector and pass an explicit choice into the opening action, keeping inventory consumption consistent across shop and chest screens.
 - Mission period baselines and rollover live in mission-progress; refresh before recording progress so open sessions do not reuse yesterday's counters.
 - Server trophy rewards use atomic database increments and unique album-world claims; client acknowledgements reconcile absolute totals with max, never sum.
+- Self-account deletion accepts no client user id, revalidates the caller, pauses/drains local synchronization, removes owned records before Auth deletion, and reloads after clearing player storage to prevent deleted progress being restored.

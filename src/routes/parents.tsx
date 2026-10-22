@@ -3,6 +3,8 @@ import { Screen } from "@/components/app-shell";
 import { EmptyState } from "@/components/states";
 import { ACHIEVEMENTS, useGame } from "@/lib/game-state";
 import { cn, fmtNum } from "@/lib/utils";
+import { DeleteAccountButton } from "@/components/delete-account-button";
+import { AccountPrivacyLinks } from "@/components/account-privacy-links";
 
 export const Route = createFileRoute("/parents")({
   head: () => ({
@@ -143,6 +145,8 @@ function ParentsPage() {
           </div>
         </section>
 
+        <DeleteAccountButton />
+        <AccountPrivacyLinks />
       </div>
     </Screen>
   );
