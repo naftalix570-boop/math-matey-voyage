@@ -1,5 +1,9 @@
 # Roadmap
 
+- [ ] Add confirmed self-account deletion and safe local cleanup.
+- [ ] Add public privacy/deletion pages and settings/login links.
+- [ ] Add and run mission-progress and score-reconcile unit tests; verify build.
+
 - [ ] Fix daily lifetime mission baselines, including midnight rollover.
 - [ ] Reconcile returned/foreground/profile/leaderboard server scores without lowering trophies.
 - [ ] Count promo and exactly-once album trophy rewards on the server.
