@@ -1,82 +1,57 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Screen } from "@/components/app-shell";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { AccountPrivacyLinks } from "@/components/account-privacy-links";
 
 export const Route = createFileRoute("/privacy")({
-  head: () => ({
-    meta: [
-      { title: "מדיניות פרטיות — מסע המתמטיקס" },
-      { name: "description", content: "איך מסע המתמטיקס אוסף, שומר ומגן על נתוני המשתמשים." },
-      { property: "og:title", content: "מדיניות פרטיות — מסע המתמטיקס" },
-      { property: "og:description", content: "מידע על איסוף ושמירת נתונים באפליקציה." },
-    ],
-  }),
+  head: () => ({ meta: [
+    { title: "מדיניות פרטיות — מסע המתמטיקס" },
+    { name: "description", content: "פרטיות ילדים במסע המתמטיקס: המידע שנשמר, שמירת התקדמות בענן וזכויות הורים לעיון, תיקון ומחיקת נתונים." },
+    { property: "og:title", content: "מדיניות פרטיות — מסע המתמטיקס" },
+    { property: "og:description", content: "מידע על נתוני המשחק, פרטיות ילדים ומחיקת חשבון." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: PrivacyPage,
 });
 
-function P({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-2xl bg-card p-4 shadow-card">
-      <h2 className="text-lg font-bold text-ink">{title}</h2>
-      <div className="mt-1 space-y-2 text-sm leading-relaxed text-muted-foreground">{children}</div>
-    </section>
-  );
-}
-
 function PrivacyPage() {
   return (
-    <Screen title="מדיניות פרטיות">
-      <div className="mt-2 grid gap-3 pb-28">
-        <p className="text-sm text-muted-foreground">עודכן לאחרונה: ספטמבר 2026</p>
-
-        <P title="מי אנחנו">
-          <p>
-            "מסע המתמטיקס" היא אפליקציית משחקי חשבון לילדים. השימוש באפליקציה מהווה הסכמה
-            למדיניות זו ולתנאי השימוש.
-          </p>
-        </P>
-
-        <P title="איזה מידע נאסף">
-          <p>• שם תצוגה, אימוג׳י ומדינה שהוזנו על ידכם.</p>
-          <p>• נתוני התקדמות במשחק: שלב, גביעים, מטבעות, מדבקות והישגים.</p>
-          <p>• כתובת אימייל — רק אם בחרתם להתחבר עם אימייל או עם חשבון גוגל.</p>
-          <p>• איננו אוספים מיקום מדויק, אנשי קשר, תמונות או נתוני בריאות.</p>
-        </P>
-
-        <P title="למה המידע משמש">
-          <p>
-            לשמירת ההתקדמות בין מכשירים, להצגת טבלת המובילים (שם, אימוג׳י, מדינה ומספר גביעים
-            בלבד), ולשיפור המשחק. איננו מוכרים מידע לצדדים שלישיים.
-          </p>
-        </P>
-
-        <P title="שמירה ואבטחה">
-          <p>
-            הנתונים נשמרים במכשיר וגם בשרת מאובטח. הגישה לנתוני חשבון מוגבלת לבעל החשבון בלבד
-            באמצעות הרשאות בצד השרת. עדכון גרסה אינו מוחק את ההתקדמות.
-          </p>
-        </P>
-
-        <P title="ילדים">
-          <p>
-            האפליקציה מיועדת ללמידה לילדים. אנו ממליצים שההרשמה תתבצע על ידי הורה או אפוטרופוס.
-            אפשר לשחק גם ללא הרשמה, כאורח, ואז הנתונים נשמרים במכשיר בלבד.
-          </p>
-        </P>
-
-        <P title="מחיקת נתונים">
-          <p>
-            אפשר לאפס את ההתקדמות במסך ההגדרות. למחיקת חשבון ונתוניו מהשרת, שלחו בקשה לכתובת
-            התמיכה ונטפל בה בתוך 30 יום.
-          </p>
-        </P>
-
-        <P title="שינויים ויצירת קשר">
-          <p>
-            ייתכנו עדכונים למדיניות זו; הגרסה העדכנית תוצג תמיד במסך זה. לשאלות ולבקשות:
-            <span dir="ltr"> support@math-matey-voyage.lovable.app</span>
-          </p>
-        </P>
+    <main dir="rtl" className="screen-pad mx-auto min-h-screen max-w-lg bg-background text-ink">
+      <h1 className="py-4 text-center text-[22px] font-bold">מדיניות פרטיות</h1>
+      <div className="space-y-5 text-sm leading-relaxed">
+        <p className="text-muted-foreground">עודכן לאחרונה: 22 באוקטובר 2026</p>
+        <section>
+          <h2 className="text-lg font-bold">מי אנחנו</h2>
+          <p>מסע המתמטיקס היא אפליקציה לילדים הלומדים חשבון באמצעות משחקים. אנו ממליצים שההורה או האפוטרופוס ילווה את ההרשמה והשימוש.</p>
+        </section>
+        <section>
+          <h2 className="text-lg font-bold">איזה מידע נשמר</h2>
+          <p>נשמרים כינוי השחקן, האייקון והמדינה שנבחרו, והתקדמות המשחק: מטבעות, גביעים, מדבקות, משימות, הישגים, נתוני תשובות וזמן משחק.</p>
+          <p>בהתחברות עם Google, כתובת האימייל משמשת לזיהוי החשבון ולשמירת ההתקדמות בענן. כך נשמרת התקדמות גם בחיבור מחשבון זה במכשיר אחר. כך גם באפשרויות ההתחברות האחרות הקיימות באפליקציה.</p>
+          <p>שחקני אורח מקבלים קוד אקראי ללא כתובת אימייל. ההתקדמות נשמרת במכשיר, וכאשר נוצר קוד אורח היא נשמרת גם בענן לצורך שחזור והצגת ניקוד.</p>
+          <p>לא נאספים מיקום מדויק, אנשי קשר, תמונות או מידע מהמיקרופון. אם נשלח דיווח תקלה, נשמרים גם תוכן הדיווח ומידע טכני על המכשיר והגרסה. לצורך אבטחה עשויים להישמר רישומי בקשות וכתובת IP.</p>
+        </section>
+        <section>
+          <h2 className="text-lg font-bold">שימוש במידע ושיתוף</h2>
+          <p>המידע משמש לשמירת התקדמות ולפעולת המשחק. בטבלת המובילים מוצגים כינוי, אייקון, מדינה וניקוד; כתובת האימייל אינה מוצגת שם.</p>
+          <p>הנתונים אינם נמכרים ואינם משותפים לצורכי פרסום. כיום אין באפליקציה פרסומות או רכישות בתוך האפליקציה בכסף אמיתי; החנות הפנימית משתמשת במטבעות משחק בלבד.</p>
+        </section>
+        <section>
+          <h2 className="text-lg font-bold">אחסון ואבטחה</h2>
+          <p>הנתונים נשמרים במכשיר ובמסד נתונים בענן, ומועברים בחיבורים מוצפנים. הגישה לנתוני החשבון מוגבלת באמצעות אימות והרשאות.</p>
+        </section>
+        <section>
+          <h2 className="text-lg font-bold">זכויות הורים ומחיקת נתונים</h2>
+          <p>הורים ואפוטרופוסים יכולים לבקש לעיין בנתונים, לתקן אותם או למחוק אותם. למחיקה ישירה פתחו את ההגדרות או אזור ההורים ולחצו „מחיקת חשבון ונתונים”; הפעולה דורשת אישור ומוחקת לצמיתות את החשבון וההתקדמות המשויכת אליו.</p>
+          <p>לאורח, הכפתור מוחק רק את הנתונים במכשיר הנוכחי. למחיקת נתוני קוד אורח בענן, או לבקשת עיון ותיקון, פנו באימייל אל <bdi>[CONTACT_EMAIL_PLACEHOLDER]</bdi>.</p>
+          <p className="text-muted-foreground">כתובת יצירת הקשר טרם הוגדרה; פנייה באימייל עדיין אינה זמינה.</p>
+        </section>
+        <section>
+          <h2 className="text-lg font-bold">עדכונים למדיניות</h2>
+          <p>המדיניות תעודכן בעמוד זה, והגרסה העדכנית תוצג כאן.</p>
+        </section>
+        <AccountPrivacyLinks />
+        <Link to="/" className="inline-block py-2 text-primary underline">חזרה למסך ההתחלה</Link>
       </div>
-    </Screen>
+    </main>
   );
 }

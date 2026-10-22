@@ -6,6 +6,7 @@ import { Logo } from "@/components/effects";
 import { useGame } from "@/lib/game-state";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { AccountPrivacyLinks } from "@/components/account-privacy-links";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (
@@ -307,6 +308,7 @@ function AuthPage() {
             </button>
           </>
         )}
+        <AccountPrivacyLinks />
       </div>
     </Screen>
   );
