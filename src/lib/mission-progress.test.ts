@@ -10,7 +10,7 @@ function profile(): Profile {
     monthlyAnswers: 70, monthlyChests: 3, monthlyClaimed: ["monthly"],
     streakDays: 4, chestsOpened: 8, stickers: [0, 3, 4], coins: 100, hints: 5,
     gameWins: { clouds: 10 }, dayBaseline: {}, monthBaseline: {},
-  } as Profile;
+  } as unknown as Profile;
 }
 const mission = (metric: Mission["metric"]): Mission => ({ id: "test", title: "", goal: 1, metric, gameId: "clouds", reward: {} });
 afterEach(() => vi.useRealTimers());
