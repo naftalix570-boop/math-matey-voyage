@@ -27,7 +27,7 @@ export function DeleteAccountButton() {
     <AlertDialog open={open} onOpenChange={(value) => { if (!busy) { setOpen(value); setError(null); } }}>
       <AlertDialogTrigger asChild>
         <Button variant="destructive" className="h-auto min-h-11 w-full whitespace-normal py-3 font-bold">
-          <Trash2 aria-hidden="true" /> מחיקת חשבון ונתונים
+          <Trash2 aria-hidden="true" /> {linked ? "מחיקת חשבון" : "איפוס הנתונים שלי"}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent dir="rtl" className="max-w-[min(32rem,calc(100%-2rem))] text-right">
