@@ -22,6 +22,8 @@ export const Route = createFileRoute("/admin")({
       { property: "og:title", content: "ניהול — מסע המתמטיקס" },
       { property: "og:description", content: "מסך ניהול: שחקנים וקודי קידום." },
       { name: "robots", content: "noindex" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AdminPage,

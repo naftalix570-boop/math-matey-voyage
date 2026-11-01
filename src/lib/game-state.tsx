@@ -29,6 +29,7 @@ import { chestLuck } from "./chest-luck";
 import { localDate, progressOf, rollMissionPeriods } from "./mission-progress";
 import { raisedTrophies } from "./score-reconcile";
 import { deleteMyAccount } from "./account.functions";
+import { isSafeDisplayName } from "./security-rules";
 
 export type Boosts = {
   /** epoch ms until which coins are doubled */
@@ -1325,7 +1326,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const update: Ctx["update"] = useCallback((patch) => {
     const p = profileRef.current;
-    const next = { ...p, ...(typeof patch === "function" ? patch(p) : patch) };
+    const changes = typeof patch === "function" ? patch(p) : patch;
+    if (typeof changes.name === "string" && !isSafeDisplayName(changes.name)) return;
+    const next = { ...p, ...changes };
     profileRef.current = next;
     setProfile(next);
   }, []);
