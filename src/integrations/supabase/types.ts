@@ -319,6 +319,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       leaderboard_all: {
@@ -348,6 +366,10 @@ export type Database = {
         Args: { _amount: number; _user_id: string }
         Returns: number
       }
+      authorize_admin_attempt: {
+        Args: { _key: string; _valid: boolean }
+        Returns: boolean
+      }
       claim_album_trophies: {
         Args: { _user_id: string; _world_id: number }
         Returns: number
@@ -359,6 +381,14 @@ export type Database = {
           data: Json
           display_name: string
           icon: string
+        }[]
+      }
+      redeem_promo_atomic: {
+        Args: { _code: string; _user_id: string }
+        Returns: {
+          amount: number
+          reward_type: string
+          score: number
         }[]
       }
       sync_my_profile: {
