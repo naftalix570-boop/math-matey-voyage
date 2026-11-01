@@ -5,24 +5,19 @@ export type RewardType = "coins" | "hints" | "chest" | "trophies" | "stickers";
 
 const REWARDS: RewardType[] = ["coins", "hints", "chest", "trophies", "stickers"];
 
-function checkAdmin(code: unknown) {
-  const expected = process.env["ADMIN_CODE"] ?? "";
-  if (typeof code !== "string" || !expected || code.trim() !== expected) {
-    throw new Error("קוד שגוי");
-  }
-}
-
 export const verifyAdminCode = createServerFn({ method: "POST" })
   .inputValidator((input: { code: string }) => input)
   .handler(async ({ data }) => {
-    const expected = process.env["ADMIN_CODE"] ?? "";
-    return { ok: Boolean(expected) && data.code.trim() === expected };
+    const { authorizeAdmin } = await import("./admin-security.server");
+    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "", { url: process.env["SUPABASE_URL"] ?? "", key: process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "" });
+    return { ok: true };
   });
 
 export const listAdminUsers = createServerFn({ method: "POST" })
   .inputValidator((input: { code: string }) => input)
   .handler(async ({ data }) => {
-    checkAdmin(data.code);
+    const { authorizeAdmin } = await import("./admin-security.server");
+    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "", { url: process.env["SUPABASE_URL"] ?? "", key: process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("profiles")
@@ -52,7 +47,8 @@ export const listAdminUsers = createServerFn({ method: "POST" })
 export const listPromoCodes = createServerFn({ method: "POST" })
   .inputValidator((input: { code: string }) => input)
   .handler(async ({ data }) => {
-    checkAdmin(data.code);
+    const { authorizeAdmin } = await import("./admin-security.server");
+    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "", { url: process.env["SUPABASE_URL"] ?? "", key: process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("promo_codes")
@@ -82,7 +78,8 @@ export const createPromoCode = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data }) => {
-    checkAdmin(data.code);
+    const { authorizeAdmin } = await import("./admin-security.server");
+    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "", { url: process.env["SUPABASE_URL"] ?? "", key: process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "" });
     if (!REWARDS.includes(data.rewardType)) throw new Error("פרס לא תקין");
     const amount = Math.max(1, Math.min(100000, Math.floor(data.amount)));
     const maxUses = Math.max(1, Math.min(100000, Math.floor(data.maxUses)));
@@ -103,7 +100,8 @@ export const createPromoCode = createServerFn({ method: "POST" })
 export const deletePromoCode = createServerFn({ method: "POST" })
   .inputValidator((input: { code: string; promo: string }) => input)
   .handler(async ({ data }) => {
-    checkAdmin(data.code);
+    const { authorizeAdmin } = await import("./admin-security.server");
+    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "", { url: process.env["SUPABASE_URL"] ?? "", key: process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("promo_codes")
@@ -120,41 +118,19 @@ export const redeemPromoCode = createServerFn({ method: "POST" })
     const promo = data.promo.trim().toUpperCase().slice(0, 16);
     if (!promo) throw new Error("הכניסו קוד");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await supabaseAdmin
-      .from("promo_codes")
-      .select("code, reward_type, amount, max_uses, uses")
-      .eq("code", promo)
-      .maybeSingle();
-    if (!row) throw new Error("קוד שגוי");
-    if (row.uses >= row.max_uses) throw new Error("הקוד נוצל במלואו");
-
-    const { error: insErr } = await supabaseAdmin
-      .from("promo_redemptions")
-      .insert({ code: promo, user_id: context.userId });
-    if (insErr) {
-      if (insErr.code === "23505") throw new Error("כבר מימשתם את הקוד הזה");
-      throw new Error(insErr.message);
-    }
-    await supabaseAdmin
-      .from("promo_codes")
-      .update({ uses: row.uses + 1 })
-      .eq("code", promo);
-
-    // The redemption insert credits trophy rewards atomically through the database trigger.
-    let score: number | null = null;
-    if (row.reward_type === "trophies") {
-      const { data: scored, error } = await supabaseAdmin.from("player_scores")
-        .select("score").eq("user_id", context.userId).single();
-      if (error) throw new Error("לא ניתן לקרוא את הניקוד כרגע");
-      score = scored.score;
-    }
-    return { rewardType: row.reward_type as RewardType, amount: row.amount, score };
+    const { data: rows, error } = await supabaseAdmin.rpc("redeem_promo_atomic", {
+      _user_id: context.userId, _code: promo,
+    });
+    const row = rows?.[0];
+    if (error || !row) throw new Error("לא ניתן לממש את הקוד");
+    return { rewardType: row.reward_type as RewardType, amount: row.amount, score: row.score };
   });
 
 export const getAdminUser = createServerFn({ method: "POST" })
   .inputValidator((input: { code: string; userId: string }) => input)
   .handler(async ({ data }) => {
-    checkAdmin(data.code);
+    const { authorizeAdmin } = await import("./admin-security.server");
+    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "", { url: process.env["SUPABASE_URL"] ?? "", key: process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("profiles")
@@ -171,7 +147,8 @@ export const grantToUser = createServerFn({ method: "POST" })
     (input: { code: string; userId: string; rewardType: RewardType; amount: number }) => input,
   )
   .handler(async ({ data }) => {
-    checkAdmin(data.code);
+    const { authorizeAdmin } = await import("./admin-security.server");
+    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "", { url: process.env["SUPABASE_URL"] ?? "", key: process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "" });
     if (!REWARDS.includes(data.rewardType)) throw new Error("פרס לא תקין");
     const amount = Math.round(data.amount);
     if (!Number.isFinite(amount) || amount === 0) throw new Error("כמות לא תקינה");
