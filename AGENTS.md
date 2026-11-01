@@ -15,3 +15,6 @@
 - Mission period baselines and rollover live in mission-progress; refresh before recording progress so open sessions do not reuse yesterday's counters.
 - Server trophy rewards use atomic database increments and unique album-world claims; client acknowledgements reconcile absolute totals with max, never sum.
 - Self-account deletion accepts no client user id, revalidates the caller, pauses/drains local synchronization, removes owned records before Auth deletion, and reloads after clearing player storage to prevent deleted progress being restored.
+- Admin operations use a single server-only authorization guard with a verified account role, constant-time secret comparison and a transactional failed-attempt gate; client UI state is never authorization.
+- Guest save validation and name checks live in security-rules with database boundary triggers; keep existing legacy names unchanged and never trust forwarded client-IP fallbacks.
+- Security transaction and privilege regressions run against isolated PGlite databases using the actual migration SQL, never against real player accounts.

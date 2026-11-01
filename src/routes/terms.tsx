@@ -8,6 +8,8 @@ export const Route = createFileRoute("/terms")({
       { name: "description", content: "תנאי השימוש באפליקציית מסע המתמטיקס." },
       { property: "og:title", content: "תנאי שימוש — מסע המתמטיקס" },
       { property: "og:description", content: "הכללים לשימוש באפליקציה, מטבעות המשחק ואחריות." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: TermsPage,
