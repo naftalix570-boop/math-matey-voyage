@@ -9,7 +9,7 @@ export const verifyAdminCode = createServerFn({ method: "POST" })
   .inputValidator((input: { code: string }) => input)
   .handler(async ({ data }) => {
     const { authorizeAdmin } = await import("./admin-security.server");
-    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "");
+    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "", { url: process.env["SUPABASE_URL"] ?? "", key: process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "" });
     return { ok: true };
   });
 
@@ -17,7 +17,7 @@ export const listAdminUsers = createServerFn({ method: "POST" })
   .inputValidator((input: { code: string }) => input)
   .handler(async ({ data }) => {
     const { authorizeAdmin } = await import("./admin-security.server");
-    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "");
+    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "", { url: process.env["SUPABASE_URL"] ?? "", key: process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("profiles")
@@ -48,7 +48,7 @@ export const listPromoCodes = createServerFn({ method: "POST" })
   .inputValidator((input: { code: string }) => input)
   .handler(async ({ data }) => {
     const { authorizeAdmin } = await import("./admin-security.server");
-    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "");
+    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "", { url: process.env["SUPABASE_URL"] ?? "", key: process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("promo_codes")
@@ -79,7 +79,7 @@ export const createPromoCode = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { authorizeAdmin } = await import("./admin-security.server");
-    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "");
+    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "", { url: process.env["SUPABASE_URL"] ?? "", key: process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "" });
     if (!REWARDS.includes(data.rewardType)) throw new Error("פרס לא תקין");
     const amount = Math.max(1, Math.min(100000, Math.floor(data.amount)));
     const maxUses = Math.max(1, Math.min(100000, Math.floor(data.maxUses)));
@@ -101,7 +101,7 @@ export const deletePromoCode = createServerFn({ method: "POST" })
   .inputValidator((input: { code: string; promo: string }) => input)
   .handler(async ({ data }) => {
     const { authorizeAdmin } = await import("./admin-security.server");
-    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "");
+    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "", { url: process.env["SUPABASE_URL"] ?? "", key: process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("promo_codes")
@@ -130,7 +130,7 @@ export const getAdminUser = createServerFn({ method: "POST" })
   .inputValidator((input: { code: string; userId: string }) => input)
   .handler(async ({ data }) => {
     const { authorizeAdmin } = await import("./admin-security.server");
-    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "");
+    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "", { url: process.env["SUPABASE_URL"] ?? "", key: process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("profiles")
@@ -148,7 +148,7 @@ export const grantToUser = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { authorizeAdmin } = await import("./admin-security.server");
-    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "");
+    await authorizeAdmin(data.code, process.env["ADMIN_CODE"] ?? "", { url: process.env["SUPABASE_URL"] ?? "", key: process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "" });
     if (!REWARDS.includes(data.rewardType)) throw new Error("פרס לא תקין");
     const amount = Math.round(data.amount);
     if (!Number.isFinite(amount) || amount === 0) throw new Error("כמות לא תקינה");

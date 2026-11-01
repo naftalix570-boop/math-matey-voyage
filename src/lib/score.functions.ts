@@ -113,18 +113,20 @@ async function clientIp(): Promise<string> {
 async function countEvents(kind: string, key: string, windowMs: number) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const since = new Date(Date.now() - windowMs).toISOString();
-  const { count } = await supabaseAdmin
+  const { count, error } = await supabaseAdmin
     .from("rate_events")
     .select("id", { count: "exact", head: true })
     .eq("kind", kind)
     .eq("key", key)
     .gt("created_at", since);
+  if (error) throw new Error("לא ניתן לאמת בקשה כרגע");
   return count ?? 0;
 }
 
 async function addEvent(kind: string, key: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  await supabaseAdmin.from("rate_events").insert({ kind, key });
+  const { error } = await supabaseAdmin.from("rate_events").insert({ kind, key });
+  if (error) throw new Error("לא ניתן לאמת בקשה כרגע");
 }
 
 async function sha256(text: string) {
