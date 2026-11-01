@@ -1,5 +1,11 @@
 # Roadmap
 
+- [ ] Security hardening: server-owned stickers and album claims; preserve existing earned progress.
+- [ ] Security hardening: protected admin operations, constant-time long-code checks and confirmed custom rate limiting.
+- [ ] Security hardening: transactional promo redemption and signed, expiring question batches for every game.
+- [ ] Security hardening: trusted IP, 64 KB validated guest saves, restricted grants, rate-event cleanup and name moderation.
+- [ ] Add regression tests for security rules, verify real flows and run a fresh security scan.
+
 - [ ] Add confirmed self-account deletion and safe local cleanup.
 - [ ] Add public privacy/deletion pages and settings/login links.
 - [ ] Add and run mission-progress and score-reconcile unit tests; verify build.
