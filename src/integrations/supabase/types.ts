@@ -383,6 +383,7 @@ export type Database = {
           icon: string
         }[]
       }
+      is_safe_player_name: { Args: { _name: string }; Returns: boolean }
       redeem_promo_atomic: {
         Args: { _code: string; _user_id: string }
         Returns: {
